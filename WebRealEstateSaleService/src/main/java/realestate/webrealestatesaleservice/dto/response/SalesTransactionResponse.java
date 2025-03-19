@@ -14,7 +14,7 @@ public class SalesTransactionResponse {
     private String agentId;
     private BigDecimal amount;
     private BigDecimal commissionFee;
-    private String status;
+    private String transactionStatus;
     private String transactionType;
     private LocalDateTime transactionDate;
     private LocalDateTime completedAt;

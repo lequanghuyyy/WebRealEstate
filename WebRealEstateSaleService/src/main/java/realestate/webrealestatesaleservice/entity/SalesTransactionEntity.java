@@ -44,7 +44,7 @@ public class SalesTransactionEntity {
     // Trạng thái giao dịch: PENDING, COMPLETED, CANCELLED
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private TransactionStatus status;
+    private TransactionStatus transactionStatus;
 
     // Loại giao dịch: SALE hoặc RENT
     @Enumerated(EnumType.STRING)

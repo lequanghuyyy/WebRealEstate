@@ -3,6 +3,7 @@ package realestate.webrealestatesaleservice.mapper;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import realestate.webrealestatesaleservice.constant.TransactionStatus;
 import realestate.webrealestatesaleservice.constant.TransactionType;
 import realestate.webrealestatesaleservice.dto.request.SalesTransactionRequest;
 import realestate.webrealestatesaleservice.dto.response.SalesTransactionResponse;
@@ -18,10 +19,14 @@ public class SalesTransactionMapper {
     }
 
     public SalesTransactionEntity convertToSalesTransactionEntity(SalesTransactionRequest request) {
-        return modelMapper.map(request, SalesTransactionEntity.class);
+        SalesTransactionEntity salesTransactionEntity = modelMapper.map(request, SalesTransactionEntity.class);
+        salesTransactionEntity.setTransactionStatus(TransactionStatus.valueOf(request.getTransactionStatus()));
+        return salesTransactionEntity;
     }
 
     public SalesTransactionResponse convertToSalesTransactionResponse(SalesTransactionEntity entity) {
+        SalesTransactionResponse salesTransactionResponse = modelMapper.map(entity, SalesTransactionResponse.class);
+        salesTransactionResponse.setTransactionStatus(String.valueOf(entity.getTransactionStatus()));
         return modelMapper.map(entity, SalesTransactionResponse.class);
     }
 
