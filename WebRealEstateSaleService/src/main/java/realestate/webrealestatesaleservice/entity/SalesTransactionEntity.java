@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "transactions")
+@Table(name = "sale_transactions")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,7 +30,7 @@ public class SalesTransactionEntity {
     private String buyerId;
 
     // ID môi giới
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String agentId;
 
     // Giá trị giao dịch
