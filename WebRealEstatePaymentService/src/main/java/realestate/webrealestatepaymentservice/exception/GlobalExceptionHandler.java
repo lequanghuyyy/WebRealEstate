@@ -31,26 +31,19 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.badRequest().body(objectBody);
     }
 
-    @ExceptionHandler(InvalidRequestException.class)
-    public ResponseEntity<Object> handleInvalidRequestException(InvalidRequestException ex) {
-        Map<String, Object> error = new LinkedHashMap<>();
-        error.put("timestamp", new Date());
-        error.put("status", HttpStatus.BAD_REQUEST.value());
-        error.put("error", "Invalid Request");
-        error.put("details", ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Object> handleIllegalArgumentException(IllegalArgumentException ex) {
+        if (ex.getMessage().contains("No enum constant")) {
+            Map<String, Object> body = new LinkedHashMap<>();
+            body.put("timestamp", new Date());
+            body.put("status", HttpStatus.BAD_REQUEST.value());
+            body.put("error", "Invalid Enum Value");
+            body.put("details", "Giá trị không hợp lệ cho một enum. Hãy kiểm tra lại giá trị hợp lệ.");
+            return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
+        }
+        return handleUnwantedException(ex);
     }
 
-
-    @ExceptionHandler(NotFoundException.class)
-    public ResponseEntity<Object> handleNotFoundException(NotFoundException ex, WebRequest request) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("timestamp", new Date());
-        body.put("status", HttpStatus.NOT_FOUND.value());
-        body.put("error", "Not Found");
-        body.put("details", ex.getMessage());
-        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
-    }
 
     @Override
     protected ResponseEntity<Object> handleHttpMessageNotReadable(HttpMessageNotReadableException ex,
@@ -65,13 +58,36 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 Map<String, Object> body = new LinkedHashMap<>();
                 body.put("timestamp", new Date());
                 body.put("status", HttpStatus.BAD_REQUEST.value());
-                body.put("error", "Invalid Enum");
+                body.put("error", "Invalid Enum Value");
                 body.put("details", String.format("Giá trị không hợp lệ cho trường '%s'. Các giá trị hợp lệ là: %s", fieldName, allowedValues));
                 return new ResponseEntity<>(body, HttpStatus.BAD_REQUEST);
             }
         }
         return super.handleHttpMessageNotReadable(ex, headers, status, request);
     }
+
+//    @ExceptionHandler(InvalidRequestException.class)
+//    public ResponseEntity<Object> handleInvalidRequestException(InvalidRequestException ex) {
+//        Map<String, Object> error = new LinkedHashMap<>();
+//        error.put("timestamp", new Date());
+//        error.put("status", HttpStatus.BAD_REQUEST.value());
+//        error.put("error", "Invalid Request");
+//        error.put("details", ex.getMessage());
+//        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+//    }
+
+
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Object> handleNotFoundException(NotFoundException ex, WebRequest request) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("timestamp", new Date());
+        body.put("status", HttpStatus.NOT_FOUND.value());
+        body.put("error", "Not Found");
+        body.put("details", ex.getMessage());
+        return new ResponseEntity<>(body, HttpStatus.NOT_FOUND);
+    }
+
+
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleUnwantedException(Exception e) {

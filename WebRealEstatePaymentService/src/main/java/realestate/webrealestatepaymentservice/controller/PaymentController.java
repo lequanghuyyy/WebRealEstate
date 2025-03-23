@@ -1,5 +1,6 @@
 package realestate.webrealestatepaymentservice.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,7 +17,7 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/process")
-    public ResponseEntity<BaseResponse<PaymentResponse>> processPayment(@RequestBody PaymentRequest request) {
+    public ResponseEntity<BaseResponse<PaymentResponse>> processPayment(@Valid @RequestBody PaymentRequest request) {
         return ResponseFactory.ok(paymentService.processPayment(request));
     }
 

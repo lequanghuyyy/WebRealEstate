@@ -7,6 +7,8 @@ import realestate.webrealestatelistingservice.constant.ListingType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "listings")
@@ -45,6 +47,9 @@ public class ListingEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private ListingType type;
+
+    @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ListingImageEntity> images = new ArrayList<>();
 
     @Enumerated(EnumType.STRING)
     @Column(length = 10)

@@ -1,6 +1,7 @@
 package realestate.webrealestatepaymentservice.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 import realestate.webrealestatepaymentservice.constant.PaymentMethod;
 import realestate.webrealestatepaymentservice.constant.PaymentStatus;
@@ -26,6 +27,7 @@ public class PaymentEntity {
     private String transactionId;
 
     @Column(nullable = false, precision = 12, scale = 2)
+    @DecimalMin(value = "0.0", inclusive = false, message = "Amount must be greater than zero")
     private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
@@ -40,6 +42,7 @@ public class PaymentEntity {
     private LocalDateTime paymentDate;
 
     @Column(name = "commission_fee", precision = 12, scale = 2)
+    @DecimalMin(value = "0.0", inclusive = true, message = "Commission fee must be non-negative")
     private BigDecimal commissionFee;
 
     @Column(columnDefinition = "TEXT")

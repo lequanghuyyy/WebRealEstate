@@ -1,5 +1,6 @@
 package realestate.webrealestatelistingservice.service.impl;
 
+import com.cloudinary.Cloudinary;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -9,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
@@ -21,7 +23,9 @@ import realestate.webrealestatelistingservice.repository.ListingRepository;
 import realestate.webrealestatelistingservice.repository.specification.ListingSpecification;
 import realestate.webrealestatelistingservice.service.ListingService;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,6 +35,7 @@ public class ListingServiceImpl implements ListingService {
 
     ListingRepository listingRepository;
     ListingMapper listingMapper;
+    Cloudinary cloudinary;
 
     @Override
     public ListingResponse createListing(ListingRequest listingRequest) {

@@ -19,6 +19,7 @@ public class ListingResponse {
     private String description;
     private String address;
     private String city;
+    private String image;
     private BigDecimal price;
     private BigDecimal area;
     private Integer bedrooms;
