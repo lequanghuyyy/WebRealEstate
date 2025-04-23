@@ -1,0 +1,203 @@
+<div class="home-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-content">
+      <h1 *ngIf="!isLoggedIn">Find Your Dream Home</h1>
+      <h1 *ngIf="isLoggedIn">Welcome back, {{ user?.name || 'User' }}!</h1>
+      
+      <p class="hero-subtitle" *ngIf="!isLoggedIn">Discover the perfect property with our extensive listings</p>
+      <p class="hero-subtitle" *ngIf="isLoggedIn">Continue your property search with personalized recommendations</p>
+      
+      <!-- Search Box -->
+      <div class="search-box">
+        <div class="search-tabs">
+          <button [class.active]="searchType === 'buy'" (click)="searchType = 'buy'" class="tab-btn">Buy</button>
+          <button [class.active]="searchType === 'rent'" (click)="searchType = 'rent'" class="tab-btn">Rent</button>
+        </div>
+        
+        <div class="search-form">
+          <div class="search-input-group">
+            <i class="fas fa-search"></i>
+            <input type="text" placeholder="Enter location, zipcode, or address..." class="search-input">
+          </div>
+          
+          <div class="search-filters">
+            <select class="filter-select">
+              <option>Property Type</option>
+              <option>House</option>
+              <option>Apartment</option>
+              <option>Condo</option>
+              <option>Villa</option>
+            </select>
+            
+            <select class="filter-select">
+              <option>Price Range</option>
+              <option>$100k - $200k</option>
+              <option>$200k - $300k</option>
+              <option>$300k - $500k</option>
+              <option>$500k+</option>
+            </select>
+            
+            <select class="filter-select">
+              <option>Bedrooms</option>
+              <option>1+</option>
+              <option>2+</option>
+              <option>3+</option>
+              <option>4+</option>
+            </select>
+          </div>
+          
+          <div class="search-buttons">
+            <button class="search-btn">Search Properties</button>
+            <button class="save-search-btn" *ngIf="isLoggedIn" (click)="saveSearch()">
+              <i class="fas fa-bookmark"></i> Save Search
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Personalized Section for Logged In Users -->
+  <section class="recommended-section" *ngIf="isLoggedIn">
+    <div class="section-title">
+      <h2>Recommended for You</h2>
+      <p>Based on your preferences and search history</p>
+    </div>
+    
+    <div class="property-grid">
+      <!-- Recommended Property Cards (loop through recommendedProperties) -->
+      <div class="property-card" *ngFor="let property of recommendedProperties">
+        <div class="property-image" [style.background-image]="'url(' + property.image + ')'">
+          <span class="property-tag">{{ property.tag }}</span>
+        </div>
+        <div class="property-details">
+          <h3 class="property-price">{{ property.price }}</h3>
+          <h4 class="property-address">{{ property.address }}</h4>
+          <div class="property-features">
+            <span><i class="fas fa-bed"></i> {{ property.beds }} Beds</span>
+            <span><i class="fas fa-bath"></i> {{ property.baths }} Baths</span>
+            <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+          </div>
+          <p class="property-description">{{ property.description }}</p>
+          <div class="property-actions">
+            <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
+            <button class="favorite-btn"><i class="far fa-heart"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="quick-links" *ngIf="isLoggedIn">
+      <h3>Quick Actions</h3>
+      <div class="quick-links-grid">
+        <a routerLink="/profile" class="quick-link">
+          <i class="fas fa-user-circle"></i>
+          <span>My Profile</span>
+        </a>
+        <a routerLink="/profile/favorites" class="quick-link">
+          <i class="fas fa-heart"></i>
+          <span>Favorites</span>
+        </a>
+        <a routerLink="/profile/saved-searches" class="quick-link">
+          <i class="fas fa-search"></i>
+          <span>Saved Searches</span>
+        </a>
+        <a routerLink="/appointments" class="quick-link">
+          <i class="fas fa-calendar-alt"></i>
+          <span>Appointments</span>
+        </a>
+      </div>
+    </div>
+  </section>
+  
+  <!-- Featured Properties Section -->
+  <section class="featured-section">
+    <div class="section-title">
+      <h2>Featured Properties</h2>
+      <p>Handpicked properties for you</p>
+    </div>
+    
+    <div class="property-grid">
+      <!-- Featured Property Cards (loop through featuredProperties) -->
+      <div class="property-card" *ngFor="let property of featuredProperties">
+        <div class="property-image" [style.background-image]="'url(' + property.image + ')'">
+          <span class="property-tag">{{ property.tag }}</span>
+        </div>
+        <div class="property-details">
+          <h3 class="property-price">{{ property.price }}</h3>
+          <h4 class="property-address">{{ property.address }}</h4>
+          <div class="property-features">
+            <span><i class="fas fa-bed"></i> {{ property.beds }} Beds</span>
+            <span><i class="fas fa-bath"></i> {{ property.baths }} Baths</span>
+            <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+          </div>
+          <p class="property-description">{{ property.description }}</p>
+          <div class="property-actions">
+            <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
+            <button class="favorite-btn"><i class="far fa-heart"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="view-more-container">
+      <a routerLink="/properties" class="view-more-btn">View All Properties</a>
+    </div>
+  </section>
+  
+  <!-- Services Section -->
+  <section class="services-section">
+    <div class="section-title">
+      <h2>Our Services</h2>
+      <p>How we can help you</p>
+    </div>
+    
+    <div class="services-grid">
+      <div class="service-card">
+        <div class="service-icon">
+          <i class="fas fa-home"></i>
+        </div>
+        <h3>Find a Home</h3>
+        <p>Browse our selection of houses, apartments, and condos to find your perfect match.</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <h3>Buy a Property</h3>
+        <p>Our experts will guide you through the entire buying process for a smooth experience.</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <i class="fas fa-key"></i>
+        </div>
+        <h3>Rent a Place</h3>
+        <p>Discover rental properties that fit your lifestyle and budget with flexible terms.</p>
+      </div>
+      
+      <div class="service-card">
+        <div class="service-icon">
+          <i class="fas fa-chart-line"></i>
+        </div>
+        <h3>Sell Your Property</h3>
+        <p>Get the best value for your property with our expert market analysis and marketing.</p>
+      </div>
+    </div>
+  </section>
+  
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2 *ngIf="!isLoggedIn">Ready to Find Your Dream Home?</h2>
+      <h2 *ngIf="isLoggedIn">Need Expert Assistance?</h2>
+      
+      <p *ngIf="!isLoggedIn">Contact our agents today to start your journey.</p>
+      <p *ngIf="isLoggedIn">Our real estate specialists are ready to help you make the best decision.</p>
+      
+      <a routerLink="/contact" class="cta-btn">Contact Us</a>
+    </div>
+  </section>
+</div>

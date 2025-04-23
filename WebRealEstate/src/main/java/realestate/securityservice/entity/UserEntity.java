@@ -2,9 +2,11 @@ package realestate.securityservice.entity;
 
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import realestate.securityservice.constant.UserStatus;
 
 
 import java.util.List;
@@ -26,6 +28,7 @@ public class UserEntity {
     private String username;
 
     @Column(nullable = false, unique = true, name = "email")
+    @Email(message = "Email format is invalid")
     private String email;
 
     @Column(nullable = false, name = "password")
@@ -39,6 +42,13 @@ public class UserEntity {
 
     @Column(name = "phone")
     private String phone;
+
+    @Column(name = "bio")
+    private String bio;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private UserStatus status = UserStatus.ACTIVE;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",

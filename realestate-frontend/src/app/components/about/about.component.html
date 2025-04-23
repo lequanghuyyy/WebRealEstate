@@ -1,0 +1,203 @@
+<div class="about-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content">
+        <h1>About RealEstatePro</h1>
+        <p>Your trusted partner in real estate since 2010</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Company Overview Section -->
+  <section class="overview-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Our Story</h2>
+        <p>Building communities and connecting people with their dream homes</p>
+      </div>
+
+      <div class="company-story">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="about-image">
+              <img src="/assets/images/about-office.jpg" alt="RealEstatePro Office">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="about-content">
+              <h3>Who We Are</h3>
+              <p>RealEstatePro was founded in 2010 with a vision to transform the real estate industry by combining innovative technology with personalized service. Our team of experienced professionals is dedicated to helping clients find their perfect property, whether it's a cozy apartment, a luxury house, or a commercial space.</p>
+              
+              <h3>Our Mission</h3>
+              <p>We are committed to providing exceptional real estate services that exceed our clients' expectations. Through integrity, expertise, and innovation, we aim to make the property buying, selling, and renting process as seamless and enjoyable as possible.</p>
+              
+              <h3>Our Values</h3>
+              <ul class="values-list">
+                <li><i class="fas fa-check-circle"></i> Integrity and transparency in all our dealings</li>
+                <li><i class="fas fa-check-circle"></i> Client-centered approach to every transaction</li>
+                <li><i class="fas fa-check-circle"></i> Innovation in our services and solutions</li>
+                <li><i class="fas fa-check-circle"></i> Community engagement and social responsibility</li>
+                <li><i class="fas fa-check-circle"></i> Excellence in every aspect of our business</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-container">
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-calendar-alt"></i></div>
+          <div class="stat-number">{{ companyInfo.established }}</div>
+          <div class="stat-label">Year Established</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-user-tie"></i></div>
+          <div class="stat-number">{{ companyInfo.agents }}+</div>
+          <div class="stat-label">Professional Agents</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-home"></i></div>
+          <div class="stat-number">{{ companyInfo.properties }}+</div>
+          <div class="stat-label">Properties Sold</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-globe-americas"></i></div>
+          <div class="stat-number">{{ companyInfo.countries }}</div>
+          <div class="stat-label">Countries</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-icon"><i class="fas fa-building"></i></div>
+          <div class="stat-number">{{ companyInfo.offices }}</div>
+          <div class="stat-label">Office Locations</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Team Section -->
+  <section class="team-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Our Leadership Team</h2>
+        <p>Meet the experts behind RealEstatePro</p>
+      </div>
+
+      <div class="team-grid">
+        <div class="team-card" *ngFor="let member of teamMembers">
+          <div class="team-image">
+            <img [src]="member.image" [alt]="member.name">
+          </div>
+          <div class="team-details">
+            <h3 class="team-name">{{ member.name }}</h3>
+            <p class="team-position">{{ member.position }}</p>
+            <p class="team-description">{{ member.description }}</p>
+            <div class="team-social">
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+              <a href="#"><i class="fas fa-envelope"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Timeline Section -->
+  <section class="timeline-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>Our Journey</h2>
+        <p>Key milestones in our company's history</p>
+      </div>
+
+      <div class="timeline">
+        <div class="timeline-item" *ngFor="let milestone of milestones; let i = index" [ngClass]="{'right': i % 2 !== 0}">
+          <div class="timeline-badge">{{ milestone.year }}</div>
+          <div class="timeline-panel">
+            <div class="timeline-heading">
+              <h4>{{ milestone.title }}</h4>
+            </div>
+            <div class="timeline-body">
+              <p>{{ milestone.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Testimonials Section -->
+  <section class="testimonials-section">
+    <div class="container">
+      <div class="section-title">
+        <h2>What Our Clients Say</h2>
+        <p>Hear from the people who have found their dream homes with us</p>
+      </div>
+
+      <div class="testimonials-container">
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <i class="fas fa-quote-left"></i>
+            <p>The team at RealEstatePro made finding our first home such a smooth and enjoyable experience. They were always available to answer our questions and guided us through every step of the process.</p>
+          </div>
+          <div class="testimonial-author">
+            <img src="/assets/images/testimonial-1.jpg" alt="David & Maria Wilson">
+            <div class="author-info">
+              <h4>David & Maria Wilson</h4>
+              <p>First-time Homebuyers</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <i class="fas fa-quote-left"></i>
+            <p>I've worked with many real estate agencies over the years, but RealEstatePro stands out for their professionalism and attention to detail. They truly understand the market and their clients' needs.</p>
+          </div>
+          <div class="testimonial-author">
+            <img src="/assets/images/testimonial-2.jpg" alt="Robert Johnson">
+            <div class="author-info">
+              <h4>Robert Johnson</h4>
+              <p>Property Investor</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card">
+          <div class="testimonial-content">
+            <i class="fas fa-quote-left"></i>
+            <p>Selling our family home of 25 years was an emotional process, but the compassionate team at RealEstatePro made it easier. They secured a great price and ensured a hassle-free transaction.</p>
+          </div>
+          <div class="testimonial-author">
+            <img src="/assets/images/testimonial-3.jpg" alt="Linda Thompson">
+            <div class="author-info">
+              <h4>Linda Thompson</h4>
+              <p>Home Seller</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Ready to Work With Us?</h2>
+        <p>Let our experts guide you through your real estate journey</p>
+        <div class="cta-buttons">
+          <a routerLink="/contact" class="btn btn-primary">Contact Us</a>
+          <a routerLink="/properties" class="btn btn-secondary">Browse Properties</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div> 

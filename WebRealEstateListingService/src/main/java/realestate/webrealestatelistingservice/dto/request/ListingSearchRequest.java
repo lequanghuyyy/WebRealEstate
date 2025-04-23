@@ -3,6 +3,7 @@ package realestate.webrealestatelistingservice.dto.request;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.Data;
+import realestate.webrealestatelistingservice.constant.ListingPropertyType;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 
@@ -20,6 +21,8 @@ public class ListingSearchRequest {
 
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
+    private ListingPropertyType propertyType; // Added property type field
+
 
     private BigDecimal minArea;   // Diện tích tối thiểu
     private BigDecimal maxArea;   // Diện tích tối đa

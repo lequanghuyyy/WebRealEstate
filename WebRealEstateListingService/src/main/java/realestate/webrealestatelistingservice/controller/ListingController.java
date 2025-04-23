@@ -10,6 +10,7 @@ import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingStatusUpdateRequest;
 import realestate.webrealestatelistingservice.dto.response.BaseResponse;
 import realestate.webrealestatelistingservice.dto.response.ListingResponse;
+import realestate.webrealestatelistingservice.dto.response.ListingResponseCustom;
 import realestate.webrealestatelistingservice.dto.response.ResponseFactory;
 import realestate.webrealestatelistingservice.service.ListingService;
 
@@ -69,6 +70,18 @@ public class ListingController {
     public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> search(@RequestBody ListingSearchRequest searchRequest) {
         PageDto<ListingResponse> pageResult = listingService.searchListings(searchRequest);
         return ResponseFactory.ok(pageResult);
+    }
+
+    @GetMapping("/findCustom")
+    public ResponseEntity<BaseResponse<List<ListingResponseCustom>>> getCustomListings() {
+        return ResponseFactory.ok(listingService.getCustomListings());
+    }
+
+    @GetMapping("/custom/paged")
+    public ResponseEntity<BaseResponse<PageDto<ListingResponseCustom>>> getCustomListingsPaged(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseFactory.ok(listingService.getCustomListingsPaged(page, size));
     }
 
 

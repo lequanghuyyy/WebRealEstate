@@ -1,0 +1,265 @@
+<div class="create-listing-container">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner"></div>
+    <p>Loading data...</p>
+  </div>
+
+  <div class="content-container" *ngIf="!isLoading">
+    <div class="page-header">
+      <h1 class="page-title">{{ editMode ? 'Edit Listing' : 'Create New Listing' }}</h1>
+      <p class="page-subtitle">{{ editMode ? 'Update your property information' : 'Add a new property to the marketplace' }}</p>
+    </div>
+
+    <!-- Success/Error Messages -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      <i class="fas fa-check-circle"></i> {{ successMessage }}
+    </div>
+    
+    <div class="alert alert-danger" *ngIf="errorMessage">
+      <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
+    </div>
+
+    <!-- Listing Form -->
+    <form [formGroup]="listingForm" (ngSubmit)="onSubmit()" class="listing-form">
+      <div class="form-section">
+        <h2 class="section-title">Basic Information</h2>
+        
+        <div class="form-group">
+          <label for="title">Title <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="title" 
+            formControlName="title" 
+            class="form-control" 
+            placeholder="e.g. Modern Villa in District 2"
+            [class.is-invalid]="listingForm.get('title')?.invalid && listingForm.get('title')?.touched">
+          <div class="invalid-feedback" *ngIf="listingForm.get('title')?.hasError('required') && listingForm.get('title')?.touched">
+            Title is required
+          </div>
+          <div class="invalid-feedback" *ngIf="listingForm.get('title')?.hasError('minlength') && listingForm.get('title')?.touched">
+            Title must be at least 5 characters
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="description">Description <span class="required">*</span></label>
+          <textarea 
+            id="description" 
+            formControlName="description" 
+            class="form-control" 
+            rows="5" 
+            placeholder="Describe the property in detail..."
+            [class.is-invalid]="listingForm.get('description')?.invalid && listingForm.get('description')?.touched"></textarea>
+          <div class="invalid-feedback" *ngIf="listingForm.get('description')?.hasError('required') && listingForm.get('description')?.touched">
+            Description is required
+          </div>
+          <div class="invalid-feedback" *ngIf="listingForm.get('description')?.hasError('minlength') && listingForm.get('description')?.touched">
+            Description must be at least 20 characters
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="type">Listing Type <span class="required">*</span></label>
+            <select 
+              id="type" 
+              formControlName="type" 
+              class="form-control"
+              [class.is-invalid]="listingForm.get('type')?.invalid && listingForm.get('type')?.touched">
+              <option value="sale">For Sale</option>
+              <option value="rent">For Rent</option>
+            </select>
+          </div>
+          
+          <div class="form-group col-md-6">
+            <label for="status">Status <span class="required">*</span></label>
+            <select 
+              id="status" 
+              formControlName="status" 
+              class="form-control"
+              [class.is-invalid]="listingForm.get('status')?.invalid && listingForm.get('status')?.touched">
+              <option *ngFor="let option of statusOptions" [value]="option.value">{{ option.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Location</h2>
+        
+        <div class="form-group">
+          <label for="address">Address <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="address" 
+            formControlName="address" 
+            class="form-control" 
+            placeholder="Full street address"
+            [class.is-invalid]="listingForm.get('address')?.invalid && listingForm.get('address')?.touched">
+          <div class="invalid-feedback" *ngIf="listingForm.get('address')?.hasError('required') && listingForm.get('address')?.touched">
+            Address is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="city">City <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="city" 
+            formControlName="city" 
+            class="form-control" 
+            placeholder="e.g. Ho Chi Minh City"
+            [class.is-invalid]="listingForm.get('city')?.invalid && listingForm.get('city')?.touched">
+          <div class="invalid-feedback" *ngIf="listingForm.get('city')?.hasError('required') && listingForm.get('city')?.touched">
+            City is required
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Property Details</h2>
+        
+        <div class="form-row">
+          <div class="form-group col-md-6">
+            <label for="price">Price (VND) <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="price" 
+              formControlName="price" 
+              class="form-control" 
+              placeholder="Enter price in VND"
+              [class.is-invalid]="listingForm.get('price')?.invalid && listingForm.get('price')?.touched">
+            <div class="invalid-feedback" *ngIf="listingForm.get('price')?.hasError('required') && listingForm.get('price')?.touched">
+              Price is required
+            </div>
+            <div class="invalid-feedback" *ngIf="listingForm.get('price')?.hasError('min') && listingForm.get('price')?.touched">
+              Price cannot be negative
+            </div>
+          </div>
+          
+          <div class="form-group col-md-6">
+            <label for="area">Area (m²) <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="area" 
+              formControlName="area" 
+              class="form-control" 
+              placeholder="Enter area in square meters"
+              [class.is-invalid]="listingForm.get('area')?.invalid && listingForm.get('area')?.touched">
+            <div class="invalid-feedback" *ngIf="listingForm.get('area')?.hasError('required') && listingForm.get('area')?.touched">
+              Area is required
+            </div>
+            <div class="invalid-feedback" *ngIf="listingForm.get('area')?.hasError('min') && listingForm.get('area')?.touched">
+              Area must be at least 1 m²
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group col-md-4">
+            <label for="bedrooms">Bedrooms</label>
+            <input 
+              type="number" 
+              id="bedrooms" 
+              formControlName="bedrooms" 
+              class="form-control" 
+              placeholder="Number of bedrooms"
+              [class.is-invalid]="listingForm.get('bedrooms')?.invalid && listingForm.get('bedrooms')?.touched">
+            <div class="invalid-feedback" *ngIf="listingForm.get('bedrooms')?.hasError('min') && listingForm.get('bedrooms')?.touched">
+              Bedrooms cannot be negative
+            </div>
+          </div>
+          
+          <div class="form-group col-md-4">
+            <label for="bathrooms">Bathrooms</label>
+            <input 
+              type="number" 
+              id="bathrooms" 
+              formControlName="bathrooms" 
+              class="form-control" 
+              placeholder="Number of bathrooms"
+              [class.is-invalid]="listingForm.get('bathrooms')?.invalid && listingForm.get('bathrooms')?.touched">
+            <div class="invalid-feedback" *ngIf="listingForm.get('bathrooms')?.hasError('min') && listingForm.get('bathrooms')?.touched">
+              Bathrooms cannot be negative
+            </div>
+          </div>
+          
+          <div class="form-group col-md-4">
+            <label for="style">Property Style <span class="required">*</span></label>
+            <select 
+              id="style" 
+              formControlName="style" 
+              class="form-control"
+              [class.is-invalid]="listingForm.get('style')?.invalid && listingForm.get('style')?.touched">
+              <option *ngFor="let type of propertyTypes" [value]="type.value">{{ type.label }}</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Tags</h2>
+        <p class="section-description">Select the relevant tags for your property.</p>
+        
+        <div class="form-group mb-4">
+          <label class="form-label fw-semibold">Tags</label>
+          <div class="tag-container d-flex flex-wrap gap-2">
+            <div *ngFor="let tag of tagOptions" 
+                 class="tag-chip p-2 rounded-3" 
+                 [class.selected]="isTagSelected(tag.value)"
+                 (click)="toggleTag(tag.value)">
+              {{ tag.label }}
+            </div>
+          </div>
+          <div *ngIf="listingForm.get('tags')?.touched && listingForm.get('tags')?.invalid" class="text-danger mt-1">
+            <small *ngIf="listingForm.get('tags')?.errors?.['required']">Please select at least one tag</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h2 class="section-title">Images</h2>
+        <p class="section-description">Upload up to {{ maxImages }} images of the property. First image will be used as the main photo.</p>
+        
+        <div class="image-upload-container">
+          <div class="image-upload-area">
+            <input 
+              type="file" 
+              id="imageUpload" 
+              accept="image/*" 
+              multiple 
+              (change)="onImageSelected($event)"
+              [disabled]="imagePreviewUrls.length >= maxImages">
+            <label for="imageUpload" class="upload-label" [class.disabled]="imagePreviewUrls.length >= maxImages">
+              <i class="fas fa-cloud-upload-alt"></i>
+              <span>Click to select images</span>
+              <span class="small">or drag and drop here</span>
+            </label>
+          </div>
+          
+          <div class="image-preview-container" *ngIf="imagePreviewUrls.length > 0">
+            <div class="image-preview-item" *ngFor="let url of imagePreviewUrls; let i = index">
+              <img [src]="url" alt="Property image preview">
+              <button type="button" class="remove-image-btn" (click)="removeImage(i)">
+                <i class="fas fa-times"></i>
+              </button>
+              <div class="image-number" *ngIf="i === 0">Main Photo</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="cancel()">Cancel</button>
+        <button 
+          type="submit" 
+          class="btn btn-primary" 
+          [disabled]="isSubmitting || listingForm.invalid || imagePreviewUrls.length === 0">
+          <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
+          {{ editMode ? 'Update Listing' : 'Create Listing' }}
+        </button>
+      </div>
+    </form>
+  </div>
+</div> 

@@ -1,0 +1,163 @@
+<div class="property-reviews">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading reviews...</p>
+  </div>
+
+  <div class="content" *ngIf="!isLoading">
+    <div class="reviews-header">
+      <h2>Customer Reviews</h2>
+      <div *ngIf="reviews.length > 0" class="rating-summary">
+        <div class="average-rating">
+          <div class="rating-value">{{ getAverageRating() }}</div>
+          <div class="rating-stars">
+            <span *ngFor="let star of getStarArray(getRoundedAverage())" class="star">
+              <i class="fas" [ngClass]="star === 1 ? 'fa-star' : 'fa-star-o'"></i>
+            </span>
+          </div>
+          <div class="rating-count">{{ reviews.length }} reviews</div>
+        </div>
+        
+        <div class="rating-breakdown">
+          <div class="rating-bar" *ngFor="let num of [5, 4, 3, 2, 1]">
+            <div class="rating-label">{{ num }} <i class="fas fa-star"></i></div>
+            <div class="progress">
+              <div 
+                class="progress-bar" 
+                role="progressbar" 
+                [style.width.%]="getRatingPercentage(num)"
+                [attr.aria-valuenow]="getRatingPercentage(num)" 
+                aria-valuemin="0" 
+                aria-valuemax="100">
+              </div>
+            </div>
+            <div class="rating-percent">{{ getRatingPercentage(num) }}%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Review Button -->
+    <div class="add-review-action">
+      <button 
+        *ngIf="!hasReviewed && !showAddReview" 
+        class="btn btn-primary" 
+        (click)="toggleAddReview()">
+        <i class="fas fa-pen"></i> Write a Review
+      </button>
+      
+      <div *ngIf="hasReviewed && !showAddReview" class="already-reviewed">
+        <i class="fas fa-check-circle"></i> You've already reviewed this property
+      </div>
+    </div>
+
+    <!-- Add Review Form -->
+    <div class="add-review-form" *ngIf="showAddReview">
+      <div class="card">
+        <div class="card-header">
+          <h3>Write Your Review</h3>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+            <div class="mb-3">
+              <label for="rating" class="form-label">Rating</label>
+              <div class="star-rating">
+                <div class="stars">
+                  <span 
+                    *ngFor="let star of [1, 2, 3, 4, 5]" 
+                    class="star" 
+                    [class.active]="reviewForm.get('rating')?.value >= star"
+                    (click)="reviewForm.get('rating')?.setValue(star)">
+                    <i class="fas fa-star"></i>
+                  </span>
+                </div>
+                <div class="rating-value">{{ reviewForm.get('rating')?.value }}/5</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="title" class="form-label">Title</label>
+              <input 
+                type="text" 
+                id="title" 
+                class="form-control" 
+                formControlName="title"
+                placeholder="Summarize your experience in one sentence"
+                [class.is-invalid]="reviewForm.get('title')?.invalid && reviewForm.get('title')?.touched">
+              <div class="invalid-feedback" *ngIf="reviewForm.get('title')?.errors?.['required'] && reviewForm.get('title')?.touched">
+                Please enter a title
+              </div>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('title')?.errors?.['minlength'] && reviewForm.get('title')?.touched">
+                Title must be at least 5 characters
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="comment" class="form-label">Review Details</label>
+              <textarea 
+                id="comment" 
+                class="form-control" 
+                formControlName="comment" 
+                rows="4"
+                placeholder="Share your experience about this property"
+                [class.is-invalid]="reviewForm.get('comment')?.invalid && reviewForm.get('comment')?.touched"></textarea>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('comment')?.errors?.['required'] && reviewForm.get('comment')?.touched">
+                Please enter your review
+              </div>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('comment')?.errors?.['minlength'] && reviewForm.get('comment')?.touched">
+                Review must be at least 20 characters
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="toggleAddReview()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="reviewForm.invalid">Post Review</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews List -->
+    <div class="reviews-list">
+      <div class="no-reviews" *ngIf="reviews.length === 0">
+        <i class="fas fa-comment-slash fa-3x"></i>
+        <h3>No Reviews Yet</h3>
+        <p>Be the first to review this property</p>
+      </div>
+
+      <div class="review-item" *ngFor="let review of reviews">
+        <div class="review-header">
+          <div class="reviewer-info">
+            <div class="reviewer-avatar">
+              <img [src]="review.userAvatar || 'assets/images/default-avatar.jpg'" [alt]="review.userName">
+            </div>
+            <div class="reviewer-details">
+              <div class="reviewer-name">{{ review.userName }}</div>
+              <div class="review-date">{{ formatDate(review.date) }}</div>
+            </div>
+          </div>
+          <div class="review-rating">
+            <span *ngFor="let star of getStarArray(review.rating)" class="star">
+              <i class="fas" [ngClass]="star === 1 ? 'fa-star' : 'fa-star-o'"></i>
+            </span>
+          </div>
+        </div>
+        
+        <div class="review-content">
+          <h4 class="review-title">{{ review.title }}</h4>
+          <p class="review-comment">{{ review.comment }}</p>
+        </div>
+        
+        <div class="review-footer">
+          <button class="helpful-btn" (click)="markHelpful(review.id)">
+            <i class="fas fa-thumbs-up"></i> Helpful ({{ review.helpful }})
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

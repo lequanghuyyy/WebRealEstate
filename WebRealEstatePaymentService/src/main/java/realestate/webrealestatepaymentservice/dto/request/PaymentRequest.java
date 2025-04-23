@@ -1,6 +1,7 @@
 package realestate.webrealestatepaymentservice.dto.request;
 
 import lombok.Data;
+import realestate.webrealestatepaymentservice.constant.TransactionStyle;
 
 import java.math.BigDecimal;
 
@@ -11,4 +12,5 @@ public class PaymentRequest {
     private String paymentMethod; // Ví dụ: "CREDIT_CARD"
     private BigDecimal commissionFee;
     private String notes;
+    private TransactionStyle transactionStyle;
 }

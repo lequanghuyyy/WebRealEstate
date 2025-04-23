@@ -13,11 +13,7 @@ public class SalesTransactionResponse {
     private String buyerId;
     private String agentId;
     private BigDecimal amount;
-    private BigDecimal commissionFee;
     private String transactionStatus;
-    private String transactionType;
-    private LocalDateTime transactionDate;
     private LocalDateTime completedAt;
-    private String notes;
     private LocalDateTime createdAt;
 }

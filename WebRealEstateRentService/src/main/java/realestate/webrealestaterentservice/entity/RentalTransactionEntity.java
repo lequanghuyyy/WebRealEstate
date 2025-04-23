@@ -23,7 +23,7 @@ public class RentalTransactionEntity {
     @GeneratedValue(strategy = GenerationType.UUID)
     private String id;
 
-    // Liên kết đến Listing (ID từ Listing Service, không dùng khóa ngoại)
+    // Liên kết đến Listing (ID từ Listing Service)
     @Column(nullable = false)
     private String listingId;
 
@@ -40,17 +40,14 @@ public class RentalTransactionEntity {
     @DecimalMin(value = "0.0", inclusive = false, message = "Monthly rent must be positive")
     private BigDecimal monthlyRent;
 
-
     // Tiền đặt cọc
     @Column(precision = 12, scale = 2)
     @DecimalMin(value = "0.0", inclusive = true, message = "Deposit must not be negative")
     private BigDecimal deposit;
 
-    // Ngày bắt đầu thuê
     @Column(nullable = false)
     private LocalDate startDate;
 
-    // Ngày kết thúc thuê
     @Column(nullable = false)
     private LocalDate endDate;
 
@@ -59,11 +56,6 @@ public class RentalTransactionEntity {
     @Column(nullable = false, length = 10)
     private RentalStatus status;
 
-    // Ghi chú thêm về giao dịch thuê
-    @Column(columnDefinition = "TEXT")
-    private String notes;
-
-    // Thời gian tạo và cập nhật bản ghi
     @Column(updatable = false)
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

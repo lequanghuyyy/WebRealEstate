@@ -1,0 +1,274 @@
+<div class="agent-applications-container">
+  <div class="header">
+    <h2 class="title">Quản lý đăng ký Agent</h2>
+    <p class="subtitle">Duyệt đơn đăng ký và yêu cầu trở thành đối tác môi giới bất động sản</p>
+  </div>
+
+  <!-- Notifications -->
+  <div *ngIf="successMessage" class="alert alert-success alert-dismissible fade show" role="alert">
+    {{ successMessage }}
+    <button type="button" class="btn-close" (click)="successMessage = null"></button>
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+    {{ error }}
+    <button type="button" class="btn-close" (click)="error = null"></button>
+  </div>
+
+  <!-- Search and filter -->
+  <div class="filters-section">
+    <div class="search-container">
+      <input 
+        type="text" 
+        class="form-control search-input" 
+        placeholder="Tìm theo tên, email, số giấy phép..." 
+        (input)="onSearch($event)"
+      >
+      <i class="fas fa-search search-icon"></i>
+    </div>
+    
+    <div class="filter-buttons">
+      <button 
+        [class.active]="filterStatus === 'pending'" 
+        class="btn" 
+        (click)="changeFilter('pending')"
+      >
+        <span class="badge bg-warning">Đang chờ duyệt</span>
+      </button>
+      <button 
+        [class.active]="filterStatus === 'approved'" 
+        class="btn" 
+        (click)="changeFilter('approved')"
+      >
+        <span class="badge bg-success">Đã duyệt</span>
+      </button>
+      <button 
+        [class.active]="filterStatus === 'rejected'" 
+        class="btn" 
+        (click)="changeFilter('rejected')"
+      >
+        <span class="badge bg-danger">Từ chối</span>
+      </button>
+      <button 
+        [class.active]="filterStatus === 'all'" 
+        class="btn" 
+        (click)="changeFilter('all')"
+      >
+        <span class="badge bg-secondary">Tất cả</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Đang tải...</span>
+    </div>
+    <p>Đang tải dữ liệu...</p>
+  </div>
+
+  <!-- Applications list -->
+  <div *ngIf="!isLoading" class="applications-table-container">
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>Tên</th>
+          <th>Email</th>
+          <th>Số điện thoại</th>
+          <th>Số giấy phép</th>
+          <th>Ngày đăng ký</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="filteredApplications.length === 0">
+          <td colspan="7" class="text-center py-4">
+            <p class="text-muted">Không có đơn đăng ký nào phù hợp với tiêu chí tìm kiếm</p>
+          </td>
+        </tr>
+        <tr *ngFor="let app of filteredApplications">
+          <td>{{ app.fullName }}</td>
+          <td>{{ app.email }}</td>
+          <td>{{ app.phoneNumber }}</td>
+          <td>{{ app.licenseNumber }}</td>
+          <td>{{ formatDate(app.applicationDate) }}</td>
+          <td>
+            <span class="badge" [ngClass]="{
+              'bg-warning': app.status === 'pending',
+              'bg-success': app.status === 'approved',
+              'bg-danger': app.status === 'rejected'
+            }">
+              {{ app.status === 'pending' ? 'Đang chờ' : 
+                 app.status === 'approved' ? 'Đã duyệt' : 'Từ chối' }}
+            </span>
+          </td>
+          <td class="actions-column">
+            <button class="btn btn-sm btn-outline-primary me-1" (click)="viewApplication(app)">
+              <i class="fas fa-eye"></i>
+            </button>
+            <button 
+              *ngIf="app.status === 'pending'" 
+              class="btn btn-sm btn-outline-success me-1" 
+              (click)="openApproveModal(app)"
+            >
+              <i class="fas fa-check"></i>
+            </button>
+            <button 
+              *ngIf="app.status === 'pending'" 
+              class="btn btn-sm btn-outline-danger" 
+              (click)="openRejectModal(app)"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- View Application Modal -->
+  <div class="modal" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Chi tiết đơn đăng ký</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedApplication">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>Thông tin cá nhân</h6>
+              <hr>
+              <p><strong>Họ và tên:</strong> {{ selectedApplication.fullName }}</p>
+              <p><strong>Email:</strong> {{ selectedApplication.email }}</p>
+              <p><strong>Số điện thoại:</strong> {{ selectedApplication.phoneNumber }}</p>
+            </div>
+            <div class="col-md-6">
+              <h6>Thông tin chuyên môn</h6>
+              <hr>
+              <p><strong>Số giấy phép:</strong> {{ selectedApplication.licenseNumber }}</p>
+              <p><strong>Công ty/Đại lý:</strong> {{ selectedApplication.agencyName || 'Freelance' }}</p>
+              <p><strong>Ngày đăng ký:</strong> {{ formatDate(selectedApplication.applicationDate) }}</p>
+            </div>
+          </div>
+
+          <div class="row mt-3">
+            <div class="col-12">
+              <h6>Tài liệu đính kèm</h6>
+              <hr>
+              <div class="documents-list">
+                <div *ngFor="let doc of selectedApplication.documents" class="document-item">
+                  <i class="fas fa-file-pdf document-icon"></i>
+                  <span>{{ doc }}</span>
+                  <button class="btn btn-sm btn-link">Xem</button>
+                </div>
+                <p *ngIf="!selectedApplication.documents || selectedApplication.documents.length === 0">
+                  Không có tài liệu đính kèm
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-3" *ngIf="selectedApplication.status !== 'pending'">
+            <div class="col-12">
+              <h6>Ghi chú</h6>
+              <hr>
+              <p *ngIf="selectedApplication.notes">{{ selectedApplication.notes }}</p>
+              <p *ngIf="!selectedApplication.notes" class="text-muted">Không có ghi chú</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button 
+            *ngIf="selectedApplication && selectedApplication.status === 'pending'" 
+            class="btn btn-success me-2" 
+            (click)="openApproveModal(selectedApplication)"
+          >
+            Duyệt đơn
+          </button>
+          <button 
+            *ngIf="selectedApplication && selectedApplication.status === 'pending'" 
+            class="btn btn-danger me-2" 
+            (click)="openRejectModal(selectedApplication)"
+          >
+            Từ chối
+          </button>
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Đóng</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Approve Application Modal -->
+  <div class="modal" [class.show]="showApproveModal" [style.display]="showApproveModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Duyệt đơn đăng ký</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedApplication">
+          <p>Bạn sắp duyệt đơn đăng ký của <strong>{{ selectedApplication.fullName }}</strong>.</p>
+          <p>Người dùng sẽ được cấp quyền Agent và có thể đăng bất động sản trên hệ thống.</p>
+          
+          <form [formGroup]="applicationForm">
+            <div class="mb-3">
+              <label for="approveNotes" class="form-label">Ghi chú (tùy chọn)</label>
+              <textarea 
+                id="approveNotes" 
+                class="form-control" 
+                rows="3" 
+                placeholder="Thêm ghi chú nếu cần..."
+                formControlName="notes"
+              ></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Hủy</button>
+          <button type="button" class="btn btn-success" (click)="approveApplication()">Duyệt đơn</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Application Modal -->
+  <div class="modal" [class.show]="showRejectModal" [style.display]="showRejectModal ? 'block' : 'none'" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Từ chối đơn đăng ký</h5>
+          <button type="button" class="btn-close" (click)="closeModals()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedApplication">
+          <p>Bạn sắp từ chối đơn đăng ký của <strong>{{ selectedApplication.fullName }}</strong>.</p>
+          
+          <form [formGroup]="applicationForm">
+            <div class="mb-3">
+              <label for="rejectNotes" class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+              <textarea 
+                id="rejectNotes" 
+                class="form-control" 
+                rows="3" 
+                placeholder="Vui lòng cung cấp lý do từ chối đơn đăng ký..."
+                formControlName="notes"
+                required
+              ></textarea>
+              <div *ngIf="error && error.includes('lý do')" class="text-danger mt-1">
+                {{ error }}
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Hủy</button>
+          <button type="button" class="btn btn-danger" (click)="rejectApplication()">Từ chối đơn</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal backdrop -->
+  <div *ngIf="showViewModal || showApproveModal || showRejectModal" class="modal-backdrop fade show"></div>
+</div>

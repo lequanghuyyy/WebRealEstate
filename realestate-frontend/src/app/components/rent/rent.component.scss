@@ -1,0 +1,772 @@
+@use "sass:color";
+
+// Variables
+$primary-color: #2563eb;
+$secondary-color: #f59e0b;
+$dark-color: #1f2937;
+$light-color: #f9fafb;
+$border-color: #e5e7eb;
+$text-color: #4b5563;
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+$transition: all 0.3s ease;
+
+// Main container
+.rent-container {
+  padding-top: 80px;
+  padding-bottom: 60px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+// Hero Section
+.hero-section {
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), url('/assets/images/rent-banner.jpg');
+  background-size: cover;
+  background-position: center;
+  color: white;
+  padding: 5rem 0;
+  margin-bottom: 2rem;
+  
+  .hero-content {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+    
+    h1 {
+      font-size: 3rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    
+    p {
+      font-size: 1.25rem;
+      opacity: 0.9;
+    }
+  }
+}
+
+// Filter Sidebar
+.filter-sidebar {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  
+  .filter-sidebar-header {
+    padding: 1.25rem;
+    border-bottom: 1px solid #eee;
+    position: relative;
+    
+    h3 {
+      margin: 0 0 0.5rem;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+    
+    .close-filters {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: none;
+      border: none;
+      font-size: 1.25rem;
+      color: #999;
+      cursor: pointer;
+      
+      &:hover {
+        color: #ff5a5f;
+      }
+    }
+  }
+}
+
+.filter-accordion {
+  .filter-section {
+    border-bottom: 1px solid #eee;
+    
+    .filter-header {
+      padding: 1rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      
+      h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 500;
+      }
+      
+      i {
+        color: #999;
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover {
+        background-color: #f9f9f9;
+      }
+    }
+    
+    .filter-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      
+      &.show {
+        max-height: 500px;
+        padding: 0 1.25rem 1rem;
+      }
+    }
+  }
+}
+
+.filter-options {
+  .custom-radio {
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: center;
+    
+    input[type="radio"] {
+      margin-right: 0.5rem;
+    }
+    
+    label {
+      margin: 0;
+      cursor: pointer;
+    }
+  }
+}
+
+.range-inputs {
+  display: flex;
+  gap: 0.5rem;
+  
+  .min-input, .max-input {
+    flex: 1;
+    
+    label {
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 0.85rem;
+      color: #666;
+    }
+  }
+}
+
+.filter-actions {
+  padding: 1.25rem;
+  display: flex;
+  gap: 0.5rem;
+  
+  .btn {
+    flex: 1;
+    padding: 0.5rem;
+    
+    &.btn-reset {
+      background: white;
+      border: 1px solid #ddd;
+      color: #666;
+      
+      &:hover {
+        background-color: #f5f5f5;
+      }
+    }
+    
+    &.btn-apply {
+      background-color: #ff5a5f;
+      border: 1px solid #ff5a5f;
+      color: white;
+      
+      &:hover {
+        background-color: color.adjust(#ff5a5f, $lightness: -10%);
+        border-color: color.adjust(#ff5a5f, $lightness: -10%);
+      }
+    }
+  }
+}
+
+// Rental Tips
+.rental-tips-sidebar {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 1.25rem;
+  
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    position: relative;
+    
+    &:after {
+      content: '';
+      position: absolute;
+      bottom: -5px;
+      left: 0;
+      width: 40px;
+      height: 2px;
+      background-color: #ff5a5f;
+    }
+  }
+  
+  .tips-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    
+    li {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+      
+      i {
+        color: #28a745;
+        margin-right: 0.5rem;
+        margin-top: 0.25rem;
+      }
+      
+      span {
+        font-size: 0.9rem;
+        line-height: 1.4;
+      }
+    }
+  }
+}
+
+// List Property Card
+.list-property-card {
+  background-color: #f8f9fa;
+  border-left: 3px solid #ff5a5f;
+  border-radius: 8px;
+  padding: 1.25rem;
+  text-align: center;
+  
+  .card-icon {
+    background-color: rgba(255, 90, 95, 0.1);
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    
+    i {
+      font-size: 1.5rem;
+      color: #ff5a5f;
+    }
+  }
+  
+  h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+  }
+}
+
+// Results Section
+.results-section {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  
+  .results-header {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    .btn-filter {
+      background-color: #f8f9fa;
+      border: 1px solid #ddd;
+      color: #333;
+      
+      i {
+        margin-right: 0.5rem;
+      }
+    }
+    
+    .sorting-options {
+      display: flex;
+      align-items: center;
+      
+      label {
+        margin-right: 0.5rem;
+        margin-bottom: 0;
+      }
+    }
+  }
+}
+
+.loading-container, .no-results {
+  padding: 3rem;
+  text-align: center;
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  i {
+    font-size: 3rem;
+    color: #ddd;
+    margin-bottom: 1rem;
+  }
+  
+  h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  p {
+    color: #666;
+    margin-bottom: 1.5rem;
+  }
+}
+
+// Property Grid
+.property-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.property-card {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background-color: white;
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  }
+  
+  .property-image {
+    height: 200px;
+    position: relative;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .property-tag {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      background-color: #ff5a5f;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    
+    .property-status {
+      position: absolute;
+      top: 1rem;
+      right: 3rem;
+      background-color: #28a745;
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    
+    .favorite-btn {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background-color: white;
+      border: none;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      
+      i {
+        color: #ff5a5f;
+        font-size: 0.9rem;
+      }
+    }
+  }
+  
+  .property-content {
+    padding: 1rem;
+    
+    .property-price {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 0.5rem;
+      
+      .price-period {
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: #666;
+      }
+    }
+    
+    .property-title {
+      font-size: 1.1rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.4;
+      max-height: 2.8em;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    
+    .property-address {
+      color: #666;
+      font-size: 0.9rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: flex-start;
+      
+      i {
+        margin-right: 0.5rem;
+        margin-top: 0.25rem;
+      }
+    }
+    
+    .property-features {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      color: #666;
+      font-size: 0.85rem;
+      
+      i {
+        color: #ff5a5f;
+        margin-right: 0.25rem;
+      }
+    }
+    
+    .property-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 0.75rem;
+      border-top: 1px solid #eee;
+      
+      .agent-info {
+        display: flex;
+        align-items: center;
+        
+        .agent-image {
+          width: 30px;
+          height: 30px;
+          border-radius: 50%;
+          margin-right: 0.5rem;
+          object-fit: cover;
+        }
+        
+        .agent-name {
+          font-size: 0.85rem;
+          color: #666;
+        }
+      }
+      
+      .view-details-btn {
+        font-size: 0.85rem;
+        color: #ff5a5f;
+        background: none;
+        border: none;
+        padding: 0;
+        font-weight: 600;
+        
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+  }
+}
+
+// Pagination
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1.5rem;
+  gap: 0.5rem;
+  
+  .page-numbers {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0 0.5rem;
+  }
+  
+  .btn {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Rental Info Section
+.rental-info-section {
+  background-color: #f8f9fa;
+  padding: 4rem 0;
+  
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      color: #666;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+  }
+  
+  .info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    
+    .info-card {
+      background-color: white;
+      border-radius: 8px;
+      padding: 2rem;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      
+      .info-icon {
+        width: 70px;
+        height: 70px;
+        background-color: rgba(255, 90, 95, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        
+        i {
+          font-size: 1.75rem;
+          color: #ff5a5f;
+        }
+      }
+      
+      h3 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+      }
+      
+      p {
+        color: #666;
+        font-size: 0.95rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .info-link {
+        color: #ff5a5f;
+        font-weight: 600;
+        text-decoration: none;
+        
+        i {
+          transition: transform 0.3s ease;
+          display: inline-block;
+          margin-left: 0.25rem;
+        }
+        
+        &:hover {
+          color: color.adjust(#ff5a5f, $lightness: -10%);
+          
+          i {
+            transform: translateX(3px);
+          }
+        }
+      }
+    }
+  }
+}
+
+// Property Owner CTA
+.owner-cta-section {
+  padding: 5rem 0;
+  background-color: white;
+  
+  .cta-content {
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    
+    .cta-text {
+      flex: 1;
+      
+      h2 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #333;
+      }
+      
+      p {
+        color: #666;
+        margin-bottom: 1.5rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+      
+      .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 2rem;
+        
+        li {
+          margin-bottom: 0.75rem;
+          display: flex;
+          align-items: flex-start;
+          
+          i {
+            color: #ff5a5f;
+            margin-right: 0.75rem;
+            margin-top: 0.25rem;
+          }
+        }
+      }
+      
+      .cta-buttons {
+        display: flex;
+        gap: 1rem;
+        
+        .btn {
+          padding: 0.75rem 1.5rem;
+          font-weight: 600;
+          
+          &.btn-primary {
+            background-color: #ff5a5f;
+            border-color: #ff5a5f;
+            
+            &:hover {
+              background-color: color.adjust(#ff5a5f, $lightness: -10%);
+              border-color: color.adjust(#ff5a5f, $lightness: -10%);
+            }
+          }
+          
+          &.btn-outline-primary {
+            border-color: #ff5a5f;
+            color: #ff5a5f;
+            
+            &:hover {
+              background-color: rgba(255, 90, 95, 0.1);
+            }
+          }
+        }
+      }
+    }
+    
+    .cta-image {
+      flex: 1;
+      
+      img {
+        width: 100%;
+        border-radius: 8px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+}
+
+// Mobile Responsiveness
+@media (max-width: 992px) {
+  .owner-cta-section {
+    .cta-content {
+      flex-direction: column;
+      
+      .cta-image {
+        order: -1;
+      }
+    }
+  }
+  
+  .hero-section {
+    .hero-content {
+      h1 {
+        font-size: 2.5rem;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .property-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  }
+  
+  .info-cards {
+    gap: 1rem;
+  }
+  
+  .hero-section {
+    padding: 3rem 0;
+    
+    .hero-content {
+      h1 {
+        font-size: 2rem;
+      }
+      
+      p {
+        font-size: 1rem;
+      }
+    }
+  }
+  
+  .filter-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    border-radius: 0;
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    
+    &.open {
+      transform: translateX(0);
+    }
+  }
+} 

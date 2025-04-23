@@ -1,0 +1,217 @@
+.reviews-container {
+  padding: 30px 0;
+  min-height: 600px;
+  margin-top: 50px;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 0;
+  
+  p {
+    margin-top: 15px;
+    color: #666;
+  }
+}
+
+.reviews-header {
+  margin-bottom: 30px;
+  
+  h1 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    font-size: 1rem;
+    color: #666;
+  }
+}
+
+// Danh sách đánh giá
+.reviews-list {
+  .no-reviews {
+    text-align: center;
+    padding: 50px 0;
+    color: #777;
+    
+    i {
+      margin-bottom: 20px;
+      color: #ddd;
+    }
+    
+    h3 {
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    
+    p {
+      color: #999;
+    }
+  }
+  
+  .review-card {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    padding: 20px;
+    
+    .review-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      
+      .review-property {
+        a {
+          color: #3498db;
+          text-decoration: none;
+          display: flex;
+          align-items: center;
+          
+          i {
+            margin-right: 5px;
+          }
+          
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+      
+      .review-date {
+        color: #777;
+        display: flex;
+        align-items: center;
+        
+        i {
+          margin-right: 5px;
+        }
+      }
+    }
+    
+    .review-content {
+      .review-title {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        align-items: center;
+        
+        h3 {
+          font-size: 1.2rem;
+          margin: 0;
+          font-weight: 600;
+        }
+      }
+      
+      .review-rating {
+        display: flex;
+        align-items: center;
+        
+        .star {
+          color: #f39c12;
+          margin-right: 2px;
+        }
+        
+        .rating-value {
+          margin-left: 5px;
+          font-weight: 600;
+        }
+      }
+      
+      .review-comment {
+        margin-bottom: 15px;
+        color: #555;
+        line-height: 1.5;
+      }
+      
+      .review-helpful {
+        font-size: 0.9rem;
+        color: #777;
+        
+        i {
+          margin-right: 5px;
+          color: #3498db;
+        }
+      }
+    }
+    
+    .review-actions {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+    }
+  }
+}
+
+// Chỉnh sửa đánh giá
+.edit-review-container {
+  margin-bottom: 30px;
+  
+  .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    
+    h3 {
+      margin: 0;
+      font-size: 1.2rem;
+    }
+  }
+  
+  .card-body {
+    padding: 20px;
+  }
+  
+  .star-rating {
+    display: flex;
+    align-items: center;
+    
+    .stars {
+      display: flex;
+      
+      .star {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: #ddd;
+        margin-right: 5px;
+        
+        &.active {
+          color: #f39c12;
+        }
+        
+        &:hover {
+          transform: scale(1.1);
+        }
+      }
+    }
+    
+    .rating-value {
+      margin-left: 10px;
+      font-weight: 600;
+    }
+  }
+  
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+  }
+}
+
+// Modal backdrop
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1040;
+} 

@@ -1,0 +1,31 @@
+package spring.userexperienceservice.controller;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import spring.userexperienceservice.dto.request.RecentlyViewedRequest;
+import spring.userexperienceservice.dto.response.RecentlyViewedResponse;
+import spring.userexperienceservice.service.RecentlyViewedService;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("api/v1/recently-viewed")
+@RequiredArgsConstructor
+public class RecentlyViewedController {
+
+    private final RecentlyViewedService recentlyViewedService;
+
+    @PostMapping
+    public ResponseEntity<Void> recordView(@RequestBody RecentlyViewedRequest request) {
+        recentlyViewedService.recordView(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<List<RecentlyViewedResponse>> getRecentlyViewed(
+            @PathVariable String userId,
+            @RequestParam(defaultValue = "10") int limit) {
+        return ResponseEntity.ok(recentlyViewedService.getRecentlyViewed(userId, limit));
+    }
+}

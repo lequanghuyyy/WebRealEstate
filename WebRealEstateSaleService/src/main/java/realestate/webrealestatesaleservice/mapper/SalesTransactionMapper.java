@@ -43,12 +43,6 @@ public class SalesTransactionMapper {
         if (request.getAmount() != null) {
             existingEntity.setAmount(request.getAmount());
         }
-        if (request.getCommissionFee() != null) {
-            existingEntity.setCommissionFee(request.getCommissionFee());
-        }
-        if (request.getTransactionType() != null) {
-            existingEntity.setTransactionType(TransactionType.valueOf(request.getTransactionType()));
-        }
         return existingEntity;
     }
 }

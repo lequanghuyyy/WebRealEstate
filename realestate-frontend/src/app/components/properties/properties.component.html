@@ -1,0 +1,340 @@
+<div class="properties-container">
+  <!-- Hero Section -->
+  <div class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="hero-content">
+        <h1>Explore Our Properties</h1>
+        <p>Find your dream home from our exclusive collection of properties</p>
+        <div class="search-container">
+          <input 
+            type="text" 
+            [(ngModel)]="filterForm.value.location" 
+            (input)="filterForm.patchValue({location: $any($event.target).value})"
+            placeholder="Enter location, zip code, or address" 
+            class="search-input">
+          <button type="button" class="search-button" (click)="applyFilters()">
+            <i class="fas fa-search"></i> Search
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="container main-content">
+    <div class="row">
+      <!-- Sidebar Filters -->
+      <div class="col-lg-3 col-md-4">
+        <div class="filters-sidebar" [class.mobile-open]="showMobileFilters">
+          <div class="filters-header">
+            <h3>Filters</h3>
+            <button class="close-filters d-lg-none" (click)="toggleMobileFilters()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title" (click)="toggleFilterSection('propertyType')">
+              <h4>Property Type</h4>
+              <i class="fas" [ngClass]="isFilterOpen['propertyType'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="filter-content" [ngClass]="{'open': isFilterOpen['propertyType']}">
+              <div class="property-type-options">
+                <div class="type-option" *ngFor="let type of propertyTypes">
+                  <input 
+                    type="radio" 
+                    [id]="'type-' + type.replace(' ', '-').toLowerCase()" 
+                    [value]="type"
+                    [checked]="filterForm.value.type === type"
+                    (change)="filterForm.patchValue({type: type}); applyFilters()">
+                  <label [for]="'type-' + type.replace(' ', '-').toLowerCase()">{{ type }}</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title" (click)="toggleFilterSection('priceRange')">
+              <h4>Price Range</h4>
+              <i class="fas" [ngClass]="isFilterOpen['priceRange'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="filter-content" [ngClass]="{'open': isFilterOpen['priceRange']}">
+              <div class="price-range">
+                <div class="range-input">
+                  <label>Min Price</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="filterForm.value.priceMin"
+                    (input)="filterForm.patchValue({priceMin: $any($event.target).value})"
+                    placeholder="Min Price" 
+                    class="form-control">
+                </div>
+                <div class="range-input">
+                  <label>Max Price</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="filterForm.value.priceMax"
+                    (input)="filterForm.patchValue({priceMax: $any($event.target).value})"
+                    placeholder="Max Price" 
+                    class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title" (click)="toggleFilterSection('bedrooms')">
+              <h4>Bedrooms</h4>
+              <i class="fas" [ngClass]="isFilterOpen['bedrooms'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="filter-content" [ngClass]="{'open': isFilterOpen['bedrooms']}">
+              <div class="beds-options">
+                <div class="bed-option">
+                  <input 
+                    type="radio" 
+                    id="bed-any" 
+                    value="Any"
+                    [checked]="filterForm.value.beds === 'Any'"
+                    (change)="filterForm.patchValue({beds: 'Any'}); applyFilters()">
+                  <label for="bed-any">Any</label>
+                </div>
+                <div class="bed-option" *ngFor="let i of [1, 2, 3, 4, 5]">
+                  <input 
+                    type="radio" 
+                    [id]="'bed-' + i" 
+                    [value]="i.toString()"
+                    [checked]="filterForm.value.beds === i.toString()"
+                    (change)="filterForm.patchValue({beds: i.toString()}); applyFilters()">
+                  <label [for]="'bed-' + i">{{ i }}</label>
+                </div>
+                <div class="bed-option">
+                  <input 
+                    type="radio" 
+                    id="bed-5plus" 
+                    value="5+"
+                    [checked]="filterForm.value.beds === '5+'"
+                    (change)="filterForm.patchValue({beds: '5+'}); applyFilters()">
+                  <label for="bed-5plus">5+</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title" (click)="toggleFilterSection('bathrooms')">
+              <h4>Bathrooms</h4>
+              <i class="fas" [ngClass]="isFilterOpen['bathrooms'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="filter-content" [ngClass]="{'open': isFilterOpen['bathrooms']}">
+              <div class="bath-options">
+                <div class="bath-option">
+                  <input 
+                    type="radio" 
+                    id="bath-any" 
+                    value="Any"
+                    [checked]="filterForm.value.baths === 'Any'"
+                    (change)="filterForm.patchValue({baths: 'Any'}); applyFilters()">
+                  <label for="bath-any">Any</label>
+                </div>
+                <div class="bath-option" *ngFor="let i of [1, 2, 3, 4]">
+                  <input 
+                    type="radio" 
+                    [id]="'bath-' + i" 
+                    [value]="i.toString()"
+                    [checked]="filterForm.value.baths === i.toString()"
+                    (change)="filterForm.patchValue({baths: i.toString()}); applyFilters()">
+                  <label [for]="'bath-' + i">{{ i }}</label>
+                </div>
+                <div class="bath-option">
+                  <input 
+                    type="radio" 
+                    id="bath-4plus" 
+                    value="4+"
+                    [checked]="filterForm.value.baths === '4+'"
+                    (change)="filterForm.patchValue({baths: '4+'}); applyFilters()">
+                  <label for="bath-4plus">4+</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title" (click)="toggleFilterSection('squareFeet')">
+              <h4>Square Feet</h4>
+              <i class="fas" [ngClass]="isFilterOpen['squareFeet'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+            </div>
+            <div class="filter-content" [ngClass]="{'open': isFilterOpen['squareFeet']}">
+              <div class="area-range">
+                <div class="range-input">
+                  <label>Min</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="filterForm.value.squareFeetMin"
+                    (input)="filterForm.patchValue({squareFeetMin: $any($event.target).value})"
+                    placeholder="Min Sq Ft" 
+                    class="form-control">
+                </div>
+                <div class="range-input">
+                  <label>Max</label>
+                  <input 
+                    type="number" 
+                    [(ngModel)]="filterForm.value.squareFeetMax"
+                    (input)="filterForm.patchValue({squareFeetMax: $any($event.target).value})"
+                    placeholder="Max Sq Ft" 
+                    class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <div class="filter-title">
+              <h4>Keywords</h4>
+            </div>
+            <div class="filter-content open">
+              <div class="keywords-input">
+                <input 
+                  type="text" 
+                  [(ngModel)]="filterForm.value.keywords"
+                  (input)="filterForm.patchValue({keywords: $any($event.target).value})"
+                  placeholder="e.g. pool, garage, modern" 
+                  class="form-control">
+              </div>
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button class="btn-reset" (click)="resetFilters()">
+              <i class="fas fa-undo"></i> Reset Filters
+            </button>
+            <button class="btn-apply" (click)="applyFilters()">
+              <i class="fas fa-filter"></i> Apply Filters
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Properties Grid -->
+      <div class="col-lg-9 col-md-8">
+        <div class="properties-content">
+          <div class="properties-header">
+            <div class="properties-count">
+              <h2>Available Properties</h2>
+              <p>{{ totalItems }} properties found</p>
+            </div>
+            
+            <div class="properties-actions">
+              <div class="mobile-filter-toggle d-lg-none">
+                <button (click)="toggleMobileFilters()">
+                  <i class="fas fa-filter"></i> Filters
+                </button>
+              </div>
+              
+              <div class="sort-options">
+                <label for="sortBy">Sort By:</label>
+                <select 
+                  id="sortBy" 
+                  [(ngModel)]="selectedSort" 
+                  (change)="updateSort(selectedSort)" 
+                  class="form-control">
+                  <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoading">
+            <div class="spinner-border" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading properties...</p>
+          </div>
+
+          <!-- Error State -->
+          <div class="error-message" *ngIf="errorMessage">
+            <div class="alert alert-danger">
+              {{ errorMessage }}
+              <button (click)="loadProperties()">Try Again</button>
+            </div>
+          </div>
+
+          <!-- No Results State -->
+          <div class="no-results" *ngIf="!isLoading && !errorMessage && filteredProperties.length === 0">
+            <i class="fas fa-search"></i>
+            <h3>No properties found</h3>
+            <p>Try adjusting your search filters to see more results</p>
+            <button (click)="resetFilters()">Reset Filters</button>
+          </div>
+
+          <!-- Properties Grid -->
+          <div class="properties-grid" *ngIf="!isLoading && filteredProperties.length > 0">
+            <div class="property-card" *ngFor="let property of paginatedProperties">
+              <div class="property-image">
+                <a [routerLink]="['/property', property.id]">
+                  <img [src]="property.images[0]" [alt]="property.title">
+                </a>
+                <div class="property-badges">
+                  <span class="property-status" *ngIf="property.status">{{ property.status }}</span>
+                </div>
+                <div class="property-action">
+                  <button class="favorite-btn">
+                    <i class="far fa-heart"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="property-details">
+                <div class="property-price">{{ formatPrice(property.price) }}</div>
+                <h3 class="property-title">
+                  <a [routerLink]="['/property', property.id]">{{ property.title }}</a>
+                </h3>
+                <p class="property-location">
+                  <i class="fas fa-map-marker-alt"></i> {{ property.location.city }}, {{ property.location.state }}
+                </p>
+                <div class="property-features">
+                  <span><i class="fas fa-bed"></i> {{ property.features.bedrooms }} Beds</span>
+                  <span><i class="fas fa-bath"></i> {{ property.features.bathrooms }} Baths</span>
+                  <span><i class="fas fa-ruler-combined"></i> {{ property.features.area }} sq ft</span>
+                </div>
+                <div class="property-footer">
+                  <div class="agent-info" *ngIf="property.agent">
+                    <img [src]="property.agent.photo" [alt]="property.agent.name" class="agent-avatar">
+                    <span class="agent-name">{{ property.agent.name }}</span>
+                  </div>
+                  <div class="view-details">
+                    <a [routerLink]="['/property', property.id]" class="view-details-btn">View Details</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-container" *ngIf="!isLoading && totalItems > itemsPerPage">
+            <nav>
+              <ul class="pagination">
+                <li class="page-item" [class.disabled]="currentPage === 1">
+                  <a class="page-link" (click)="changePage(currentPage - 1)">
+                    <i class="fas fa-chevron-left"></i>
+                  </a>
+                </li>
+                
+                <li class="page-item" *ngFor="let page of [].constructor(totalPages); let i = index"
+                    [class.active]="currentPage === i + 1">
+                  <a class="page-link" (click)="changePage(i + 1)">{{ i + 1 }}</a>
+                </li>
+                
+                <li class="page-item" [class.disabled]="currentPage === totalPages">
+                  <a class="page-link" (click)="changePage(currentPage + 1)">
+                    <i class="fas fa-chevron-right"></i>
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

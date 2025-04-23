@@ -1,6 +1,7 @@
 package realestate.webrealestatepaymentservice.dto.response;
 
 import lombok.Data;
+import realestate.webrealestatepaymentservice.constant.TransactionStyle;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -16,4 +17,5 @@ public class PaymentResponse {
     private BigDecimal commissionFee;
     private String notes;
     private LocalDateTime createdAt;
+    private TransactionStyle transactionStyle;
 }

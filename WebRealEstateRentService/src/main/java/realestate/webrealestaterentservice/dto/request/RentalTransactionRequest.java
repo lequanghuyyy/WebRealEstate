@@ -14,6 +14,4 @@ public class RentalTransactionRequest {
     private BigDecimal deposit;
     private LocalDate startDate;
     private LocalDate endDate;
-    // Bạn có thể bổ sung các trường khác nếu cần, ví dụ: notes
-    private String notes;
 }

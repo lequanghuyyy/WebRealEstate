@@ -1,0 +1,287 @@
+<div class="admin-transactions">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading transactions...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div class="alert alert-danger" *ngIf="error">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </div>
+
+  <!-- Transactions Content -->
+  <div class="transactions-content" *ngIf="!isLoading && !error">
+    <div class="content-header">
+      <h1 class="page-title">Transaction Management</h1>
+      <p class="subtitle">Monitor and manage property transactions</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-container">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" [formControl]="searchControl" class="form-control" placeholder="Search by property, buyer, or seller...">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="filter-select">
+            <label>Type:</label>
+            <select class="form-select" [formControl]="typeFilter">
+              <option value="all">All Types</option>
+              <option value="sale">Sale</option>
+              <option value="rent">Rent</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="filter-select">
+            <label>Status:</label>
+            <select class="form-select" [formControl]="statusFilter">
+              <option value="all">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
+              <option value="refunded">Refunded</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="transactions-table">
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Property</th>
+                  <th>Type</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Buyer</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filteredTransactions.length === 0">
+                  <td colspan="8" class="text-center">No transactions found</td>
+                </tr>
+                <tr *ngFor="let transaction of filteredTransactions">
+                  <td>{{ transaction.id }}</td>
+                  <td>{{ transaction.propertyTitle }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="getTypeBadgeClass(transaction.transactionType)">
+                      {{ transaction.transactionType === 'sale' ? 'Sale' : 'Rent' }}
+                    </span>
+                  </td>
+                  <td>{{ formatCurrency(transaction.amount) }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="getStatusBadgeClass(transaction.status)">
+                      {{ transaction.status }}
+                    </span>
+                  </td>
+                  <td>{{ transaction.buyerName }}</td>
+                  <td>{{ formatDate(transaction.date) }}</td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn btn-sm btn-primary" (click)="openTransactionModal(transaction)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                          <li><h6 class="dropdown-header">Change Status</h6></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'pending')">Mark as Pending</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'completed')">Mark as Completed</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'cancelled')">Mark as Cancelled</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'refunded')">Mark as Refunded</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Transaction Detail Modal -->
+  <div class="modal" [class.show]="showTransactionModal" tabindex="-1" [style.display]="showTransactionModal ? 'block' : 'none'">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Transaction Details</h5>
+          <button type="button" class="btn-close" (click)="closeTransactionModal()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedTransaction">
+          <div class="transaction-detail">
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="detail-group">
+                  <h6 class="detail-header">Transaction Information</h6>
+                  <div class="detail-item">
+                    <div class="detail-label">Transaction ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.id }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Type:</div>
+                    <div class="detail-value">
+                      <span class="badge" [ngClass]="getTypeBadgeClass(selectedTransaction.transactionType)">
+                        {{ selectedTransaction.transactionType === 'sale' ? 'Sale' : 'Rent' }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Status:</div>
+                    <div class="detail-value">
+                      <span class="badge" [ngClass]="getStatusBadgeClass(selectedTransaction.status)">
+                        {{ selectedTransaction.status }}
+                      </span>
+                    </div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Amount:</div>
+                    <div class="detail-value">{{ formatCurrency(selectedTransaction.amount) }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Date:</div>
+                    <div class="detail-value">{{ formatDate(selectedTransaction.date) }}</div>
+                  </div>
+                  <div class="detail-item" *ngIf="selectedTransaction.completionDate">
+                    <div class="detail-label">Completion Date:</div>
+                    <div class="detail-value">{{ formatDate(selectedTransaction.completionDate) }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Payment Method:</div>
+                    <div class="detail-value">{{ selectedTransaction.paymentMethod }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-group">
+                  <h6 class="detail-header">Property Information</h6>
+                  <div class="detail-item">
+                    <div class="detail-label">Property ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.propertyId }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Title:</div>
+                    <div class="detail-value">{{ selectedTransaction.propertyTitle }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Type:</div>
+                    <div class="detail-value">{{ selectedTransaction.propertyType }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <div class="detail-group">
+                  <h6 class="detail-header">Buyer Information</h6>
+                  <div class="detail-item">
+                    <div class="detail-label">Buyer ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.buyerId }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Buyer Name:</div>
+                    <div class="detail-value">{{ selectedTransaction.buyerName }}</div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="detail-group">
+                  <h6 class="detail-header">Seller Information</h6>
+                  <div class="detail-item">
+                    <div class="detail-label">Seller ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.sellerId }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Seller Name:</div>
+                    <div class="detail-value">{{ selectedTransaction.sellerName }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row mt-4" *ngIf="selectedTransaction.agentId">
+              <div class="col-md-6">
+                <div class="detail-group">
+                  <h6 class="detail-header">Agent Information</h6>
+                  <div class="detail-item">
+                    <div class="detail-label">Agent ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.agentId }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Agent Name:</div>
+                    <div class="detail-value">{{ selectedTransaction.agentName }}</div>
+                  </div>
+                  <div class="detail-item" *ngIf="selectedTransaction.commission">
+                    <div class="detail-label">Commission:</div>
+                    <div class="detail-value">{{ formatCurrency(selectedTransaction.commission) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="notes mt-4" *ngIf="selectedTransaction.notes">
+              <h6 class="detail-header">Notes</h6>
+              <p>{{ selectedTransaction.notes }}</p>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <div class="status-actions" *ngIf="selectedTransaction">
+            <div class="btn-group">
+              <button 
+                type="button" 
+                class="btn" 
+                [ngClass]="selectedTransaction.status === 'pending' ? 'btn-warning' : 'btn-outline-warning'"
+                (click)="updateTransactionStatus(selectedTransaction, 'pending')">
+                Pending
+              </button>
+              <button 
+                type="button" 
+                class="btn" 
+                [ngClass]="selectedTransaction.status === 'completed' ? 'btn-success' : 'btn-outline-success'"
+                (click)="updateTransactionStatus(selectedTransaction, 'completed')">
+                Completed
+              </button>
+              <button 
+                type="button" 
+                class="btn" 
+                [ngClass]="selectedTransaction.status === 'cancelled' ? 'btn-danger' : 'btn-outline-danger'"
+                (click)="updateTransactionStatus(selectedTransaction, 'cancelled')">
+                Cancelled
+              </button>
+              <button 
+                type="button" 
+                class="btn" 
+                [ngClass]="selectedTransaction.status === 'refunded' ? 'btn-info' : 'btn-outline-info'"
+                (click)="updateTransactionStatus(selectedTransaction, 'refunded')">
+                Refunded
+              </button>
+            </div>
+          </div>
+          <button type="button" class="btn btn-secondary" (click)="closeTransactionModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="showTransactionModal"></div>
+</div> 

@@ -1,0 +1,229 @@
+<div class="zillow-login-container">
+  <div class="background-image-container">
+    <div class="slideshow">
+      <div class="slide active" style="background-image: url('/assets/images/homeInLogin.png')"></div>
+      <!-- <div class="slide" style="background-image: url('/assets/images/homeInLogin1.jpg')"></div>
+      <div class="slide" style="background-image: url('/assets/images/homeInLogin2.jpg')"></div>
+      <div class="slide" style="background-image: url('/assets/images/homeInLogin3.jpg')"></div> -->
+    </div>
+    <div class="bg-overlay"></div>
+  </div>
+  
+  <div class="login-wrapper">
+    <!-- Logo section -->
+    <div class="logo-section">
+      <img src="/assets/images/logo.jpg" alt="RealEstatePro Logo" class="login-logo" style="width: 200px; height: auto;">
+    </div>
+    
+    <!-- Form section -->
+    <div class="login-form-section">
+      <h1>Create an Account</h1>
+      
+      <div *ngIf="serverError" class="server-error alert alert-danger">
+        {{ serverError }}
+      </div>
+
+      <!-- Success message for agent registration -->
+      <div *ngIf="registrationSuccess && verificationSent" class="alert alert-success">
+        <h4><i class="fas fa-check-circle"></i> Registration Successful!</h4>
+        <p>Thank you for registering as a Property Owner/Agent. We've sent a verification link to your email address.</p>
+        <p>Please verify your email to continue. Your account will be pending until approved by an administrator.</p>
+        <p class="mt-3">
+          <a routerLink="/login" class="btn btn-outline-primary">Back to Login</a>
+        </p>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" *ngIf="!(registrationSuccess && verificationSent)">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input 
+            type="email" 
+            class="form-control" 
+            id="email" 
+            formControlName="email" 
+            placeholder="Enter your email"
+            [class.is-invalid]="emailControl?.invalid && (emailControl?.touched || emailControl?.dirty)"
+          />
+          <div class="input-helper-text">We'll never share your email</div>
+          <div class="invalid-feedback" *ngIf="emailControl?.invalid && (emailControl?.touched || emailControl?.dirty)">
+            <span *ngIf="emailControl?.errors?.['required']">Email is required</span>
+            <span *ngIf="emailControl?.errors?.['email']">Please enter a valid email address</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="fullName">Full Name</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="fullName" 
+            formControlName="fullName" 
+            placeholder="Enter your full name"
+            [class.is-invalid]="fullNameControl?.invalid && (fullNameControl?.touched || fullNameControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="fullNameControl?.invalid && (fullNameControl?.touched || fullNameControl?.dirty)">
+            <span *ngIf="fullNameControl?.errors?.['required']">Full name is required</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>I am a:</label>
+          <div class="role-options">
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="radio" 
+                id="homeSeeker" 
+                value="homeSeeker" 
+                formControlName="role"
+                [class.is-invalid]="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)"
+              >
+              <label class="form-check-label" for="homeSeeker">
+                <strong>Home Seeker</strong>
+                <span class="role-description">I'm looking to buy or rent a property</span>
+              </label>
+            </div>
+            <div class="form-check mt-2">
+              <input 
+                class="form-check-input" 
+                type="radio" 
+                id="propertyOwner" 
+                value="propertyOwner" 
+                formControlName="role"
+                [class.is-invalid]="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)"
+              >
+              <label class="form-check-label" for="propertyOwner">
+                <strong>Property Owner/Agent</strong>
+                <span class="role-description">I want to list properties for sale or rent</span>
+              </label>
+            </div>
+            <div class="invalid-feedback" *ngIf="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)">
+              <span *ngIf="roleControl?.errors?.['required']">Please select your role</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conditional fields for Property Owner/Agent -->
+        <div *ngIf="isPropertyOwner()" class="agent-fields">
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number</label>
+            <input 
+              type="tel" 
+              class="form-control" 
+              id="phoneNumber" 
+              formControlName="phoneNumber" 
+              placeholder="Enter your phone number"
+              [class.is-invalid]="phoneNumberControl?.invalid && (phoneNumberControl?.touched || phoneNumberControl?.dirty)"
+            />
+            <div class="invalid-feedback" *ngIf="phoneNumberControl?.invalid && (phoneNumberControl?.touched || phoneNumberControl?.dirty)">
+              <span *ngIf="phoneNumberControl?.errors?.['required']">Phone number is required for agents</span>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="licenseNumber">License Number (Optional)</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="licenseNumber" 
+              formControlName="licenseNumber" 
+              placeholder="Enter your real estate license number if available"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="agencyName">Agency/Company Name (Optional)</label>
+            <input 
+              type="text" 
+              class="form-control" 
+              id="agencyName" 
+              formControlName="agencyName" 
+              placeholder="Enter your agency or company name"
+            />
+          </div>
+
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> 
+            Note: Agent accounts require verification. Your account will be pending until approved by an administrator. 
+            You'll receive an email verification link to confirm your email address.
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input 
+            type="password" 
+            class="form-control" 
+            id="password" 
+            formControlName="password" 
+            placeholder="At least 8 characters"
+            [class.is-invalid]="passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty)">
+            <span *ngIf="passwordControl?.errors?.['required']">Password is required</span>
+            <span *ngIf="passwordControl?.errors?.['minlength']">Password must be at least 8 characters</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm Password</label>
+          <input 
+            type="password" 
+            class="form-control" 
+            id="confirmPassword" 
+            formControlName="confirmPassword" 
+            placeholder="Confirm your password"
+            [class.is-invalid]="confirmPasswordControl?.invalid && (confirmPasswordControl?.touched || confirmPasswordControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="confirmPasswordControl?.invalid && (confirmPasswordControl?.touched || confirmPasswordControl?.dirty)">
+            <span *ngIf="confirmPasswordControl?.errors?.['required']">Please confirm your password</span>
+            <span *ngIf="confirmPasswordControl?.errors?.['passwordMismatch']">Passwords don't match</span>
+          </div>
+        </div>
+        
+        <div class="form-check mb-4">
+          <input 
+            type="checkbox" 
+            class="form-check-input" 
+            id="terms" 
+            formControlName="termsAccepted"
+            [class.is-invalid]="termsControl?.invalid && (termsControl?.touched || termsControl?.dirty)"
+          />
+          <label class="form-check-label" for="terms">I agree to the <a href="#">Terms & Conditions</a></label>
+          <div class="invalid-feedback" *ngIf="termsControl?.invalid && (termsControl?.touched || termsControl?.dirty)">
+            <span>You must accept the terms to continue</span>
+          </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary btn-continue" [disabled]="isLoading || registerForm.invalid">
+          <span *ngIf="!isLoading">Create Account</span>
+          <span *ngIf="isLoading">Creating account...</span>
+        </button>
+        
+        <div class="divider">
+          <span>or</span>
+        </div>
+        
+        <div class="alternate-login-options">
+          <button type="button" class="btn btn-outline-secondary btn-google" (click)="loginWithGoogle()">
+            <img src="/assets/images/gg.jpg" alt="Google" class="provider-icon">
+            Continue with Google
+          </button>
+          
+          <button type="button" class="btn btn-outline-secondary btn-facebook" (click)="loginWithFacebook()">
+            <img src="/assets/images/facebook.png" alt="Facebook" class="provider-icon">
+            Continue with Facebook
+          </button>
+        </div>
+      </form>
+      
+      <div class="account-options">
+        <p>Already have a RealEstatePro account? <a routerLink="/login">Sign in</a></p>
+      </div>
+      
+      <div class="login-footer">
+        <p>By submitting this form, I agree to RealEstatePro's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</p>
+      </div>
+    </div>
+  </div>
+</div> 

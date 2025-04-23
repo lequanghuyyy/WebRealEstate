@@ -1,0 +1,156 @@
+<div class="reviews-container">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading reviews...</p>
+  </div>
+
+  <div class="content" *ngIf="!isLoading">
+    <div class="reviews-header">
+      <h1>My Reviews</h1>
+      <p>Manage the reviews you've written for properties</p>
+    </div>
+
+    <!-- Edit Review -->
+    <div class="edit-review-container" *ngIf="editMode">
+      <div class="card">
+        <div class="card-header">
+          <h3>Edit Review</h3>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="reviewForm" (ngSubmit)="saveReview()">
+            <div class="mb-3">
+              <label for="rating" class="form-label">Rating</label>
+              <div class="star-rating">
+                <div class="stars">
+                  <span 
+                    *ngFor="let star of [1, 2, 3, 4, 5]" 
+                    class="star" 
+                    [class.active]="reviewForm.get('rating')?.value >= star"
+                    (click)="reviewForm.get('rating')?.setValue(star)">
+                    <i class="fas fa-star"></i>
+                  </span>
+                </div>
+                <div class="rating-value">{{ reviewForm.get('rating')?.value }}/5</div>
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="title" class="form-label">Title</label>
+              <input 
+                type="text" 
+                id="title" 
+                class="form-control" 
+                formControlName="title"
+                [class.is-invalid]="reviewForm.get('title')?.invalid && reviewForm.get('title')?.touched">
+              <div class="invalid-feedback" *ngIf="reviewForm.get('title')?.errors?.['required'] && reviewForm.get('title')?.touched">
+                Please enter a title
+              </div>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('title')?.errors?.['minlength'] && reviewForm.get('title')?.touched">
+                Title must be at least 5 characters
+              </div>
+            </div>
+            
+            <div class="mb-3">
+              <label for="comment" class="form-label">Review Content</label>
+              <textarea 
+                id="comment" 
+                class="form-control" 
+                formControlName="comment" 
+                rows="4"
+                [class.is-invalid]="reviewForm.get('comment')?.invalid && reviewForm.get('comment')?.touched"></textarea>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('comment')?.errors?.['required'] && reviewForm.get('comment')?.touched">
+                Please enter your review content
+              </div>
+              <div class="invalid-feedback" *ngIf="reviewForm.get('comment')?.errors?.['minlength'] && reviewForm.get('comment')?.touched">
+                Review content must be at least 20 characters
+              </div>
+            </div>
+            
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="cancelEdit()">Cancel</button>
+              <button type="submit" class="btn btn-primary" [disabled]="reviewForm.invalid">Save Changes</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reviews List -->
+    <div class="reviews-list" *ngIf="!editMode">
+      <div *ngIf="reviews.length === 0" class="no-reviews">
+        <i class="fas fa-comment-slash fa-3x"></i>
+        <h3>No Reviews Yet</h3>
+        <p>You haven't written any reviews for properties</p>
+      </div>
+
+      <div class="review-card" *ngFor="let review of reviews">
+        <div class="review-header">
+          <div class="review-property">
+            <!-- Link to property details page -->
+            <a [routerLink]="['/property', review.propertyId]">
+              <i class="fas fa-home"></i>
+              <span>View Property</span>
+            </a>
+          </div>
+          <div class="review-date">
+            <i class="far fa-calendar-alt"></i>
+            <span>{{ formatDate(review.date) }}</span>
+          </div>
+        </div>
+        
+        <div class="review-content">
+          <div class="review-title">
+            <h3>{{ review.title }}</h3>
+            <div class="review-rating">
+              <span *ngFor="let star of getStarArray(review.rating)" class="star">
+                <i class="fas" [ngClass]="star === 1 ? 'fa-star' : 'fa-star-o'"></i>
+              </span>
+              <span class="rating-value">{{ review.rating }}/5</span>
+            </div>
+          </div>
+          
+          <div class="review-comment">
+            <p>{{ review.comment }}</p>
+          </div>
+          
+          <div class="review-helpful">
+            <i class="fas fa-thumbs-up"></i>
+            <span>{{ review.helpful }} people found this helpful</span>
+          </div>
+        </div>
+        
+        <div class="review-actions">
+          <button class="btn btn-outline-primary btn-sm" (click)="editReview(review)">
+            <i class="fas fa-edit"></i> Edit
+          </button>
+          <button class="btn btn-outline-danger btn-sm" (click)="confirmDelete(review.id)">
+            <i class="fas fa-trash"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Confirm Delete Modal -->
+    <div class="modal" [class.show]="showConfirmDelete" tabindex="-1" [style.display]="showConfirmDelete ? 'block' : 'none'">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Confirm Delete</h5>
+            <button type="button" class="btn-close" (click)="cancelDelete()"></button>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this review? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="cancelDelete()">Cancel</button>
+            <button type="button" class="btn btn-danger" (click)="deleteReview()">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-backdrop fade show" *ngIf="showConfirmDelete"></div>
+  </div>
+</div> 

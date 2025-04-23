@@ -1,0 +1,163 @@
+.admin-dashboard {
+  padding: 1rem;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+  
+  p {
+    margin-top: 1rem;
+    color: #6c757d;
+  }
+}
+
+.page-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.subtitle {
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+// Stats Cards
+.stats-cards {
+  margin-bottom: 2.5rem;
+}
+
+.stats-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.stats-card-header {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  
+  .stats-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    color: white;
+    
+    i {
+      font-size: 1.2rem;
+    }
+  }
+}
+
+.stats-card-body {
+  padding: 1rem;
+  
+  .stats-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: #2c3e50;
+  }
+  
+  .stats-detail {
+    .detail-item {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.25rem;
+      
+      .detail-label {
+        color: #6c757d;
+      }
+      
+      .detail-value {
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+// Recent Transactions
+.recent-transactions {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+
+.section-header {
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  
+  h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+}
+
+// Make background colors more subtle
+.bg-primary {
+  background-color: #3498db !important;
+}
+
+.bg-success {
+  background-color: #2ecc71 !important;
+}
+
+.bg-warning {
+  background-color: #f39c12 !important;
+}
+
+.bg-info {
+  background-color: #3498db !important;
+}
+
+.bg-danger {
+  background-color: #e74c3c !important;
+}
+
+// Table
+.table {
+  margin-bottom: 0;
+  
+  th {
+    font-weight: 600;
+    color: #2c3e50;
+    border-top: none;
+  }
+  
+  td {
+    vertical-align: middle;
+  }
+}
+
+// Badge styling
+.badge {
+  padding: 0.4em 0.6em;
+  font-weight: 500;
+  text-transform: capitalize;
+} 

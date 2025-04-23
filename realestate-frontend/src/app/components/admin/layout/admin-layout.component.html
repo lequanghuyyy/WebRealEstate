@@ -1,0 +1,91 @@
+<div class="admin-layout">
+  <!-- Header -->
+  <header class="header">
+    <div class="container-fluid">
+      <div class="header-content">
+        <div class="logo">
+          <a [routerLink]="['/admin/dashboard']">
+            <span class="logo-text">RealEstate</span>
+            <span class="logo-highlight">Admin</span>
+          </a>
+        </div>
+        
+        <nav class="nav-menu">
+          <ul class="nav-list">
+            <li class="nav-item">
+              <a [routerLink]="['/admin/dashboard']" routerLinkActive="active">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/users']" routerLinkActive="active">
+                <i class="fas fa-users"></i> Users
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/agent-applications']" routerLinkActive="active">
+                <i class="fas fa-user-check"></i> Agent
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/listings']" routerLinkActive="active">
+                <i class="fas fa-home"></i> Listings
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/transactions']" routerLinkActive="active">
+                <i class="fas fa-exchange-alt"></i> Transactions
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/payments']" routerLinkActive="active">
+                <i class="fas fa-dollar-sign"></i> Payments
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/reviews']" routerLinkActive="active">
+                <i class="fas fa-star"></i> Reviews
+              </a>
+            </li>
+            <li class="nav-item">
+              <a [routerLink]="['/admin/contacts']" routerLinkActive="active">
+                <i class="fas fa-envelope"></i> Contacts
+              </a>
+            </li>
+          </ul>
+        </nav>
+        
+        <div class="user-menu">
+          <div class="user-dropdown">
+            <button class="user-dropdown-toggle">
+              <div class="user-avatar">
+                <img src="assets/images/default-avatar.jpg" alt="Admin">
+              </div>
+              <span class="user-name">{{ user?.name || 'Administrator' }}</span>
+              <i class="fas fa-chevron-down"></i>
+            </button>
+            
+            <div class="user-dropdown-menu">
+              <div class="dropdown-header">
+                <strong>{{ user?.name }}</strong>
+                <p>{{ user?.role }}</p>
+              </div>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-divider"></div>
+              <a (click)="logout()" class="dropdown-item">
+                <i class="fas fa-sign-out-alt"></i> Logout
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-content">
+    <div class="container-fluid p-4">
+      <router-outlet></router-outlet>
+    </div>
+  </div>
+</div>

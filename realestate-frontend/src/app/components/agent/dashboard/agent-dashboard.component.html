@@ -1,0 +1,413 @@
+﻿<div class="agent-dashboard">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your dashboard...</p>
+  </div>
+
+  <!-- New Listing Form Page -->
+  <div *ngIf="!isLoading && agent && isNewListingPage">
+    <div class="dashboard-header">
+      <div class="agent-info">
+        <h1>Create New Listing</h1>
+      </div>
+      <div class="dashboard-actions">
+        <button class="btn btn-outline-primary me-2" routerLink="/agent/transactions">
+          <i class="fas fa-exchange-alt"></i> Manage Transactions
+        </button>
+        <button class="btn btn-outline-secondary me-2" routerLink="/agent/dashboard">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+      </div>
+    </div>
+    
+    <div class="content-card">
+      <div class="card-header">
+        <h3>Property Information</h3>
+      </div>
+      <div class="card-body">
+        <form>
+          <!-- Basic Property Information -->
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Property Title*</label>
+              <input type="text" class="form-control" placeholder="e.g., Modern Apartment in Downtown">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Property Type*</label>
+              <select class="form-select">
+                <option value="">Select property type</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+                <option value="office">Office Space</option>
+                <option value="commercial">Commercial</option>
+                <option value="land">Land</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Price*</label>
+              <input type="number" class="form-control" placeholder="Property price">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Listing Type*</label>
+              <select class="form-select">
+                <option value="">Select listing type</option>
+                <option value="sale">For Sale</option>
+                <option value="rent">For Rent</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Submit Button -->
+          <div class="mb-3">
+            <button type="submit" class="btn btn-primary" (click)="addNewListing()">
+              <i class="fas fa-save"></i> Save Property
+            </button>
+            <button type="button" class="btn btn-outline-secondary ms-2" routerLink="/agent/dashboard">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Edit Listing Form Page -->
+  <div *ngIf="!isLoading && agent && isEditListingPage">
+    <div class="dashboard-header">
+      <div class="agent-info">
+        <h1>Edit Listing</h1>
+        <p>Update property information</p>
+      </div>
+      <div class="dashboard-actions">
+        <button class="btn btn-outline-primary me-2" routerLink="/agent/transactions">
+          <i class="fas fa-exchange-alt"></i> Manage Transactions
+        </button>
+        <button class="btn btn-outline-secondary me-2" routerLink="/agent/dashboard">
+          <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </button>
+      </div>
+    </div>
+    
+    <div class="content-card">
+      <div class="card-header">
+        <h3>Property Information</h3>
+      </div>
+      <div class="card-body">
+        <form>
+          <!-- Basic Property Information -->
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Property Title*</label>
+              <input type="text" class="form-control" [value]="getListingProperty(editingListingId, 'title')" placeholder="e.g., Modern Apartment in Downtown">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Property Type*</label>
+              <select class="form-select">
+                <option value="">Select property type</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+                <option value="office">Office Space</option>
+                <option value="commercial">Commercial</option>
+                <option value="land">Land</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="row mb-3">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Price*</label>
+              <input type="number" class="form-control" [value]="getListingProperty(editingListingId, 'price')" placeholder="Property price">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Listing Type*</label>
+              <select class="form-select">
+                <option value="">Select listing type</option>
+                <option value="sale">For Sale</option>
+                <option value="rent">For Rent</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Submit Button -->
+          <div class="mb-3">
+            <button type="submit" class="btn btn-primary" (click)="editListing(editingListingId || 0)">
+              <i class="fas fa-save"></i> Update Property
+            </button>
+            <button type="button" class="btn btn-outline-secondary ms-2" routerLink="/agent/dashboard">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard Content -->
+  <div *ngIf="!isLoading && agent && !isNewListingPage && !isEditListingPage">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="agent-info">
+        <img [src]="agent.avatar || 'assets/images/default-agent.jpg'" alt="Agent photo" class="agent-avatar">
+        <div class="agent-details">
+          <h1>Welcome back, {{agent.firstName}} {{agent.lastName}}</h1>
+          <p>{{agent.email}}</p>
+          <p class="license-number">License #: {{agent.licenseNumber}}</p>
+        </div>
+      </div>
+      <div class="dashboard-actions">
+        <button class="btn btn-outline-primary me-2" routerLink="/agent/transactions">
+          <i class="fas fa-exchange-alt"></i> Manage Transactions
+        </button>
+        <!-- <button class="btn btn-outline-primary me-2">
+          <i class="fas fa-edit"></i> Edit Profile
+        </button>
+        <button class="btn btn-outline-danger" (click)="logout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button> -->
+        <button class="btn btn-primary" (click)="routeToNewListing()">
+          <i class="fas fa-plus-circle"></i> Add New Listing
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-home"></i>
+        </div>
+        <div class="stat-content">
+          <p class="stat-title">Active Listings</p>
+          <h2 class="stat-value">{{getActiveListingsCount()}}</h2>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-eye"></i>
+        </div>
+        <div class="stat-content">
+          <p class="stat-title">Total Views</p>
+          <h2 class="stat-value">2,543</h2>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="stat-content">
+          <p class="stat-title">New Messages</p>
+          <h2 class="stat-value">{{getUnreadMessageCount()}}</h2>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">
+          <i class="fas fa-dollar-sign"></i>
+        </div>
+        <div class="stat-content">
+          <p class="stat-title">Total Sale Value</p>
+          <h2 class="stat-value">{{formatCurrency(6500000)}}</h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Tabs -->
+    <div class="dashboard-tabs">
+      <div class="tabs-header">
+        <button [class.active]="activeTab === 'listings'" (click)="setActiveTab('listings')">
+          <i class="fas fa-list"></i> My Listings
+        </button>
+  
+        <button [class.active]="activeTab === 'activity'" (click)="setActiveTab('activity')">
+          <i class="fas fa-chart-line"></i> Activity
+        </button>
+        <button [class.active]="activeTab === 'profile'" (click)="setActiveTab('profile')">
+          <i class="fas fa-user"></i> Profile
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Listings Tab -->
+        <div class="tab-pane" *ngIf="activeTab === 'listings'">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>My Listings</h3>
+              <button class="btn btn-primary" (click)="routeToNewListing()">
+                <i class="fas fa-plus"></i> Add New Listing
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Property</th>
+                      <th>Price</th>
+                      <th>Status</th>
+                      <th>Date Created</th>
+                      <th>Views</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let listing of listings">
+                      <td>
+                        <div class="property-cell">
+                          <img [src]="listing.thumbnail" alt="Property">
+                          <span>{{listing.title}}</span>
+                        </div>
+                      </td>
+                      <td>{{formatCurrency(listing.price)}}</td>
+                      <td>
+                        <span class="status-badge" [class]="'status-' + listing.status.toLowerCase()">
+                          {{listing.status}}
+                        </span>
+                      </td>
+                      <td>{{listing.dateCreated}}</td>
+                      <td>{{listing.views}}</td>
+                      <td>
+                        <div class="action-buttons">
+                          <button class="btn btn-sm btn-outline-primary" (click)="editListing(listing.id)">
+                            <i class="fas fa-edit"></i> Edit
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" (click)="deleteListing(listing.id)">
+                            <i class="fas fa-trash"></i> Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      
+        <!-- Activity Tab -->
+        <div class="tab-pane" *ngIf="activeTab === 'activity'">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Recent Activity</h3>
+            </div>
+            <div class="card-body">
+              <div class="activity-feed">
+                <div *ngFor="let activity of activities" class="activity-item">
+                  <div class="activity-icon" [ngClass]="'activity-' + activity.type">
+                    <i class="fas" [ngClass]="{
+                      'fa-comment': activity.type === 'message',
+                      'fa-eye': activity.type === 'view',
+                      'fa-heart': activity.type === 'favorite',
+                      'fa-question-circle': activity.type === 'inquiry',
+                      'fa-home': activity.type === 'listing'
+                    }"></i>
+                  </div>
+                  <div class="activity-content">
+                    <p>{{activity.content}}</p>
+                    <div class="activity-time">{{activity.time}}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Latest Property Views -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3>Latest Listing Views</h3>
+            </div>
+            <div class="card-body">
+              <div class="listing-preview" *ngFor="let listing of listings.slice(0, 3)">
+                <img [src]="listing.thumbnail" alt="Property">
+                <div class="listing-preview-details">
+                  <h4>{{listing.title}}</h4>
+                  <div class="listing-meta">
+                    <span class="listing-price">{{formatCurrency(listing.price)}}</span>
+                    <span class="listing-type">{{listing.type}}</span>
+                    <span class="listing-status" [class]="'status-' + listing.status.toLowerCase()">{{listing.status}}</span>
+                  </div>
+                  <div class="listing-stats">
+                    <span><i class="fas fa-eye"></i> {{listing.views}} views</span>
+                    <span><i class="fas fa-heart"></i> {{listing.favorites}} favorites</span>
+                    <span><i class="fas fa-comment"></i> {{listing.inquiries}} inquiries</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div class="tab-pane" *ngIf="activeTab === 'profile'">
+          <div class="content-card">
+            <div class="card-header">
+              <h3>My Profile</h3>
+              <button class="btn btn-primary btn-sm">
+                <i class="fas fa-edit"></i> Edit Profile
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="profile-image-container">
+                <img [src]="agent.avatar || 'assets/images/default-agent.jpg'" alt="Profile Image" class="profile-image">
+              </div>
+              
+              <form>
+                <div class="row mb-3">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">First Name</label>
+                    <input type="text" class="form-control" [value]="agent.firstName" disabled>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Last Name</label>
+                    <input type="text" class="form-control" [value]="agent.lastName" disabled>
+                  </div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Email</label>
+                    <input type="email" class="form-control" [value]="agent.email" disabled>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Phone</label>
+                    <input type="tel" class="form-control" [value]="agent.phone" disabled>
+                  </div>
+                </div>
+                
+                <div class="row mb-3">
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">License Number</label>
+                    <input type="text" class="form-control" [value]="agent.licenseNumber" disabled>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label class="form-label">Office</label>
+                    <input type="text" class="form-control" [value]="agent.office" disabled>
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <label class="form-label">Bio</label>
+                  <textarea class="form-control" rows="5" disabled>{{agent.bio}}</textarea>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!isLoading && !agent" class="alert alert-danger">
+    <i class="fas fa-exclamation-circle me-2"></i>
+    <strong>Error:</strong> You must be logged in as an agent to view this page.
+  </div>
+</div> 

@@ -7,6 +7,8 @@ import realestate.securityservice.dto.request.UserCreationRequest;
 import realestate.securityservice.dto.respone.UserResponse;
 import realestate.securityservice.entity.UserEntity;
 
+import java.util.stream.Collectors;
+
 @Component
 public class UserMapper {
     private final ModelMapper modelMapper;
@@ -16,9 +18,14 @@ public class UserMapper {
         this.modelMapper = modelMapper;
     }
 
+
     public UserResponse convertToUserResponse(UserEntity userEntity) {
         UserResponse userResponse = modelMapper.map(userEntity, UserResponse.class);
         userResponse.setId(userEntity.getId());
+        userResponse.setStatus(userEntity.getStatus());
+        userResponse.setRoles(userEntity.getRoles().stream()
+                .map(role -> role.getRoleName().name())
+                .collect(Collectors.toList()));
         return userResponse;
     }
     public UserEntity convertToUserEntity(UserCreationRequest userCreationRequest) {

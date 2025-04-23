@@ -16,6 +16,7 @@ import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingStatusUpdateRequest;
 import realestate.webrealestatelistingservice.dto.response.ListingResponse;
+import realestate.webrealestatelistingservice.dto.response.ListingResponseCustom;
 import realestate.webrealestatelistingservice.entity.ListingEntity;
 import realestate.webrealestatelistingservice.exception.NotFoundException;
 import realestate.webrealestatelistingservice.mapper.ListingMapper;
@@ -84,6 +85,7 @@ public class ListingServiceImpl implements ListingService {
                 .withMaxPrice(searchRequest.getMaxPrice())
                 .withType(searchRequest.getType())
                 .withStatus(searchRequest.getStatus())
+                .withPropertyType(searchRequest.getPropertyType()) // Added property type filter
                 .build();
 
         // Tạo Pageable (trừ 1 cho page vì Pageable bắt đầu từ 0)
@@ -117,5 +119,31 @@ public class ListingServiceImpl implements ListingService {
         return listingMapper.convertToListingResponse(savedEntity);
     }
 
+    @Override
+    public List<ListingResponseCustom> getCustomListings() {
+        List<ListingEntity> listings = listingRepository.findAll();
+        return listings.stream()
+                .map(listingMapper::convertToListingResponseCustom)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageDto<ListingResponseCustom> getCustomListingsPaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        Page<ListingEntity> pageResult = listingRepository.findAll(pageable);
+
+        List<ListingResponseCustom> items = pageResult.getContent()
+                .stream()
+                .map(listingMapper::convertToListingResponseCustom)
+                .collect(Collectors.toList());
+
+        return PageDto.<ListingResponseCustom>builder()
+                .items(items)
+                .page(page)
+                .size(size)
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .build();
+    }
 
 }

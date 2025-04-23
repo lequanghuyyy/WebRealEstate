@@ -1,0 +1,421 @@
+<div class="rent-container">
+  <div class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1>Find Your Perfect Rental Home</h1>
+        <p>Discover properties available for rent in your preferred location</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid mt-4">
+    <div class="row">
+      <!-- Vertical Filter Column -->
+      <div class="col-lg-3 col-md-4">
+        <div class="filter-sidebar" [class.open]="mobileFiltersOpen">
+          <div class="filter-sidebar-header">
+            <h3>Filter Properties</h3>
+            <p>{{ totalItems }} properties found</p>
+            <button *ngIf="mobileFiltersOpen" class="close-filters" (click)="toggleMobileFilters()">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <form [formGroup]="filterForm">
+            <!-- Accordion style filters -->
+            <div class="filter-accordion">
+              <!-- Location Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('location')">
+                  <h4>Location</h4>
+                  <i class="fas" [ngClass]="filtersOpen['location'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['location']}">
+                  <div class="filter-input-group">
+                    <input 
+                      type="text" 
+                      formControlName="location" 
+                      placeholder="City, State, or Zip"
+                      class="form-control"
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- Property Type Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('propertyType')">
+                  <h4>Property Type</h4>
+                  <i class="fas" [ngClass]="filtersOpen['propertyType'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['propertyType']}">
+                  <div class="filter-options">
+                    <div class="custom-radio" *ngFor="let type of propertyTypes">
+                      <input 
+                        type="radio" 
+                        [id]="'property-type-' + type.id" 
+                        [value]="type.id" 
+                        formControlName="propertyType"
+                      >
+                      <label [for]="'property-type-' + type.id">{{ type.label }}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Price Range Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('price')">
+                  <h4>Price Range</h4>
+                  <i class="fas" [ngClass]="filtersOpen['price'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['price']}">
+                  <div class="range-inputs">
+                    <div class="min-input">
+                      <label>Min</label>
+                      <input 
+                        type="number" 
+                        formControlName="priceMin" 
+                        placeholder="Min" 
+                        class="form-control"
+                      >
+                    </div>
+                    <div class="max-input">
+                      <label>Max</label>
+                      <input 
+                        type="number" 
+                        formControlName="priceMax" 
+                        placeholder="Max" 
+                        class="form-control"
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bedrooms Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('beds')">
+                  <h4>Bedrooms</h4>
+                  <i class="fas" [ngClass]="filtersOpen['beds'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['beds']}">
+                  <div class="filter-options">
+                    <div class="custom-radio" *ngFor="let option of bedOptions">
+                      <input 
+                        type="radio" 
+                        [id]="'bed-' + option.id" 
+                        [value]="option.id" 
+                        [checked]="filterForm.get('beds')?.value === option.id"
+                        (change)="filterForm.get('beds')?.setValue(option.id)"
+                      >
+                      <label [for]="'bed-' + option.id">{{ option.label }}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bathrooms Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('baths')">
+                  <h4>Bathrooms</h4>
+                  <i class="fas" [ngClass]="filtersOpen['baths'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['baths']}">
+                  <div class="filter-options">
+                    <div class="custom-radio" *ngFor="let option of bathOptions">
+                      <input 
+                        type="radio" 
+                        [id]="'bath-' + option.id" 
+                        [value]="option.id" 
+                        [checked]="filterForm.get('baths')?.value === option.id"
+                        (change)="filterForm.get('baths')?.setValue(option.id)"
+                      >
+                      <label [for]="'bath-' + option.id">{{ option.label }}</label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Area Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('area')">
+                  <h4>Square Feet</h4>
+                  <i class="fas" [ngClass]="filtersOpen['area'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['area']}">
+                  <div class="range-inputs">
+                    <div class="min-input">
+                      <label>Min</label>
+                      <input 
+                        type="number" 
+                        formControlName="areaMin" 
+                        placeholder="Min" 
+                        class="form-control"
+                      >
+                    </div>
+                    <div class="max-input">
+                      <label>Max</label>
+                      <input 
+                        type="number" 
+                        formControlName="areaMax" 
+                        placeholder="Max" 
+                        class="form-control"
+                      >
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Keywords Filter -->
+              <div class="filter-section">
+                <div class="filter-header" (click)="toggleFilter('keywords')">
+                  <h4>Keywords</h4>
+                  <i class="fas" [ngClass]="filtersOpen['keywords'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                </div>
+                <div class="filter-content" [ngClass]="{'show': filtersOpen['keywords']}">
+                  <div class="filter-input-group">
+                    <input 
+                      type="text" 
+                      formControlName="keywords" 
+                      placeholder="e.g. garage, pool, renovated" 
+                      class="form-control"
+                    >
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Filter Actions -->
+            <div class="filter-actions">
+              <button type="button" class="btn btn-reset" (click)="resetFilters()">
+                <i class="fas fa-undo"></i> Reset All
+              </button>
+              <button type="button" class="btn btn-apply" (click)="applyFiltersAction()">
+                <i class="fas fa-filter"></i> Apply Filters
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Useful Rental Tips Section -->
+        <div class="rental-tips-sidebar mt-4">
+          <h3>Useful Rental Tips</h3>
+          <ul class="tips-list">
+            <li>
+              <i class="fas fa-check-circle"></i>
+              <span>Always inspect the property in person before signing a lease</span>
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i>
+              <span>Read the lease agreement thoroughly before signing</span>
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i>
+              <span>Document property condition during move-in</span>
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i>
+              <span>Understand your rights as a tenant</span>
+            </li>
+            <li>
+              <i class="fas fa-check-circle"></i>
+              <span>Check utility costs before committing</span>
+            </li>
+          </ul>
+          <a href="/rental-tips" class="btn btn-outline-primary btn-sm mt-2">More Tips</a>
+        </div>
+
+        <!-- Have a property to rent section -->
+        <div class="list-property-card mt-4">
+          <div class="card-icon">
+            <i class="fas fa-home"></i>
+          </div>
+          <h3>Have a property to rent?</h3>
+          <p>List your property with us and reach thousands of potential tenants</p>
+          <a href="/contact" class="btn btn-primary mt-2">Contact Us</a>
+        </div>
+      </div>
+
+      <!-- Results Section -->
+      <div class="col-lg-9 col-md-8">
+        <div class="results-section">
+          <!-- Sorting and Results Count -->
+          <div class="results-header">
+            <div class="mobile-filter-toggle d-lg-none">
+              <button class="btn btn-filter" (click)="toggleMobileFilters()">
+                <i class="fas fa-filter"></i> Filters
+              </button>
+            </div>
+            
+            <div class="sorting-options">
+              <label for="sortBy">Sort By:</label>
+              <select 
+                id="sortBy" 
+                [(ngModel)]="selectedSort" 
+                (change)="updateSort(selectedSort)" 
+                class="form-control"
+              >
+                <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
+              </select>
+            </div>
+          </div>
+          
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoading">
+            <div class="spinner-border text-primary" role="status">
+              <span class="visually-hidden">Loading...</span>
+            </div>
+            <p>Loading properties...</p>
+          </div>
+          
+          <!-- Error State -->
+          <div class="alert alert-danger" *ngIf="errorMessage">
+            {{ errorMessage }}
+            <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadProperties()">
+              Try Again
+            </button>
+          </div>
+          
+          <!-- No Results -->
+          <div class="no-results" *ngIf="!isLoading && !errorMessage && filteredProperties.length === 0">
+            <i class="fas fa-search"></i>
+            <h3>No properties found</h3>
+            <p>Try adjusting your filters to see more results</p>
+            <button class="btn btn-primary" (click)="resetFilters()">Reset Filters</button>
+          </div>
+          
+          <!-- Property Grid -->
+          <div class="property-grid" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
+            <div class="property-card" *ngFor="let property of getPaginatedProperties(); trackBy: trackById" (click)="viewPropertyDetails(property.id)">
+              <div class="property-image">
+                <img [src]="property.images[0]" [alt]="property.title">
+                <div class="property-tag" *ngIf="property.tags && property.tags.includes('New')">New</div>
+                <div class="property-status">{{ property.status }}</div>
+                <button class="favorite-btn" (click)="toggleFavorite($event, property.id)">
+                  <i class="fas" [ngClass]="property.isFavorite ? 'fa-heart' : 'fa-heart'"></i>
+                </button>
+              </div>
+              
+              <div class="property-content">
+                <div class="property-price">{{ property.price | currency:'USD':'symbol':'1.0-0' }} <span class="price-period">/month</span></div>
+                <h3 class="property-title">{{ property.title }}</h3>
+                <div class="property-address">
+                  <i class="fas fa-map-marker-alt"></i>
+                  {{ property.location.address }}
+                </div>
+                <div class="property-features">
+                  <span><i class="fas fa-bed"></i> {{ property.features.bedrooms }} Beds</span>
+                  <span><i class="fas fa-bath"></i> {{ property.features.bathrooms }} Baths</span>
+                  <span><i class="fas fa-ruler-combined"></i> {{ property.features.area }} sq ft</span>
+                </div>
+                <div class="property-footer">
+                  <div class="agent-info" *ngIf="property.agent">
+                    <img [src]="property.agent.photo" [alt]="property.agent.name" class="agent-image">
+                    <span class="agent-name">{{ property.agent.name }}</span>
+                  </div>
+                  <button class="view-details-btn">View Details</button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Pagination -->
+          <div class="pagination-container" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
+            <button 
+              class="btn btn-outline-secondary"
+              [disabled]="currentPage === 1"
+              (click)="setPage(currentPage - 1)"
+            >
+              <i class="fas fa-chevron-left"></i> Previous
+            </button>
+            
+            <div class="page-numbers">
+              <button 
+                *ngFor="let page of getPageNumbers()"
+                class="btn"
+                [ngClass]="{
+                  'btn-primary': page === currentPage,
+                  'btn-outline-secondary': page !== currentPage
+                }"
+                (click)="setPage(page)"
+              >{{ page }}</button>
+            </div>
+            
+            <button 
+              class="btn btn-outline-secondary"
+              [disabled]="currentPage === totalPages"
+              (click)="setPage(currentPage + 1)"
+            >
+              Next <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rental Information Section -->
+  <div class="rental-info-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Renting with Confidence</h2>
+        <p>Everything you need to know about renting a property</p>
+      </div>
+      
+      <div class="info-cards">
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-file-signature"></i>
+          </div>
+          <h3>Understand Your Lease</h3>
+          <p>Learn about common lease terms, your rights, and responsibilities as a tenant.</p>
+          <a href="/rental-tips/leases" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-coins"></i>
+          </div>
+          <h3>Rental Costs</h3>
+          <p>Understand the costs associated with renting, including deposits, fees, and monthly expenses.</p>
+          <a href="/rental-tips/costs" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
+        </div>
+        
+        <div class="info-card">
+          <div class="info-icon">
+            <i class="fas fa-clipboard-check"></i>
+          </div>
+          <h3>Inspection Tips</h3>
+          <p>What to look for during property viewings to ensure your new home meets your expectations.</p>
+          <a href="/rental-tips/inspections" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Property Owner CTA Section -->
+  <div class="owner-cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <div class="cta-text">
+          <h2>Do you have a property to rent?</h2>
+          <p>List your property with us and get access to thousands of potential tenants. We offer comprehensive property management services to make renting your property hassle-free.</p>
+          <ul class="benefits-list">
+            <li><i class="fas fa-check"></i> Professional property listing with high-quality photos</li>
+            <li><i class="fas fa-check"></i> Tenant screening and verification</li>
+            <li><i class="fas fa-check"></i> Lease agreement preparation</li>
+            <li><i class="fas fa-check"></i> Rent collection and property maintenance</li>
+          </ul>
+          <div class="cta-buttons">
+            <a href="/contact" class="btn btn-primary">List Your Property</a>
+            <a href="/property-management" class="btn btn-outline-primary">Learn More</a>
+          </div>
+        </div>
+        <div class="cta-image">
+          <img src="assets/images/property-owner.jpg" alt="Property Owner">
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

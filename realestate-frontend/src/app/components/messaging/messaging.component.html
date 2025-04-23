@@ -1,0 +1,155 @@
+<div class="messaging-container">
+  <!-- Loading spinner -->
+  <div class="loading-overlay" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+
+  <div class="messaging-content">
+    <!-- Sidebar with contacts -->
+    <div class="contacts-sidebar">
+      <div class="sidebar-header">
+        <h2>Messages</h2>
+      </div>
+      
+      <div class="contacts-search">
+        <div class="input-group">
+          <span class="input-group-text">
+            <i class="fas fa-search"></i>
+          </span>
+          <input 
+            type="text" 
+            class="form-control" 
+            placeholder="Search contacts..." 
+            [(ngModel)]="searchQuery"
+            (input)="searchContacts()">
+        </div>
+      </div>
+      
+      <div class="contacts-list">
+        <div 
+          *ngFor="let contact of filteredContacts" 
+          class="contact-item" 
+          [class.active]="selectedContact?.id === contact.id"
+          [class.unread]="contact.unreadCount && contact.unreadCount > 0"
+          (click)="selectContact(contact)">
+          
+          <div class="contact-avatar">
+            <img [src]="contact.avatar || 'assets/images/default-avatar.jpg'" alt="{{ contact.name }}">
+            <span class="status-indicator" 
+                  [class.online]="contact.online"></span>
+          </div>
+          
+          <div class="contact-info">
+            <div class="contact-name">
+              {{ contact.name }}
+              <span class="contact-role" *ngIf="contact.role">{{ contact.role }}</span>
+              <span class="contact-time" *ngIf="contact.lastMessageTime">
+                {{ contact.lastMessageTime }}
+              </span>
+            </div>
+            
+            <div class="contact-last-message" *ngIf="contact.lastMessage">
+              {{ contact.lastMessage }}
+            </div>
+          </div>
+          
+          <div class="contact-unread" *ngIf="contact.unreadCount && contact.unreadCount > 0">
+            {{ contact.unreadCount }}
+          </div>
+        </div>
+        
+        <div class="no-contacts" *ngIf="filteredContacts.length === 0 && !isLoading">
+          <p>No conversations found.</p>
+          <p *ngIf="searchQuery">Try a different search term.</p>
+          <p *ngIf="!searchQuery">Start a conversation from a property listing or agent profile.</p>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chat area -->
+    <div class="chat-area" *ngIf="selectedContact">
+      <div class="chat-header">
+        <div class="chat-contact-info">
+          <img [src]="selectedContact.avatar || 'assets/images/default-avatar.jpg'" alt="{{ selectedContact.name }}">
+          <div>
+            <h3>{{ selectedContact.name }}</h3>
+            <span class="status" *ngIf="selectedContact.role">
+              <span class="status-dot" [class.online]="selectedContact.online"></span> {{ selectedContact.role }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="chat-actions">
+          <button class="btn btn-light btn-sm">
+            <i class="fas fa-phone"></i>
+          </button>
+          <button class="btn btn-light btn-sm">
+            <i class="fas fa-video"></i>
+          </button>
+          <button class="btn btn-light btn-sm">
+            <i class="fas fa-info-circle"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="messages-container">
+        <div *ngIf="messages.length === 0 && !isLoading" class="no-messages">
+          <p>No messages yet. Send a message to start the conversation.</p>
+        </div>
+        
+        <div *ngFor="let message of messages" 
+             class="message-wrapper"
+             [ngClass]="getMessageClasses(message)">
+          
+          <div class="message-avatar" *ngIf="!isMyMessage(message)">
+            <img [src]="selectedContact.avatar || 'assets/images/default-avatar.jpg'" alt="{{ selectedContact.name }}">
+          </div>
+          
+          <div class="message-bubble">
+            <div class="message-content">
+              {{ message.content }}
+            </div>
+            <div class="message-time">
+              {{ formatMessageTime(message.timestamp) }}
+              <i class="fas fa-check-double" *ngIf="isMyMessage(message) && message.read"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="message-input-area">
+        <form [formGroup]="messageForm" (ngSubmit)="sendMessage()">
+          <div class="input-group">
+            <button type="button" class="btn btn-light">
+              <i class="fas fa-paperclip"></i>
+            </button>
+            
+            <input 
+              type="text" 
+              class="form-control"
+              placeholder="Type a message..." 
+              formControlName="message">
+            
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="messageForm.invalid">
+              <i class="fas fa-paper-plane"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+    
+    <!-- Empty state when no contact is selected -->
+    <div class="empty-state" *ngIf="!selectedContact && !isLoading">
+      <div class="empty-state-content">
+        <i class="fas fa-comments fa-4x"></i>
+        <h3>Select a conversation</h3>
+        <p>Choose a conversation from the list to start messaging</p>
+      </div>
+    </div>
+  </div>
+</div> 

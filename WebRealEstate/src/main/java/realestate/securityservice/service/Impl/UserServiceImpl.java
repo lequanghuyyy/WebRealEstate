@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import realestate.securityservice.constant.UserStatus;
 import realestate.securityservice.dto.request.UserCreationRequest;
 import realestate.securityservice.dto.request.UserUpdateRequest;
 import realestate.securityservice.dto.respone.UserResponse;
@@ -59,12 +60,27 @@ public class UserServiceImpl implements UserService {
         if (userCreationRequest.getUsername() == null || userCreationRequest.getUsername().isBlank()) {
             throw new IllegalArgumentException("Username is Null");
         }
+
         for (String role : userCreationRequest.getRoles()) {
             if (!ALLOWED_ROLES.contains(role)) {
                 throw new IllegalArgumentException("Invalid role: " + role);
             }
         }
-        return getUserResponse(userCreationRequest, passwordEncoder, userRepository,roleRepository);
+
+        UserEntity userEntity = userMapper.convertToUserEntity(userCreationRequest);
+        userEntity.setPassword(passwordEncoder.encode(userCreationRequest.getPassword()));
+        userEntity.setRoles(roleRepository.findAllByRoleNameIn(userCreationRequest.getRoles()));
+
+        if (userCreationRequest.getRoles().contains("AGENT")) {
+            userEntity.setStatus(UserStatus.PENDING_APPROVAL);
+        } else {
+            userEntity.setStatus(UserStatus.ACTIVE);
+        }
+
+        UserEntity savedUser = userRepository.save(userEntity);
+        savePassword(savedUser, userCreationRequest);
+
+        return userMapper.convertToUserResponse(savedUser);
     }
 
 

@@ -5,6 +5,7 @@ import jakarta.validation.constraints.DecimalMin;
 import lombok.*;
 import realestate.webrealestatepaymentservice.constant.PaymentMethod;
 import realestate.webrealestatepaymentservice.constant.PaymentStatus;
+import realestate.webrealestatepaymentservice.constant.TransactionStyle;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,12 +39,12 @@ public class PaymentEntity {
     @Column(nullable = false, length = 10)
     private PaymentStatus paymentStatus;
 
-    @Column(name = "payment_date")
-    private LocalDateTime paymentDate;
-
     @Column(name = "commission_fee", precision = 12, scale = 2)
     @DecimalMin(value = "0.0", inclusive = true, message = "Commission fee must be non-negative")
     private BigDecimal commissionFee;
+
+    @Column(name = "transaction_style")
+    private TransactionStyle transactionStyle;
 
     @Column(columnDefinition = "TEXT")
     private String notes;
@@ -56,9 +57,6 @@ public class PaymentEntity {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = createdAt;
-        if(paymentDate == null){
-            paymentDate = createdAt;
-        }
     }
 
     @PreUpdate

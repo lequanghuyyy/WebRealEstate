@@ -2,6 +2,7 @@ package realestate.webrealestatelistingservice.entity;
 
 import lombok.*;
 import jakarta.persistence.*;
+import realestate.webrealestatelistingservice.constant.ListingPropertyType;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 
@@ -44,9 +45,15 @@ public class ListingEntity {
     private Integer bedrooms;
     private Integer bathrooms;
 
+    private Integer yearBuilt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private ListingType type;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 100)
+    private ListingPropertyType propertyType;
 
     @OneToMany(mappedBy = "listing", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ListingImageEntity> images = new ArrayList<>();

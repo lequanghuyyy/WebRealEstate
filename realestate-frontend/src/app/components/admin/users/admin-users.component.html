@@ -1,0 +1,220 @@
+<div class="admin-users">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading users...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div class="alert alert-danger" *ngIf="error">
+    <i class="fas fa-exclamation-circle"></i> {{ error }}
+  </div>
+
+  <!-- Users Content -->
+  <div class="users-content" *ngIf="!isLoading && !error">
+    <div class="content-header">
+      <h1 class="page-title">User Management</h1>
+      <p class="subtitle">Manage and monitor user accounts</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-container">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" [formControl]="searchControl" class="form-control" placeholder="Search by name or email...">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="filter-select">
+            <label>Role:</label>
+            <select class="form-select" [formControl]="roleFilter">
+              <option value="all">All Roles</option>
+              <option value="admin">Admin</option>
+              <option value="agent">Agent</option>
+              <option value="user">User</option>
+            </select>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="filter-select">
+            <label>Status:</label>
+            <select class="form-select" [formControl]="statusFilter">
+              <option value="all">All Statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+              <option value="suspended">Suspended</option>
+              <option value="pending">Pending</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="users-table">
+      <div class="card">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Status</th>
+                  <th>Joined Date</th>
+                  <th>Last Login</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngIf="filteredUsers.length === 0">
+                  <td colspan="7" class="text-center">No users found</td>
+                </tr>
+                <tr *ngFor="let user of filteredUsers">
+                  <td>
+                    <div class="user-info">
+                      <div class="user-avatar">
+                        <img [src]="user.profileImage || 'assets/images/default-avatar.jpg'" [alt]="user.name">
+                      </div>
+                      <div class="user-name">{{ user.name }}</div>
+                    </div>
+                  </td>
+                  <td>{{ user.email }}</td>
+                  <td>
+                    <span class="badge" [ngClass]="getRoleBadgeClass(user.role)">
+                      {{ user.role }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="badge" [ngClass]="getStatusBadgeClass(user.status)">
+                      {{ user.status }}
+                    </span>
+                  </td>
+                  <td>{{ formatDate(user.createdAt) }}</td>
+                  <td>{{ user.lastLogin ? formatDate(user.lastLogin) : 'Never' }}</td>
+                  <td>
+                    <div class="actions">
+                      <button class="btn btn-sm btn-primary" (click)="openUserModal(user)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="fas fa-cog"></i>
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                          <li><h6 class="dropdown-header">Change Role</h6></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserRole(user.id.toString(), 'user')">User</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserRole(user.id.toString(), 'agent')">Agent</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserRole(user.id.toString(), 'admin')">Admin</a></li>
+                          <li><hr class="dropdown-divider"></li>
+                          <li><h6 class="dropdown-header">Change Status</h6></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserStatus(user.id.toString(), 'active')">Activate</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserStatus(user.id.toString(), 'suspended')">Suspend</a></li>
+                          <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateUserStatus(user.id.toString(), 'inactive')">Deactivate</a></li>
+                        </ul>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Detail Modal -->
+  <div class="modal" [class.show]="showUserModal" tabindex="-1" [style.display]="showUserModal ? 'block' : 'none'">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">User Details</h5>
+          <button type="button" class="btn-close" (click)="closeUserModal()"></button>
+        </div>
+        <div class="modal-body" *ngIf="selectedUser">
+          <div class="user-profile">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="profile-image">
+                  <img [src]="selectedUser.profileImage || 'assets/images/default-avatar.jpg'" [alt]="selectedUser.name" class="img-fluid rounded">
+                </div>
+                <div class="profile-info">
+                  <div class="profile-name">{{ selectedUser.name }}</div>
+                  <div class="profile-email">{{ selectedUser.email }}</div>
+                  <div class="profile-badges">
+                    <span class="badge me-2" [ngClass]="getRoleBadgeClass(selectedUser.role)">
+                      {{ selectedUser.role }}
+                    </span>
+                    <span class="badge" [ngClass]="getStatusBadgeClass(selectedUser.status)">
+                      {{ selectedUser.status }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <div class="profile-details">
+                  <div class="detail-item">
+                    <div class="detail-label">Phone:</div>
+                    <div class="detail-value">{{ selectedUser.phone || 'Not provided' }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Member Since:</div>
+                    <div class="detail-value">{{ formatDate(selectedUser.createdAt) }}</div>
+                  </div>
+                  <div class="detail-item">
+                    <div class="detail-label">Last Login:</div>
+                    <div class="detail-value">{{ selectedUser.lastLogin ? formatDate(selectedUser.lastLogin) : 'Never' }}</div>
+                  </div>
+                  
+                  <!-- Additional details for agents -->
+                  <div *ngIf="selectedUser.role === 'agent' && selectedUser.agentInfo">
+                    <h6 class="mt-4">Agent Information</h6>
+                    <div class="detail-item">
+                      <div class="detail-label">License Number:</div>
+                      <div class="detail-value">{{ selectedUser.agentInfo.licenseNumber || 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-item">
+                      <div class="detail-label">Agency:</div>
+                      <div class="detail-value">{{ selectedUser.agentInfo.agency || 'Not provided' }}</div>
+                    </div>
+                    <div class="detail-item">
+                      <div class="detail-label">Rating:</div>
+                      <div class="detail-value">
+                        <i class="fas fa-star text-warning"></i> 
+                        {{ selectedUser.agentInfo.averageRating || 'No ratings' }}
+                      </div>
+                    </div>
+                    <div class="detail-item">
+                      <div class="detail-label">Listings:</div>
+                      <div class="detail-value">{{ selectedUser.agentInfo.listings || 0 }}</div>
+                    </div>
+                    <div class="detail-item">
+                      <div class="detail-label">Sales:</div>
+                      <div class="detail-value">{{ selectedUser.agentInfo.sales || 0 }}</div>
+                    </div>
+                  </div>
+                  
+                  <!-- User Bio -->
+                  <div class="user-bio mt-4">
+                    <h6>Bio</h6>
+                    <p>{{ selectedUser.bio || 'No bio information available.' }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="closeUserModal()">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade show" *ngIf="showUserModal"></div>
+</div> 

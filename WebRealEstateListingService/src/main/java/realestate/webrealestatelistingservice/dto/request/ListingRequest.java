@@ -1,6 +1,7 @@
 package realestate.webrealestatelistingservice.dto.request;
 
 import lombok.*;
+import realestate.webrealestatelistingservice.constant.ListingPropertyType;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 
@@ -24,4 +25,5 @@ public class ListingRequest {
     private ListingType type;
     private ListingStatus status;
     private String ownerId;
+    private ListingPropertyType propertyType;
 }

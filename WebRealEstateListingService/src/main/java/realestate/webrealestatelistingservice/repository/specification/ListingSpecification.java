@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.util.ObjectUtils;
+import realestate.webrealestatelistingservice.constant.ListingPropertyType;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.entity.ListingEntity;
@@ -25,6 +26,7 @@ public final class ListingSpecification {
     private static final String FIELD_AREA = "area";
     private static final String FIELD_TYPE = "type";
     private static final String FIELD_STATUS = "status";
+    private static final String FIELD_PROPERTY_TYPE = "propertyType";
 
     private final List<Specification<ListingEntity>> specifications = new ArrayList<>();
 
@@ -120,6 +122,14 @@ public final class ListingSpecification {
         if (status != null) {
             specifications.add((root, query, cb) ->
                     cb.equal(root.get(FIELD_STATUS), status)
+            );
+        }
+        return this;
+    }
+    public ListingSpecification withPropertyType(final ListingPropertyType propertyType) {
+        if (propertyType != null) {
+            specifications.add((root, query, cb) ->
+                    cb.equal(root.get(FIELD_PROPERTY_TYPE), propertyType)
             );
         }
         return this;

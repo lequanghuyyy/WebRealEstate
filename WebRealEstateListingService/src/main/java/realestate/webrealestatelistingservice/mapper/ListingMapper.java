@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.response.ListingResponse;
+import realestate.webrealestatelistingservice.dto.response.ListingResponseCustom;
 import realestate.webrealestatelistingservice.entity.ListingEntity;
 
 @Component
@@ -21,6 +22,9 @@ public class ListingMapper {
     }
     public ListingResponse convertToListingResponse(ListingEntity listingEntity) {
         return modelMapper.map(listingEntity, ListingResponse.class);
+    }
+    public ListingResponseCustom convertToListingResponseCustom(ListingEntity listingEntity) {
+        return modelMapper.map(listingEntity, ListingResponseCustom.class);
     }
 
     public ListingEntity updateListingEntity(ListingEntity existingEntity, ListingRequest request) {
@@ -53,6 +57,9 @@ public class ListingMapper {
         }
         if (request.getStatus() != null) {
             existingEntity.setStatus(request.getStatus());
+        }
+        if (request.getPropertyType() != null) {
+            existingEntity.setPropertyType(request.getPropertyType());
         }
         return existingEntity;
     }

@@ -1,6 +1,7 @@
 package realestate.webrealestatelistingservice.dto.response;
 
 import lombok.*;
+import realestate.webrealestatelistingservice.constant.ListingPropertyType;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 
@@ -29,5 +30,7 @@ public class ListingResponse {
     private String ownerId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private ListingPropertyType propertyType;
+
 }
 

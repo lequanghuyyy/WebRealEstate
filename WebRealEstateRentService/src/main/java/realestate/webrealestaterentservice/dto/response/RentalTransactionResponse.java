@@ -16,6 +16,5 @@ public class RentalTransactionResponse {
     private LocalDate startDate;
     private LocalDate endDate;
     private String status;
-    private String notes;
     private LocalDateTime createdAt;
 }

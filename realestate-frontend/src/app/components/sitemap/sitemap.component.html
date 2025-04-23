@@ -1,0 +1,44 @@
+<div class="sitemap-container">
+  <!-- Hero Section -->
+  <div class="sitemap-hero">
+    <div class="hero-overlay"></div>
+    <div class="container">
+      <div class="sitemap-hero-content">
+        <h1>Sitemap</h1>
+        <p>Find all pages on our website</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="sitemap-content">
+      <div class="sitemap-intro">
+        <p>Welcome to the RealEstatePro sitemap. Use this page to find any section or feature on our website quickly and easily.</p>
+      </div>
+
+      <div class="sitemap-grid">
+        <div class="sitemap-category" *ngFor="let category of sitemapCategories">
+          <div class="category-header">
+            <h2>{{ category.title }}</h2>
+          </div>
+          <div class="category-links">
+            <ul>
+              <li *ngFor="let link of category.links">
+                <a [routerLink]="link.url">{{ link.label }}</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="additional-info">
+        <h3>Looking for something specific?</h3>
+        <p>If you need help finding anything on our website, please don't hesitate to <a routerLink="/contact">contact us</a>.</p>
+        <div class="sitemap-actions">
+          <a routerLink="/" class="btn-home">Back to Home</a>
+          <a routerLink="/contact" class="btn-contact">Contact Us</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,238 @@
+<div class="profile-container">
+  <div class="container py-4">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-lg-3">
+        <div class="profile-sidebar">
+          <div class="user-info text-center mb-4">
+            <div class="avatar-container">
+              <img src="/assets/images/avatar-placeholder.jpg" alt="User Avatar" class="user-avatar">
+              <div class="avatar-edit">
+                <i class="fas fa-camera"></i>
+              </div>
+            </div>
+            <h4 class="mt-3">{{ user?.name || 'User' }}</h4>
+            <p class="text-muted">Member since {{ user?.createdAt || 'Recently' }}</p>
+          </div>
+          
+          <div class="sidebar-menu">
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'profile'" (click)="setActiveTab('profile')">
+                  <i class="fas fa-user me-2"></i> My Profile
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'favorites'" (click)="setActiveTab('favorites')">
+                  <i class="fas fa-heart me-2"></i> Favorites
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'saved-searches'" (click)="setActiveTab('saved-searches')">
+                  <i class="fas fa-search me-2"></i> Saved Searches
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'recent'" (click)="setActiveTab('recent')">
+                  <i class="fas fa-history me-2"></i> Recently Viewed
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" routerLink="/logout">
+                  <i class="fas fa-sign-out-alt me-2"></i> Logout
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Main Content -->
+      <div class="col-lg-9">
+        <!-- Profile Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'profile'">
+          <div class="card profile-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">Personal Information</h5>
+              <button class="btn btn-sm" [class.btn-primary]="!isEditing" [class.btn-success]="isEditing" (click)="isEditing ? saveProfile() : toggleEdit()">
+                <i class="fas" [class.fa-edit]="!isEditing" [class.fa-save]="isEditing"></i>
+                {{ isEditing ? 'Save Changes' : 'Edit Profile' }}
+              </button>
+            </div>
+            <div class="card-body">
+              <div class="row" *ngIf="!isEditing">
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Name</label>
+                    <div class="form-control-static">{{ user?.name || 'Not set' }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Email</label>
+                    <div class="form-control-static">{{ user?.email || 'Not set' }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Phone</label>
+                    <div class="form-control-static">{{ user?.phone || 'Not set' }}</div>
+                  </div>
+                </div>
+                <div class="col-12 mb-3">
+                  <div class="form-group">
+                    <label>Bio</label>
+                    <div class="form-control-static">{{ user?.bio || 'No bio information provided.' }}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="row" *ngIf="isEditing">
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" id="name" [(ngModel)]="profileForm.name">
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" class="form-control" id="email" [(ngModel)]="profileForm.email">
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="tel" class="form-control" id="phone" [(ngModel)]="profileForm.phone">
+                  </div>
+                </div>
+                <div class="col-12 mb-3">
+                  <div class="form-group">
+                    <label for="bio">Bio</label>
+                    <textarea class="form-control" id="bio" rows="3" [(ngModel)]="profileForm.bio"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Favorites Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'favorites'">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Favorite Properties</h5>
+            </div>
+            <div class="card-body">
+              <div class="favorites-list">
+                <div class="alert alert-info" *ngIf="favoriteProperties.length === 0">
+                  You haven't saved any properties as favorites yet.
+                </div>
+                
+                <div class="property-item" *ngFor="let property of favoriteProperties">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <img [src]="property.image" alt="Property Image" class="img-fluid property-img">
+                    </div>
+                    <div class="col-md-8">
+                      <div class="property-info">
+                        <h5>{{ property.title }}</h5>
+                        <h6 class="price">{{ property.price }}</h6>
+                        <p class="location">{{ property.location }}</p>
+                        <div class="features">
+                          <span><i class="fas fa-bed"></i> {{ property.beds }} beds</span>
+                          <span><i class="fas fa-bath"></i> {{ property.baths }} baths</span>
+                          <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+                        </div>
+                        <div class="actions mt-3">
+                          <a href="#" class="btn btn-sm btn-outline-primary me-2">View Details</a>
+                          <button class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-heart"></i> Remove
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Saved Searches Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'saved-searches'">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Saved Searches</h5>
+            </div>
+            <div class="card-body">
+              <div class="saved-searches-list">
+                <div class="alert alert-info" *ngIf="savedSearches.length === 0">
+                  You don't have any saved searches yet.
+                </div>
+                
+                <div class="search-item" *ngFor="let search of savedSearches">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <h6>{{ search.name }}</h6>
+                      <p class="mb-0">{{ search.criteria }}</p>
+                      <small class="text-muted">Saved on {{ search.date }}</small>
+                    </div>
+                    <div class="search-actions">
+                      <button class="btn btn-sm btn-outline-primary me-2">Run Search</button>
+                      <button class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recently Viewed Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'recent'">
+          <div class="card">
+            <div class="card-header">
+              <h5 class="mb-0">Recently Viewed Properties</h5>
+            </div>
+            <div class="card-body">
+              <div class="recent-list">
+                <div class="alert alert-info" *ngIf="recentlyViewed.length === 0">
+                  You haven't viewed any properties recently.
+                </div>
+                
+                <div class="property-item" *ngFor="let property of recentlyViewed">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <img [src]="property.image" alt="Property Image" class="img-fluid property-img">
+                    </div>
+                    <div class="col-md-8">
+                      <div class="property-info">
+                        <h5>{{ property.title }}</h5>
+                        <h6 class="price">{{ property.price }}</h6>
+                        <p class="location">{{ property.location }}</p>
+                        <div class="features">
+                          <span><i class="fas fa-bed"></i> {{ property.beds }} beds</span>
+                          <span><i class="fas fa-bath"></i> {{ property.baths }} baths</span>
+                          <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+                        </div>
+                        <div class="actions mt-3">
+                          <a href="#" class="btn btn-sm btn-outline-primary me-2">View Details</a>
+                          <button class="btn btn-sm btn-outline-primary">
+                            <i class="far fa-heart"></i> Add to Favorites
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
