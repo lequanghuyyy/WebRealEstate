@@ -19,7 +19,6 @@ import { SitemapComponent } from './components/sitemap/sitemap.component';
 import { AgentDashboardComponent } from './components/agent/dashboard/agent-dashboard.component';
 import { AgentTransactionsComponent } from './components/agent/transactions/agent-transactions.component';
 import { CreateListingComponent } from './components/agent/create-listing/create-listing.component';
-import { MessagingComponent } from './components/messaging/messaging.component';
 import { ReviewsComponent } from './components/reviews/reviews.component';
 
 // Admin components
@@ -59,7 +58,6 @@ export const routes: Routes = [
   { path: 'privacy', component: PrivacyComponent },
   { path: 'sitemap', component: SitemapComponent },
   { path: 'rent', component: RentComponent },
-  { path: 'messaging', component: MessagingComponent },
   { path: 'reviews', component: ReviewsComponent },
   { 
     path: 'profile', 
@@ -67,6 +65,7 @@ export const routes: Routes = [
     children: [
       { path: 'favorites', component: ProfileComponent },
       { path: 'saved-searches', component: ProfileComponent },
+      { path: 'appointments', component: ProfileComponent },
       { path: 'reviews', component: ReviewsComponent },
       { path: '', redirectTo: 'profile', pathMatch: 'full' }
     ]

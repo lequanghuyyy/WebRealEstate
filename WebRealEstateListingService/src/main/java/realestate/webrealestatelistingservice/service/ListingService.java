@@ -25,5 +25,8 @@ public interface ListingService {
     ListingResponse updateListingStatus(String listingId, ListingStatusUpdateRequest request);
     List<ListingResponseCustom> getCustomListings();
     PageDto<ListingResponseCustom> getCustomListingsPaged(int page, int size);
-
+    List<ListingResponse> getListingsBySaleType();
+    List<ListingResponse> getListingsByRentType();
+    PageDto<ListingResponse> getListingsBySaleTypePaged(int page, int size);
+    PageDto<ListingResponse> getListingsByRentTypePaged(int page, int size);
 }

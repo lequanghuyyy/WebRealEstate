@@ -1,13 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../services/auth.service';
+import { UserAppointmentsComponent } from './appointments/user-appointments.component';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, UserAppointmentsComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
@@ -29,7 +30,11 @@ export class ProfileComponent implements OnInit {
   // Property for active tab
   activeTab = 'profile';
   
-  constructor(private authService: AuthService) { }
+  constructor(
+    private authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
+  ) { }
 
   ngOnInit(): void {
     this.user = this.authService.getCurrentUser();
@@ -42,6 +47,26 @@ export class ProfileComponent implements OnInit {
       
       // In a real app, these would be fetched from a service
       this.loadMockData();
+      
+      // Đặt tab hoạt động dựa trên URL hiện tại
+      this.setActiveTabFromUrl();
+    }
+  }
+  
+  // Phương thức đặt tab hoạt động dựa trên URL
+  private setActiveTabFromUrl(): void {
+    const urlPath = this.router.url;
+    
+    if (urlPath.includes('/profile/favorites')) {
+      this.activeTab = 'favorites';
+    } else if (urlPath.includes('/profile/saved-searches')) {
+      this.activeTab = 'saved-searches';
+    } else if (urlPath.includes('/profile/appointments')) {
+      this.activeTab = 'appointments';
+    } else if (urlPath.includes('/profile/recent')) {
+      this.activeTab = 'recent';
+    } else {
+      this.activeTab = 'profile';
     }
   }
   
@@ -69,6 +94,13 @@ export class ProfileComponent implements OnInit {
   
   setActiveTab(tab: string): void {
     this.activeTab = tab;
+    
+    // Cập nhật URL khi chuyển tab
+    if (tab === 'profile') {
+      this.router.navigate(['/profile']);
+    } else {
+      this.router.navigate(['/profile', tab]);
+    }
   }
   
   // Simulate loading user data

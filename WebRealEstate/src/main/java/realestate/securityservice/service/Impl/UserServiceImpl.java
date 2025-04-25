@@ -98,8 +98,6 @@ public class UserServiceImpl implements UserService {
     public UserResponse updateUserForUser(UserUpdateRequest userUpdateRequest) {
         String idCurrent = getIdUserCurrent();
         UserEntity userEntity = userRepository.findById(idCurrent).orElseThrow(() -> new NotFoundException("User","UserId",idCurrent));
-        userEntity.setFirstName(userUpdateRequest.getFirstName());
-        userEntity.setLastName(userUpdateRequest.getLastName());
         updateUser(userUpdateRequest,userEntity);
         return userMapper.convertToUserResponse(userRepository.save(userEntity));
     }
@@ -145,6 +143,9 @@ public class UserServiceImpl implements UserService {
         if (userUpdateRequest.getPassword() != null) {
             userEntity.setPassword(passwordEncoder.encode(userUpdateRequest.getPassword()));
         }
+        if (userUpdateRequest.getBio() != null) {
+            userEntity.setBio(userUpdateRequest.getBio());
+        }
     }
 
     UserResponse getUserResponse(UserCreationRequest userCreationRequest,
@@ -155,11 +156,7 @@ public class UserServiceImpl implements UserService {
         userEntity.setPassword(passwordEncoder.encode(userCreationRequest.getPassword()));
         userEntity.setRoles(roleRepository.findAllByRoleNameIn(userCreationRequest.getRoles()));
         UserEntity savedUser = userRepository.save(userEntity);
-
-        //
         savePassword(savedUser,userCreationRequest);
-        //
-
         return userMapper.convertToUserResponse(savedUser);
     }
     void savePassword(UserEntity userEntity,UserCreationRequest userCreationRequest) {

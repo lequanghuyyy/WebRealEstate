@@ -7,6 +7,8 @@ import { Agent } from '../../models/agent.model';
 import { Injectable } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PropertyReviewsComponent } from '../property-reviews/property-reviews.component';
+import { AppointmentService } from '../../services/appointment.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-property-details',
@@ -36,6 +38,8 @@ export class PropertyDetailsComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private propertyService: PropertyService,
+    private appointmentService: AppointmentService,
+    private authService: AuthService,
     private fb: FormBuilder
   ) {
     this.contactForm = this.fb.group({
@@ -146,23 +150,40 @@ export class PropertyDetailsComponent implements OnInit {
     this.scheduleSubmitted = true;
     
     if (this.scheduleForm.valid && this.property) {
+      const currentUser = this.authService.getCurrentUser();
+      
+      if (!currentUser) {
+        alert('Please log in to schedule an appointment with the agent.');
+        return;
+      }
+      
       const formData = {
-        ...this.scheduleForm.value,
         propertyId: this.property.id,
         propertyTitle: this.property.title,
-        agentId: this.property.agent.id
+        propertyImage: this.property.images[0],
+        buyerId: currentUser.id,
+        buyerName: currentUser.name,
+        agentId: this.property.agent.id,
+        agentName: this.property.agent.name,
+        appointmentDate: this.scheduleForm.value.date,
+        appointmentTime: this.scheduleForm.value.time,
+        notes: this.scheduleForm.value.notes || 'No notes provided',
+        meetingType: 'in-person' as 'online' | 'in-person',
+        meetingLocation: 'At the property location',
+        status: 'pending' as 'pending' | 'confirmed' | 'cancelled' | 'completed'
       };
 
-      this.propertyService.scheduleViewing(formData).subscribe({
+      this.appointmentService.createAppointment(formData).subscribe({
         next: () => {
           // Handle success
           this.scheduleForm.reset();
           this.scheduleSubmitted = false;
-          alert('Your viewing request has been scheduled successfully!');
+          this.showScheduleForm = false;
+          alert('Your appointment request has been submitted successfully! Please check the Agent Appointments section in your profile.');
         },
         error: (error: any) => {
           console.error('Error scheduling viewing:', error);
-          alert('Failed to schedule viewing. Please try again later.');
+          alert('Unable to schedule the appointment. Please try again later.');
         }
       });
     }
@@ -249,16 +270,6 @@ export class PropertyDetailsComponent implements OnInit {
     );
     if (selectedSlot) {
       selectedSlot.classList.add('selected');
-    }
-  }
-
-  // Toggle form visibility methods
-  toggleContactForm(): void {
-    this.showContactForm = !this.showContactForm;
-    
-    // If opening contact form, close schedule form
-    if (this.showContactForm) {
-      this.showScheduleForm = false;
     }
   }
 

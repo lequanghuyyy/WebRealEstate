@@ -11,6 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
@@ -74,7 +75,6 @@ public class ListingServiceImpl implements ListingService {
 
     @Override
     public PageDto<ListingResponse> searchListings(ListingSearchRequest searchRequest) {
-        // Xây dựng Specification từ các tiêu chí tìm kiếm
         Specification<ListingEntity> spec = ListingSpecification.builder()
                 .withKeyword(searchRequest.getKeyword())
                 .withCity(searchRequest.getCity())
@@ -85,7 +85,9 @@ public class ListingServiceImpl implements ListingService {
                 .withMaxPrice(searchRequest.getMaxPrice())
                 .withType(searchRequest.getType())
                 .withStatus(searchRequest.getStatus())
-                .withPropertyType(searchRequest.getPropertyType()) // Added property type filter
+                .withPropertyType(searchRequest.getPropertyType())
+                .withBedrooms(searchRequest.getBedrooms())
+                .withBathrooms(searchRequest.getBathrooms())
                 .build();
 
         // Tạo Pageable (trừ 1 cho page vì Pageable bắt đầu từ 0)
@@ -93,14 +95,10 @@ public class ListingServiceImpl implements ListingService {
 
         // Truy vấn với Specification và Pageable
         Page<ListingEntity> pageResult = listingRepository.findAll(spec, pageable);
-
-        // Chuyển đổi entity thành DTO
         List<ListingResponse> items = pageResult.getContent()
                 .stream()
                 .map(listingMapper::convertToListingResponse)
                 .collect(Collectors.toList());
-
-        // Đóng gói kết quả vào PageDto và trả về
         return PageDto.<ListingResponse>builder()
                 .items(items)
                 .page(searchRequest.getPage())
@@ -138,6 +136,60 @@ public class ListingServiceImpl implements ListingService {
                 .collect(Collectors.toList());
 
         return PageDto.<ListingResponseCustom>builder()
+                .items(items)
+                .page(page)
+                .size(size)
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public List<ListingResponse> getListingsBySaleType() {
+        return listingRepository.findByType(ListingType.SALE)
+                .stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ListingResponse> getListingsByRentType() {
+        return listingRepository.findByType(ListingType.RENT)
+                .stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public PageDto<ListingResponse> getListingsBySaleTypePaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        Page<ListingEntity> pageResult = listingRepository.findByType(ListingType.SALE, pageable);
+
+        List<ListingResponse> items = pageResult.getContent()
+                .stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+
+        return PageDto.<ListingResponse>builder()
+                .items(items)
+                .page(page)
+                .size(size)
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .build();
+    }
+
+    @Override
+    public PageDto<ListingResponse> getListingsByRentTypePaged(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        Page<ListingEntity> pageResult = listingRepository.findByType(ListingType.RENT, pageable);
+
+        List<ListingResponse> items = pageResult.getContent()
+                .stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+
+        return PageDto.<ListingResponse>builder()
                 .items(items)
                 .page(page)
                 .size(size)

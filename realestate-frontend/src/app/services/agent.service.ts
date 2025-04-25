@@ -9,7 +9,6 @@ export interface AgentApplication {
   email: string;
   fullName: string;
   phoneNumber: string;
-  licenseNumber: string;
   agencyName: string | null;
   applicationDate: string;
   status: 'pending' | 'approved' | 'rejected';
@@ -98,7 +97,6 @@ export class AgentService {
       email: 'agent1@example.com',
       fullName: 'Nguyễn Văn A',
       phoneNumber: '0901234567',
-      licenseNumber: 'AG12345678',
       agencyName: 'VietReal Estate',
       applicationDate: '2025-04-10T10:30:00',
       status: 'pending',
@@ -110,7 +108,6 @@ export class AgentService {
       email: 'agent2@example.com',
       fullName: 'Trần Thị B',
       phoneNumber: '0912345678',
-      licenseNumber: 'AG23456789',
       agencyName: 'SaigonHomes',
       applicationDate: '2025-04-12T14:15:00',
       status: 'pending',
@@ -122,7 +119,6 @@ export class AgentService {
       email: 'agent3@example.com',
       fullName: 'Lê Văn C',
       phoneNumber: '0923456789',
-      licenseNumber: 'AG34567890',
       agencyName: null,
       applicationDate: '2025-04-15T09:45:00',
       status: 'pending',

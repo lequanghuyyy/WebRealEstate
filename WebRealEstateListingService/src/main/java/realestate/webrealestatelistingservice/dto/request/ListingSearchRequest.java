@@ -21,7 +21,10 @@ public class ListingSearchRequest {
 
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private ListingPropertyType propertyType; // Added property type field
+
+    private Integer bedrooms;
+    private Integer bathrooms;
+    private ListingPropertyType propertyType;
 
 
     private BigDecimal minArea;   // Diện tích tối thiểu

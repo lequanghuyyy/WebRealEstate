@@ -31,7 +31,7 @@ export class PropertiesComponent implements OnInit {
   selectedSort: string = 'Newest';
   
   // Property Types
-  propertyTypes: string[] = ['All Types', 'House', 'Apartment', 'Condo', 'Townhouse', 'Villa', 'Land'];
+  propertyTypes: string[] = ['All Types', 'Apartment', 'House', 'Villa'];
   
   // Filter Form
   filterForm: FormGroup;

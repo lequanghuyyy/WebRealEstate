@@ -1,0 +1,142 @@
+.user-appointments-container {
+  .section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+  }
+  
+  .section-description {
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 0;
+    
+    p {
+      color: #666;
+      margin-top: 10px;
+    }
+  }
+  
+  // Filter tabs
+  .filter-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    
+    .btn {
+      border: 1px solid #ddd;
+      background-color: #fff;
+      color: #555;
+      transition: all 0.3s;
+      
+      &:hover {
+        background-color: #f8f9fa;
+      }
+      
+      &.active {
+        background-color: #007bff;
+        color: #fff;
+        border-color: #007bff;
+      }
+    }
+  }
+  
+  // Appointment card
+  .appointment-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: transform 0.3s, box-shadow 0.3s;
+    overflow: hidden;
+    
+    &:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+    
+    .property-img-container {
+      height: 150px;
+      overflow: hidden;
+      border-radius: 6px;
+      
+      .property-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+    }
+    
+    .property-title {
+      margin-bottom: 15px;
+      font-weight: 600;
+      
+      a {
+        color: #333;
+        text-decoration: none;
+        
+        &:hover {
+          color: #007bff;
+        }
+      }
+    }
+    
+    .appointment-details {
+      .detail-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 8px;
+        font-size: 14px;
+        
+        i {
+          width: 20px;
+          color: #666;
+          margin-right: 8px;
+        }
+        
+        a {
+          color: #007bff;
+          
+          &:hover {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+    
+    .status-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      justify-content: space-between;
+      
+      @media (max-width: 768px) {
+        margin-top: 15px;
+        align-items: flex-start;
+      }
+      
+      .status-badge {
+        text-align: right;
+        
+        @media (max-width: 768px) {
+          text-align: left;
+        }
+        
+        .badge {
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+      
+      .action-buttons {
+        width: 100%;
+      }
+    }
+  }
+} 

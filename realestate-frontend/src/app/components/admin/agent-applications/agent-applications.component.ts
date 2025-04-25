@@ -27,7 +27,6 @@ export class AgentApplicationsComponent implements OnInit {
   applicationForm: FormGroup;
   
   // Modals
-  showViewModal: boolean = false;
   showApproveModal: boolean = false;
   showRejectModal: boolean = false;
 
@@ -74,7 +73,6 @@ export class AgentApplicationsComponent implements OnInit {
         const query = this.searchQuery.toLowerCase();
         return app.fullName.toLowerCase().includes(query) ||
                app.email.toLowerCase().includes(query) ||
-               app.licenseNumber.toLowerCase().includes(query) ||
                (app.agencyName && app.agencyName.toLowerCase().includes(query));
       }
       
@@ -91,11 +89,6 @@ export class AgentApplicationsComponent implements OnInit {
     const input = event.target as HTMLInputElement;
     this.searchQuery = input.value;
     this.applyFilters();
-  }
-
-  viewApplication(application: AgentApplication): void {
-    this.selectedApplication = application;
-    this.showViewModal = true;
   }
 
   openApproveModal(application: AgentApplication): void {
@@ -186,7 +179,6 @@ export class AgentApplicationsComponent implements OnInit {
   }
 
   closeModals(): void {
-    this.showViewModal = false;
     this.showApproveModal = false;
     this.showRejectModal = false;
     this.selectedApplication = null;

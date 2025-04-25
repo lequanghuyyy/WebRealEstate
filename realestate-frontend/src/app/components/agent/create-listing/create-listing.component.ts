@@ -44,19 +44,6 @@ export class CreateListingComponent implements OnInit {
     { value: 'sold', label: 'Sold' },
     { value: 'rented', label: 'Rented' }
   ];
-  
-  // Property tags options
-  tagOptions = [
-    { value: 'new', label: 'New' },
-    { value: 'featured', label: 'Featured' },
-    { value: 'hot deal', label: 'Hot Deal' },
-    { value: 'modern', label: 'Modern' },
-    { value: 'luxury', label: 'Luxury' },
-    { value: 'pet friendly', label: 'Pet Friendly' },
-    { value: 'family friendly', label: 'Family Friendly' },
-    { value: 'eco friendly', label: 'Eco Friendly' },
-    { value: 'investment', label: 'Investment' }
-  ];
 
   constructor(
     private fb: FormBuilder,
@@ -77,7 +64,7 @@ export class CreateListingComponent implements OnInit {
       type: ['sale', Validators.required],
       status: ['available', Validators.required],
       style: ['house', Validators.required],
-      tags: [[], Validators.required]
+      tags: [[]]
     });
   }
 
@@ -170,7 +157,7 @@ export class CreateListingComponent implements OnInit {
       images: this.imagePreviewUrls,
       amenities: [], // Required field, empty array
       agent: this.authService.getCurrentUser(),
-      tags: formValue.tags || [],
+      tags: [], // Empty array
       createdAt: new Date(),
       updatedAt: new Date()
     };
@@ -267,31 +254,5 @@ export class CreateListingComponent implements OnInit {
       // Otherwise go to the agent dashboard
       this.router.navigate(['/agent/dashboard']);
     }
-  }
-
-  // Toggle tag selection
-  toggleTag(tagValue: string): void {
-    const tagsControl = this.listingForm.get('tags');
-    if (!tagsControl) return;
-    
-    const currentTags = [...(tagsControl.value || [])];
-    const tagIndex = currentTags.indexOf(tagValue);
-    
-    if (tagIndex > -1) {
-      // Tag exists, remove it
-      currentTags.splice(tagIndex, 1);
-    } else {
-      // Tag doesn't exist, add it
-      currentTags.push(tagValue);
-    }
-    
-    tagsControl.setValue(currentTags);
-    tagsControl.markAsTouched();
-  }
-  
-  // Check if a tag is selected
-  isTagSelected(tagValue: string): boolean {
-    const tagsControl = this.listingForm.get('tags');
-    return tagsControl?.value?.includes(tagValue) || false;
   }
 } 

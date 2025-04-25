@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import realestate.securityservice.constant.UserStatus;
 
 
+import java.time.LocalDate;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 
@@ -50,10 +52,18 @@ public class UserEntity {
     @Enumerated(EnumType.STRING)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(name = "create_at")
+    private LocalDate createAt;
+
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",
             joinColumns = @JoinColumn(name = "user_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "role_id", referencedColumnName = "id"))
     private Set<RoleEntity> roles;
+
+    @PrePersist
+    protected void onCreate() {
+        this.createAt = java.time.LocalDate.now();
+    }
 
 }

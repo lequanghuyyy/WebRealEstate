@@ -1,0 +1,57 @@
+/* Sidebar Card Styles */
+.sidebar-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  padding: 0;
+  overflow: hidden;
+}
+
+.sidebar-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 20px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eee;
+}
+
+.sidebar-card .card-header i {
+  font-size: 20px;
+}
+
+.sidebar-card .card-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.sidebar-card .card-body {
+  padding: 20px;
+}
+
+.sidebar-card.highlight-card {
+  background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+  color: white;
+}
+
+.sidebar-card.highlight-card .card-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.tips-list {
+  padding-left: 5px;
+  list-style: none;
+}
+
+.tips-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.tips-list li i {
+  margin-top: 3px;
+} 

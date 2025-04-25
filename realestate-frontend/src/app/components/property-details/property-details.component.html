@@ -155,94 +155,10 @@
 
           <!-- Action buttons -->
           <div class="agent-action-buttons">
-            <button class="action-button contact-button" (click)="toggleContactForm()">
-              <i class="fas fa-envelope"></i> Contact Agent
-            </button>
+           
             <button class="action-button schedule-button" (click)="toggleScheduleForm()">
               <i class="fas fa-calendar-check"></i> Schedule a Viewing
             </button>
-          </div>
-
-          <!-- Contact form -->
-          <div class="contact-form-container" *ngIf="showContactForm">
-            <div class="form-header">
-              <h3>Contact Agent</h3>
-              <button class="close-form-btn" (click)="toggleContactForm()">
-                <i class="fas fa-times"></i>
-              </button>
-            </div>
-            <div class="quick-contact-options">
-              <a href="tel:{{property.agent.phone}}" class="quick-contact-btn phone-btn">
-                <i class="fas fa-phone"></i> Call Now
-              </a>
-              <a href="https://zalo.me/{{property.agent.phone}}" target="_blank" class="quick-contact-btn zalo-btn">
-                <i class="fas fa-comment"></i> Zalo
-              </a>
-              <a href="mailto:{{property.agent.email}}" class="quick-contact-btn email-btn">
-                <i class="fas fa-envelope"></i> Email
-              </a>
-            </div>
-            <div class="contact-form-divider">
-              <span>Or send a message</span>
-            </div>
-            <form [formGroup]="contactForm" (ngSubmit)="submitContactForm()" class="enhanced-contact-form">
-              <div class="form-floating mb-3">
-                <input type="text" id="name" formControlName="name" class="form-control" 
-                      placeholder="Full Name"
-                      [ngClass]="{'is-invalid': isFieldInvalid(contactForm, 'name')}">
-                <label for="name"><i class="fas fa-user"></i> Full Name</label>
-                <div *ngIf="formSubmitted && contactForm.get('name')?.invalid" class="invalid-feedback">
-                  Please enter your name
-                </div>
-              </div>
-              
-              <div class="form-row">
-                <div class="form-floating mb-3 col">
-                  <input type="email" id="email" formControlName="email" class="form-control" 
-                        placeholder="Email"
-                        [ngClass]="{'is-invalid': isFieldInvalid(contactForm, 'email')}">
-                  <label for="email"><i class="fas fa-envelope"></i> Email</label>
-                  <div *ngIf="formSubmitted && contactForm.get('email')?.invalid" class="invalid-feedback">
-                    Please enter a valid email
-                  </div>
-                </div>
-                
-                <div class="form-floating mb-3 col">
-                  <input type="tel" id="phone" formControlName="phone" class="form-control"
-                        placeholder="Phone Number" 
-                        [ngClass]="{'is-invalid': isFieldInvalid(contactForm, 'phone')}">
-                  <label for="phone"><i class="fas fa-phone"></i> Phone Number</label>
-                  <div *ngIf="formSubmitted && contactForm.get('phone')?.invalid" class="invalid-feedback">
-                    Please enter your phone number
-                  </div>
-                </div>
-              </div>
-              
-              <div class="form-floating mb-3">
-                <textarea id="message" formControlName="message" class="form-control"
-                          placeholder="Message" rows="5"
-                          [ngClass]="{'is-invalid': isFieldInvalid(contactForm, 'message')}"></textarea>
-                <label for="message"><i class="fas fa-comment"></i> Message</label>
-                <div *ngIf="formSubmitted && contactForm.get('message')?.invalid" class="invalid-feedback">
-                  Please enter your message
-                </div>
-              </div>
-              
-              <div class="form-check mb-3">
-                <input class="form-check-input" type="checkbox" id="newsletter" formControlName="newsletter">
-                <label class="form-check-label" for="newsletter">
-                  I want to receive updates about similar properties
-                </label>
-              </div>
-              
-              <button type="submit" class="primary-button w-100">
-                <i class="fas fa-paper-plane"></i> Send Message
-              </button>
-              
-              <div class="contact-privacy-note">
-                Your information is protected according to our <a href="/privacy" target="_blank">privacy policy</a>
-              </div>
-            </form>
           </div>
 
           <!-- Schedule viewing -->

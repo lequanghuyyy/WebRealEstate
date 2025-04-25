@@ -84,6 +84,29 @@ public class ListingController {
         return ResponseFactory.ok(listingService.getCustomListingsPaged(page, size));
     }
 
+    @GetMapping("/sale")
+    public ResponseEntity<BaseResponse<List<ListingResponse>>> getListingsBySaleType() {
+        return ResponseFactory.ok(listingService.getListingsBySaleType());
+    }
+
+    @GetMapping("/rent")
+    public ResponseEntity<BaseResponse<List<ListingResponse>>> getListingsByRentType() {
+        return ResponseFactory.ok(listingService.getListingsByRentType());
+    }
+
+    @GetMapping("/sale/paged")
+    public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> getListingsBySaleTypePaged(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseFactory.ok(listingService.getListingsBySaleTypePaged(page, size));
+    }
+
+    @GetMapping("/rent/paged")
+    public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> getListingsByRentTypePaged(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseFactory.ok(listingService.getListingsByRentTypePaged(page, size));
+    }
 
 
 }

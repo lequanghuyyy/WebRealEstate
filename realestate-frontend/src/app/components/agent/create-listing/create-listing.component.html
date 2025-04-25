@@ -199,26 +199,6 @@
       </div>
 
       <div class="form-section">
-        <h2 class="section-title">Tags</h2>
-        <p class="section-description">Select the relevant tags for your property.</p>
-        
-        <div class="form-group mb-4">
-          <label class="form-label fw-semibold">Tags</label>
-          <div class="tag-container d-flex flex-wrap gap-2">
-            <div *ngFor="let tag of tagOptions" 
-                 class="tag-chip p-2 rounded-3" 
-                 [class.selected]="isTagSelected(tag.value)"
-                 (click)="toggleTag(tag.value)">
-              {{ tag.label }}
-            </div>
-          </div>
-          <div *ngIf="listingForm.get('tags')?.touched && listingForm.get('tags')?.invalid" class="text-danger mt-1">
-            <small *ngIf="listingForm.get('tags')?.errors?.['required']">Please select at least one tag</small>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-section">
         <h2 class="section-title">Images</h2>
         <p class="section-description">Upload up to {{ maxImages }} images of the property. First image will be used as the main photo.</p>
         

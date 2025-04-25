@@ -23,6 +23,11 @@
                 </a>
               </li>
               <li class="nav-item">
+                <a class="nav-link" [class.active]="activeTab === 'appointments'" (click)="setActiveTab('appointments')">
+                  <i class="fas fa-calendar-check me-2"></i> Agent Appointments
+                </a>
+              </li>
+              <li class="nav-item">
                 <a class="nav-link" [class.active]="activeTab === 'favorites'" (click)="setActiveTab('favorites')">
                   <i class="fas fa-heart me-2"></i> Favorites
                 </a>
@@ -231,6 +236,11 @@
               </div>
             </div>
           </div>
+        </div>
+        
+        <!-- Appointments Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'appointments'">
+          <app-user-appointments></app-user-appointments>
         </div>
       </div>
     </div>

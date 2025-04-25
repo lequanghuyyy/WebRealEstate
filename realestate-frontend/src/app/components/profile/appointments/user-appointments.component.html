@@ -1,0 +1,158 @@
+<div class="user-appointments-container">
+  <h3 class="section-title">Your Appointments</h3>
+  <p class="section-description">Manage and track your appointments with real estate agents</p>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="alert alert-danger mt-3">
+    <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="loading-container mt-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading appointment data...</p>
+  </div>
+
+  <!-- Filter tabs -->
+  <div *ngIf="!isLoading && !error" class="filter-tabs mt-4">
+    <button 
+      class="btn" 
+      [class.active]="filterStatus === 'all'"
+      (click)="changeFilter('all')"
+    >
+      All
+    </button>
+    <button 
+      class="btn" 
+      [class.active]="filterStatus === 'pending'"
+      (click)="changeFilter('pending')"
+    >
+      Pending
+    </button>
+    <button 
+      class="btn" 
+      [class.active]="filterStatus === 'confirmed'"
+      (click)="changeFilter('confirmed')"
+    >
+      Confirmed
+    </button>
+    <button 
+      class="btn" 
+      [class.active]="filterStatus === 'completed'"
+      (click)="changeFilter('completed')"
+    >
+      Completed
+    </button>
+    <button 
+      class="btn" 
+      [class.active]="filterStatus === 'cancelled'"
+      (click)="changeFilter('cancelled')"
+    >
+      Cancelled
+    </button>
+  </div>
+
+  <!-- No appointments message -->
+  <div *ngIf="!isLoading && !error && filteredAppointments.length === 0" class="no-appointments mt-4">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 3rem;"></i>
+        <h5>No Appointments Found</h5>
+        <p class="text-muted">You don't have any appointments with real estate agents yet</p>
+        <a routerLink="/buy" class="btn btn-primary mt-2">Find Properties</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments list -->
+  <div *ngIf="!isLoading && !error && filteredAppointments.length > 0" class="appointments-list mt-4">
+    <div class="card appointment-card mb-3" *ngFor="let appointment of filteredAppointments">
+      <div class="card-body">
+        <div class="row">
+          <!-- Property image and info -->
+          <div class="col-md-3">
+            <div class="property-img-container">
+              <img [src]="appointment.propertyImage || 'assets/images/property-placeholder.jpg'" alt="Property image" class="property-img">
+            </div>
+          </div>
+          
+          <!-- Appointment details -->
+          <div class="col-md-6">
+            <h5 class="property-title">
+              <a [routerLink]="['/property', appointment.propertyId]">{{ appointment.propertyTitle }}</a>
+            </h5>
+            
+            <div class="appointment-details">
+              <div class="detail-item">
+                <i class="far fa-calendar-alt"></i>
+                <span>Date: <strong>{{ formatDate(appointment.appointmentDate) }}</strong></span>
+              </div>
+              <div class="detail-item">
+                <i class="far fa-clock"></i>
+                <span>Time: <strong>{{ formatTime(appointment.appointmentTime) }}</strong></span>
+              </div>
+              <div class="detail-item">
+                <i class="far fa-user"></i>
+                <span>Agent: <strong>{{ appointment.agentName }}</strong></span>
+              </div>
+              <div class="detail-item">
+                <i class="fas fa-map-marker-alt"></i>
+                <span>Meeting Type: <strong>{{ appointment.meetingType === 'online' ? 'Online' : 'In-person' }}</strong></span>
+              </div>
+              
+              <div *ngIf="appointment.meetingLocation" class="detail-item">
+                <i class="fas fa-location-arrow"></i>
+                <span>Location: <strong>{{ appointment.meetingLocation }}</strong></span>
+              </div>
+              
+              <div *ngIf="appointment.meetingLink" class="detail-item">
+                <i class="fas fa-video"></i>
+                <span>Meeting Link: <a [href]="appointment.meetingLink" target="_blank">{{ appointment.meetingLink }}</a></span>
+              </div>
+              
+              <div *ngIf="appointment.notes" class="detail-item">
+                <i class="far fa-sticky-note"></i>
+                <span>Notes: {{ appointment.notes }}</span>
+              </div>
+              
+              <div *ngIf="appointment.reason" class="detail-item text-danger">
+                <i class="fas fa-info-circle"></i>
+                <span>Reason: {{ appointment.reason }}</span>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Status and actions -->
+          <div class="col-md-3 status-actions">
+            <div class="status-badge mb-3">
+              <span class="badge" [ngClass]="getStatusBadgeClass(appointment.status)">
+                {{ getStatusText(appointment.status) }}
+              </span>
+              <small class="d-block mt-1 text-muted">
+                Updated: {{ formatDate(appointment.updatedAt || appointment.createdAt) }}
+              </small>
+            </div>
+            
+            <div class="action-buttons">
+              <!-- Show cancel button only for pending or confirmed appointments -->
+              <button 
+                *ngIf="appointment.status === 'pending' || appointment.status === 'confirmed'" 
+                class="btn btn-sm btn-outline-danger w-100 mb-2"
+                (click)="cancelAppointment(appointment.id)"
+              >
+                <i class="fas fa-times me-1"></i> Cancel Appointment
+              </button>
+              
+              <!-- Link to property details -->
+              <a [routerLink]="['/property', appointment.propertyId]" class="btn btn-sm btn-outline-primary w-100">
+                <i class="fas fa-eye me-1"></i> View Property
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

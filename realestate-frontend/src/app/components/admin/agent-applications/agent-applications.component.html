@@ -21,7 +21,7 @@
       <input 
         type="text" 
         class="form-control search-input" 
-        placeholder="Tìm theo tên, email, số giấy phép..." 
+        placeholder="Tìm theo tên, email..." 
         (input)="onSearch($event)"
       >
       <i class="fas fa-search search-icon"></i>
@@ -75,7 +75,6 @@
           <th>Tên</th>
           <th>Email</th>
           <th>Số điện thoại</th>
-          <th>Số giấy phép</th>
           <th>Ngày đăng ký</th>
           <th>Trạng thái</th>
           <th>Thao tác</th>
@@ -83,7 +82,7 @@
       </thead>
       <tbody>
         <tr *ngIf="filteredApplications.length === 0">
-          <td colspan="7" class="text-center py-4">
+          <td colspan="6" class="text-center py-4">
             <p class="text-muted">Không có đơn đăng ký nào phù hợp với tiêu chí tìm kiếm</p>
           </td>
         </tr>
@@ -91,7 +90,6 @@
           <td>{{ app.fullName }}</td>
           <td>{{ app.email }}</td>
           <td>{{ app.phoneNumber }}</td>
-          <td>{{ app.licenseNumber }}</td>
           <td>{{ formatDate(app.applicationDate) }}</td>
           <td>
             <span class="badge" [ngClass]="{
@@ -104,19 +102,16 @@
             </span>
           </td>
           <td class="actions-column">
-            <button class="btn btn-sm btn-outline-primary me-1" (click)="viewApplication(app)">
-              <i class="fas fa-eye"></i>
-            </button>
             <button 
               *ngIf="app.status === 'pending'" 
-              class="btn btn-sm btn-outline-success me-1" 
+              class="btn btn-sm btn-primary me-2" 
               (click)="openApproveModal(app)"
             >
               <i class="fas fa-check"></i>
             </button>
             <button 
               *ngIf="app.status === 'pending'" 
-              class="btn btn-sm btn-outline-danger" 
+              class="btn btn-sm btn-danger" 
               (click)="openRejectModal(app)"
             >
               <i class="fas fa-times"></i>
@@ -125,79 +120,6 @@
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- View Application Modal -->
-  <div class="modal" [class.show]="showViewModal" [style.display]="showViewModal ? 'block' : 'none'" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Chi tiết đơn đăng ký</h5>
-          <button type="button" class="btn-close" (click)="closeModals()"></button>
-        </div>
-        <div class="modal-body" *ngIf="selectedApplication">
-          <div class="row">
-            <div class="col-md-6">
-              <h6>Thông tin cá nhân</h6>
-              <hr>
-              <p><strong>Họ và tên:</strong> {{ selectedApplication.fullName }}</p>
-              <p><strong>Email:</strong> {{ selectedApplication.email }}</p>
-              <p><strong>Số điện thoại:</strong> {{ selectedApplication.phoneNumber }}</p>
-            </div>
-            <div class="col-md-6">
-              <h6>Thông tin chuyên môn</h6>
-              <hr>
-              <p><strong>Số giấy phép:</strong> {{ selectedApplication.licenseNumber }}</p>
-              <p><strong>Công ty/Đại lý:</strong> {{ selectedApplication.agencyName || 'Freelance' }}</p>
-              <p><strong>Ngày đăng ký:</strong> {{ formatDate(selectedApplication.applicationDate) }}</p>
-            </div>
-          </div>
-
-          <div class="row mt-3">
-            <div class="col-12">
-              <h6>Tài liệu đính kèm</h6>
-              <hr>
-              <div class="documents-list">
-                <div *ngFor="let doc of selectedApplication.documents" class="document-item">
-                  <i class="fas fa-file-pdf document-icon"></i>
-                  <span>{{ doc }}</span>
-                  <button class="btn btn-sm btn-link">Xem</button>
-                </div>
-                <p *ngIf="!selectedApplication.documents || selectedApplication.documents.length === 0">
-                  Không có tài liệu đính kèm
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div class="row mt-3" *ngIf="selectedApplication.status !== 'pending'">
-            <div class="col-12">
-              <h6>Ghi chú</h6>
-              <hr>
-              <p *ngIf="selectedApplication.notes">{{ selectedApplication.notes }}</p>
-              <p *ngIf="!selectedApplication.notes" class="text-muted">Không có ghi chú</p>
-            </div>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button 
-            *ngIf="selectedApplication && selectedApplication.status === 'pending'" 
-            class="btn btn-success me-2" 
-            (click)="openApproveModal(selectedApplication)"
-          >
-            Duyệt đơn
-          </button>
-          <button 
-            *ngIf="selectedApplication && selectedApplication.status === 'pending'" 
-            class="btn btn-danger me-2" 
-            (click)="openRejectModal(selectedApplication)"
-          >
-            Từ chối
-          </button>
-          <button type="button" class="btn btn-secondary" (click)="closeModals()">Đóng</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Approve Application Modal -->
@@ -270,5 +192,5 @@
   </div>
 
   <!-- Modal backdrop -->
-  <div *ngIf="showViewModal || showApproveModal || showRejectModal" class="modal-backdrop fade show"></div>
+  <div *ngIf="showApproveModal || showRejectModal" class="modal-backdrop fade show"></div>
 </div>

@@ -201,12 +201,10 @@ export class AuthService {
   }
 
   requestPasswordReset(email: string): Observable<any> {
-    // In a real app, replace with actual API call
     return of({ success: true, message: 'Password reset email sent' });
   }
 
   resetPassword(token: string, newPassword: string): Observable<any> {
-    // In a real app, replace with actual API call
     return of({ success: true, message: 'Password reset successful' });
   }
 } 

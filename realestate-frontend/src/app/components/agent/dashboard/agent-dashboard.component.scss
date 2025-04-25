@@ -626,4 +626,138 @@
       }
     }
   }
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.status-new, .status-pending {
+  background-color: #e3f2fd;
+  color: #0d47a1;
+}
+
+.status-inprogress, .status-confirmed {
+  background-color: #fff8e1;
+  color: #ff8f00;
+}
+
+.status-closed, .status-completed {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.status-cancelled {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+// Property cell
+.property-cell {
+  display: flex;
+  align-items: center;
+  
+  img {
+    width: 60px;
+    height: 45px;
+    object-fit: cover;
+    margin-right: 10px;
+    border-radius: 4px;
+  }
+}
+
+// Client info
+.client-info {
+  .client-name {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  
+  .client-contact {
+    font-size: 0.85rem;
+    
+    a {
+      color: #3f51b5;
+      text-decoration: none;
+      
+      &:hover {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+// Filter buttons
+.filter-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  
+  .btn-sm {
+    font-size: 0.8rem;
+    padding: 4px 12px;
+    border-radius: 20px;
+  }
+}
+
+// Card header with actions
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  
+  h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+  }
+}
+
+// Modal styles
+.request-property-info, .viewing-property-info {
+  display: flex;
+  gap: 16px;
+  
+  img {
+    width: 120px;
+    height: 90px;
+    object-fit: cover;
+    border-radius: 4px;
+  }
+  
+  h4 {
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+}
+
+.message-content {
+  white-space: pre-line;
+}
+
+.viewing-datetime {
+  div {
+    margin-bottom: 4px;
+  }
+  
+  i {
+    width: 18px;
+    text-align: center;
+    margin-right: 4px;
+    color: #757575;
+  }
+}
+
+// Action buttons
+.action-buttons {
+  display: flex;
+  gap: 8px;
 } 

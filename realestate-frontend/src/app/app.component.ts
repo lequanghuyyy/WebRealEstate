@@ -14,6 +14,7 @@ import { filter } from 'rxjs/operators';
 })
 export class AppComponent implements OnInit {
   isAdminRoute = false;
+  title = 'realestate-frontend';
 
   constructor(private router: Router) {}
 

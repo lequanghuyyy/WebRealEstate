@@ -16,9 +16,9 @@
         <ul class="nav-list">
           <li class="nav-item"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a></li>
           <li class="nav-item"><a routerLink="/properties" routerLinkActive="active">Properties</a></li>
-          <li class="nav-item"><a routerLink="/rent" routerLinkActive="active">Rent</a></li>
           <li class="nav-item"><a routerLink="/buy" routerLinkActive="active">Buy</a></li>
-        
+          <li class="nav-item"><a routerLink="/rent" routerLinkActive="active">Rent</a></li>
+
         </ul>
       </nav>
       
@@ -66,14 +66,14 @@
             <a routerLink="/profile/favorites" class="dropdown-item">
               <i class="fas fa-heart"></i> Favorites
             </a>
+            <a routerLink="/profile/appointments" class="dropdown-item">
+              <i class="fas fa-calendar-check"></i> Agent Appointments
+            </a>
             <a routerLink="/profile/saved-searches" class="dropdown-item">
               <i class="fas fa-search"></i> Saved Searches
             </a>
-            <a routerLink="/messaging" class="dropdown-item">
-              <i class="fas fa-envelope"></i> Messages
-            </a>
             <a routerLink="/reviews" class="dropdown-item">
-              <i class="fas fa-star"></i> Đánh giá của tôi
+              <i class="fas fa-star"></i> My Reviews
             </a>
             <div class="dropdown-divider"></div>
             <a (click)="logout()" class="dropdown-item">

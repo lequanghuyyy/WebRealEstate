@@ -39,8 +39,8 @@ export class BuyComponent implements OnInit {
   
   // Property types
   propertyTypes: string[] = [
-    'House',
     'Apartment',
+    'House',
     'Villa'
   ];
   

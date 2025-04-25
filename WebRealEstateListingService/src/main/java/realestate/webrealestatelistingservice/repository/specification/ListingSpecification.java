@@ -27,6 +27,8 @@ public final class ListingSpecification {
     private static final String FIELD_TYPE = "type";
     private static final String FIELD_STATUS = "status";
     private static final String FIELD_PROPERTY_TYPE = "propertyType";
+    private static final String FIELD_BEDROOMS = "bedrooms";
+    private static final String FIELD_BATHROOMS = "bathrooms";
 
     private final List<Specification<ListingEntity>> specifications = new ArrayList<>();
 
@@ -92,6 +94,24 @@ public final class ListingSpecification {
         if (minPrice != null) {
             specifications.add((root, query, cb) ->
                     cb.greaterThanOrEqualTo(root.get(FIELD_PRICE), minPrice)
+            );
+        }
+        return this;
+    }
+
+    public ListingSpecification withBedrooms(final Integer bedrooms) {
+        if (bedrooms != null) {
+            specifications.add((root, query, cb) ->
+                    cb.equal(root.get(FIELD_BEDROOMS), bedrooms)
+            );
+        }
+        return this;
+    }
+
+    public ListingSpecification withBathrooms(final Integer bathrooms) {
+        if (bathrooms != null) {
+            specifications.add((root, query, cb) ->
+                    cb.equal(root.get(FIELD_BATHROOMS), bathrooms)
             );
         }
         return this;

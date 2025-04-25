@@ -28,7 +28,6 @@ public class FavoriteController {
         return ResponseFactory.ok("Successfully added to Favorites");
     }
 
-    // Xóa listing khỏi danh sách yêu thích
     @DeleteMapping("/remove")
     public ResponseEntity<BaseResponse<String>> removeFromFavorites(
             @RequestParam String userId,
@@ -37,7 +36,6 @@ public class FavoriteController {
         return ResponseFactory.ok("Successfully removed from Favorites");
     }
 
-    // Lấy danh sách listing yêu thích của user
     @GetMapping("/list/{userId}")
     public ResponseEntity<BaseResponse<List<ListingResponse>>> getFavoriteListings(
             @PathVariable String userId) {

@@ -284,3 +284,24 @@ label {
     display: block !important;
   }
 }
+/* Form floating fix */
+.form-floating input.form-control, .form-floating textarea.form-control {
+  padding-top: 1.625rem !important;
+  padding-bottom: 0.625rem !important;
+}
+
+.form-floating > .form-control:focus ~ label,
+.form-floating > .form-control:not(:placeholder-shown) ~ label,
+.form-floating > textarea.form-control:focus ~ label,
+.form-floating > textarea.form-control:not(:placeholder-shown) ~ label {
+  opacity: 0.65;
+  transform: scale(0.85) translateY(-0.5rem) translateX(0.15rem);
+  background-color: transparent;
+}
+
+/* Custom styling for input and textarea with content */
+.contact-form-container .form-control, .schedule-viewing .form-control {
+  color: #333;
+  font-weight: normal;
+  font-size: 16px;
+}
