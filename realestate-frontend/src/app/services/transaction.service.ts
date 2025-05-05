@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { TransactionStatus, RentalStatus } from '../models/transaction.model';
 
 // Reuse the Transaction interface from the component
 export interface Transaction {
@@ -45,7 +46,7 @@ export class TransactionService {
       type: 'sale',
       amount: 2500000000,
       commission: 75000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-06-15'
     },
@@ -63,7 +64,7 @@ export class TransactionService {
       type: 'rent',
       amount: 15000000,
       commission: 7500000,
-      status: 'pending',
+      status: RentalStatus.PENDING,
       paymentStatus: 'pending',
       date: '2023-07-02'
     },
@@ -81,7 +82,7 @@ export class TransactionService {
       type: 'sale',
       amount: 5800000000,
       commission: 174000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-05-20'
     },
@@ -99,7 +100,7 @@ export class TransactionService {
       type: 'rent',
       amount: 25000000,
       commission: 12500000,
-      status: 'cancelled',
+      status: RentalStatus.CANCELLED,
       paymentStatus: 'refunded',
       date: '2023-07-10'
     },
@@ -117,7 +118,7 @@ export class TransactionService {
       type: 'sale',
       amount: 12000000000,
       commission: 360000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-04-25'
     },
@@ -135,7 +136,7 @@ export class TransactionService {
       type: 'rent',
       amount: 18000000,
       commission: 9000000,
-      status: 'pending',
+      status: RentalStatus.PENDING,
       paymentStatus: 'pending',
       date: '2023-07-15'
     },
@@ -153,7 +154,7 @@ export class TransactionService {
       type: 'sale',
       amount: 8500000000,
       commission: 255000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-03-12'
     },
@@ -171,7 +172,7 @@ export class TransactionService {
       type: 'rent',
       amount: 30000000,
       commission: 15000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-06-01'
     },
@@ -189,7 +190,7 @@ export class TransactionService {
       type: 'sale',
       amount: 9500000000,
       commission: 285000000,
-      status: 'pending',
+      status: RentalStatus.PENDING,
       paymentStatus: 'pending',
       date: '2023-07-18'
     },
@@ -207,7 +208,7 @@ export class TransactionService {
       type: 'rent',
       amount: 45000000,
       commission: 22500000,
-      status: 'cancelled',
+      status: RentalStatus.CANCELLED,
       paymentStatus: 'refunded',
       date: '2023-05-05'
     },
@@ -225,7 +226,7 @@ export class TransactionService {
       type: 'sale',
       amount: 3200000000,
       commission: 96000000,
-      status: 'completed',
+      status: TransactionStatus.COMPLETED,
       paymentStatus: 'paid',
       date: '2023-02-28'
     },
@@ -243,7 +244,7 @@ export class TransactionService {
       type: 'rent',
       amount: 35000000,
       commission: 17500000,
-      status: 'pending',
+      status: RentalStatus.PENDING,
       paymentStatus: 'pending',
       date: '2023-07-20'
     }
@@ -313,6 +314,20 @@ export class TransactionService {
     
     return of(false).pipe(
       delay(500)
+    );
+  }
+
+  // Get buy transactions with new status
+  getBuyTransactions(): Observable<Transaction[]> {
+    return of(this.mockTransactions.filter(t => t.type === 'sale')).pipe(
+      delay(300)
+    );
+  }
+
+  // Get rent transactions with new status
+  getRentTransactions(): Observable<Transaction[]> {
+    return of(this.mockTransactions.filter(t => t.type === 'rent')).pipe(
+      delay(300)
     );
   }
 } 

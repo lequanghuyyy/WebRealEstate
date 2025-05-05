@@ -1,11 +1,132 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 import { Review } from '../models/review.model';
+import { ReviewRequest, ReviewResponse, BaseResponse } from '../models/user-experience.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReviewService {
+  private apiUrl = `${environment.userExperienceServiceUrl}/reviews`;
+  
+  constructor(private http: HttpClient) { }
+  
+  // Get all reviews for a specific user
+  getUserReviews(userId: string): Observable<ReviewResponse[]> {
+    return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/user/${userId}`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching user reviews:', error);
+          // Return mock data for development
+          return of(this.getMockReviews());
+        })
+      );
+  }
+
+  // Get all reviews for a specific property
+  getPropertyReviews(propertyId: string): Observable<ReviewResponse[]> {
+    return this.http.get<ReviewResponse[]>(`${this.apiUrl}/property/${propertyId}`)
+      .pipe(
+        catchError(error => {
+          console.error('Error fetching property reviews:', error);
+          return of([]);
+        })
+      );
+  }
+
+  // Create a new review
+  createReview(reviewData: ReviewRequest): Observable<ReviewResponse> {
+    return this.http.post<BaseResponse<ReviewResponse>>(this.apiUrl, reviewData).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Update an existing review
+  updateReview(id: string, reviewData: ReviewRequest): Observable<ReviewResponse> {
+    return this.http.put<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}`, reviewData).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Delete a review
+  deleteReview(id: string): Observable<void> {
+    return this.http.delete<BaseResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      map(() => undefined as void)
+    );
+  }
+
+  // Get a review by ID
+  getReviewById(id: string): Observable<ReviewResponse> {
+    return this.http.get<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Get reviews by buyer/renter ID
+  getReviewsByBrId(brId: string): Observable<ReviewResponse[]> {
+    return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/br/${brId}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Get reviews by listing ID
+  getReviewsByListingId(listingId: string): Observable<ReviewResponse[]> {
+    return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/listing/${listingId}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  // Like a review
+  likeReview(id: string): Observable<ReviewResponse> {
+    return this.http.post<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}/like`, {}).pipe(
+      map(response => response.data)
+    );
+  }
+  
+  // Mock reviews for development/testing
+  private getMockReviews(): ReviewResponse[] {
+    return [
+      {
+        id: '1',
+        listingId: '101',
+        brId: 'user-123',
+        title: 'Modern Apartment in Downtown',
+        contentReview: 'Great location and amenities. Very clean and modern.',
+        rate: 4,
+        countLike: 5,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      },
+      {
+        id: '2',
+        listingId: '102',
+        brId: 'user-123',
+        title: 'Seaside Villa with Pool',
+        contentReview: 'Amazing property with breathtaking views. Perfect for a family vacation.',
+        rate: 5,
+        countLike: 12,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: '3',
+        listingId: '103',
+        brId: 'user-123',
+        title: 'Cozy Studio near University',
+        contentReview: 'Decent place for the price. Could use some maintenance on the bathroom fixtures.',
+        rate: 3,
+        countLike: 2,
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
+        updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  }
+
+  // Legacy methods using mock data
   private mockReviews: Review[] = [
     {
       id: '1',
@@ -57,11 +178,11 @@ export class ReviewService {
     }
   ];
 
-  constructor() { }
-
   getReviewsByPropertyId(propertyId: string): Observable<Review[]> {
-    const reviews = this.mockReviews.filter(review => review.propertyId === propertyId);
-    return of(reviews);
+    const propertyReviews = this.mockReviews.filter(
+      review => review.propertyId === propertyId
+    );
+    return of(propertyReviews);
   }
 
   getReviewsByUserId(userId: string): Observable<Review[]> {
@@ -72,38 +193,19 @@ export class ReviewService {
   addReview(review: Omit<Review, 'id' | 'date' | 'helpful'>): Observable<Review> {
     const newReview: Review = {
       ...review,
-      id: (this.mockReviews.length + 1).toString(),
+      id: `rev-${this.mockReviews.length + 1}`,
       date: new Date(),
       helpful: 0
     };
-    
     this.mockReviews.push(newReview);
     return of(newReview);
   }
 
-  updateReview(id: string, review: Partial<Review>): Observable<Review> {
-    const index = this.mockReviews.findIndex(r => r.id === id);
-    if (index !== -1) {
-      this.mockReviews[index] = { ...this.mockReviews[index], ...review };
-      return of(this.mockReviews[index]);
-    }
-    return of({} as Review);
-  }
-
-  deleteReview(id: string): Observable<boolean> {
-    const index = this.mockReviews.findIndex(r => r.id === id);
-    if (index !== -1) {
-      this.mockReviews.splice(index, 1);
-      return of(true);
-    }
-    return of(false);
-  }
-
   markHelpful(id: string): Observable<Review> {
-    const index = this.mockReviews.findIndex(r => r.id === id);
-    if (index !== -1) {
-      this.mockReviews[index].helpful += 1;
-      return of(this.mockReviews[index]);
+    const review = this.mockReviews.find(r => r.id === id);
+    if (review) {
+      review.helpful = (review.helpful || 0) + 1;
+      return of(review);
     }
     return of({} as Review);
   }

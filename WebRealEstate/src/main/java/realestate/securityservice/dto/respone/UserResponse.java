@@ -23,4 +23,5 @@ public class UserResponse {
     UserStatus status;
     List<String> roles;
     LocalDate createAt;
+    String phone;
 }

@@ -20,7 +20,7 @@ import realestate.webrealestaterentservice.service.RentalService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/rent")
+@RequestMapping("api/v1/rentals")
 @RequiredArgsConstructor
 public class RentsController {
 

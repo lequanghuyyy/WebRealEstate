@@ -52,8 +52,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             return JwtDto.builder().token(token).expiredIn(expiryDate).build();
         }
         catch (AuthenticationException e){
-            log.error("Wrong username or password {}", e.getMessage(), e);
-            throw new InvalidCredentialsException("Wrong username or password");
+            throw new InvalidCredentialsException("Invalid Username or Password");
         }
     }
 

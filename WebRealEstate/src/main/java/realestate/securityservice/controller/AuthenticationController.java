@@ -5,10 +5,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import realestate.securityservice.dto.JwtDto;
 import realestate.securityservice.dto.request.AuthenticationRequest;
 
@@ -18,7 +15,8 @@ import realestate.securityservice.dto.respone.ResponseFactory;
 import realestate.securityservice.service.AuthenticationService;
 
 @RestController
-@RequestMapping("api/v1/auth")
+@CrossOrigin(origins = "*")
+@RequestMapping("api/v1/users/auth")
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 

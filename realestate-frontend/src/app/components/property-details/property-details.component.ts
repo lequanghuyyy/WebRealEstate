@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { PropertyService } from '../../services/property.service';
@@ -9,6 +9,8 @@ import { CommonModule } from '@angular/common';
 import { PropertyReviewsComponent } from '../property-reviews/property-reviews.component';
 import { AppointmentService } from '../../services/appointment.service';
 import { AuthService } from '../../services/auth.service';
+import { FavoriteService } from '../../services/favorite.service';
+import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
 
 @Component({
   selector: 'app-property-details',
@@ -18,6 +20,17 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, ReactiveFormsModule, RouterModule, PropertyReviewsComponent]
 })
 export class PropertyDetailsComponent implements OnInit {
+  // Private injections
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private propertyService = inject(PropertyService);
+  private appointmentService = inject(AppointmentService);
+  private authService = inject(AuthService);
+  private favoriteService = inject(FavoriteService);
+  private toastr = inject(ToastrWrapperService);
+  private fb = inject(FormBuilder);
+  
+  // Component properties
   propertyId: string | null = null;
   property: Property | null = null;
   isLoading: boolean = true;
@@ -34,14 +47,14 @@ export class PropertyDetailsComponent implements OnInit {
   showContactForm: boolean = false;
   showScheduleForm: boolean = false;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private propertyService: PropertyService,
-    private appointmentService: AppointmentService,
-    private authService: AuthService,
-    private fb: FormBuilder
-  ) {
+  // User authentication
+  isAuthenticated: boolean = false;
+  userId: string | null = null;
+  
+  // Favorite status
+  isFavorite: boolean = false;
+
+  constructor() {
     this.contactForm = this.fb.group({
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
@@ -56,39 +69,124 @@ export class PropertyDetailsComponent implements OnInit {
       notes: [''],
       name: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)]]
+      phone: ['', [Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)]],
+      meetingType: ['', [Validators.required]],
+      meetingLocation: ['']
     });
   }
 
   ngOnInit(): void {
     this.propertyId = this.route.snapshot.paramMap.get('id');
-    if (this.propertyId) {
-      this.loadPropertyDetails(this.propertyId);
+    this.loadProperty();
+    this.checkAuthStatus();
+    
+    // Monitor route changes to reload property data
+    this.route.params.subscribe(params => {
+      const newPropertyId = params['id'];
+      if (newPropertyId && newPropertyId !== this.propertyId) {
+        this.propertyId = newPropertyId;
+        this.loadProperty();
+      }
+    });
+  }
+  
+  private checkAuthStatus(): void {
+    this.isAuthenticated = this.authService.isLoggedIn();
+    if (this.isAuthenticated) {
+      const user = this.authService.getCurrentUser();
+      if (user) {
+        this.userId = user.id;
+        if (this.propertyId) {
+          this.checkFavoriteStatus();
+        }
+      }
     } else {
-      this.handleError('Property ID not found');
+      this.isAuthenticated = false;
+      this.userId = null;
     }
   }
 
-  loadPropertyDetails(id: string): void {
+  private loadProperty(): void {
+    if (!this.propertyId) {
+      this.errorMessage = 'Property ID is missing';
+      this.isLoading = false;
+      return;
+    }
+
     this.isLoading = true;
-    this.errorMessage = null;
-    
-    this.propertyService.getPropertyById(id).subscribe({
-      next: (property) => {
-        this.property = property;
+    this.propertyService.getPropertyById(this.propertyId).subscribe({
+      next: (response: any) => {
+        this.property = response;
         this.isLoading = false;
-        this.loadSimilarProperties(property);
+        
+        if (this.property) {
+          // Safe call to loadSimilarProperties with a null check
+          this.loadSimilarProperties(this.property);
+          
+          // Update page title with property name
+          document.title = `${this.property?.title} | Real Estate`;
+          
+          if (this.isAuthenticated && this.userId) {
+            this.checkFavoriteStatus();
+          }
+        }
       },
-      error: (error: any) => {
-        this.handleError('Failed to load property details');
-        console.error('Error loading property:', error);
+      error: (error) => {
+        this.errorMessage = error.message || 'Failed to load property details';
+        this.isLoading = false;
       }
     });
   }
 
+  private checkFavoriteStatus(): void {
+    if (this.userId && this.propertyId) {
+      this.favoriteService.checkIsFavorite(this.userId, this.propertyId).subscribe(isFavorite => {
+        this.isFavorite = isFavorite;
+      });
+    }
+  }
+
+  toggleFavorite(): void {
+    if (!this.isAuthenticated) {
+      this.toastr.warning('Please login to save properties to favorites');
+      return;
+    }
+
+    if (!this.userId || !this.propertyId) {
+      this.toastr.error('Unable to process favorite action');
+      return;
+    }
+
+    if (this.isFavorite) {
+      this.favoriteService.removeFavorite(this.userId, this.propertyId).subscribe({
+        next: () => {
+          this.isFavorite = false;
+          this.toastr.success('Removed from favorites');
+        },
+        error: (error) => {
+          this.toastr.error('Failed to remove from favorites');
+        }
+      });
+    } else {
+      this.favoriteService.addFavorite(this.userId, this.propertyId).subscribe({
+        next: () => {
+          this.isFavorite = true;
+          this.toastr.success('Added to favorites');
+        },
+        error: (error) => {
+          this.toastr.error('Failed to add to favorites');
+        }
+      });
+    }
+  }
+
   loadSimilarProperties(property: Property): void {
     // Fetch similar properties based on current property
-    this.propertyService.getSimilarProperties(property.id, property.type, property.location.city).subscribe({
+    this.propertyService.getSimilarProperties(
+      property.id, 
+      property.type, 
+      4 // Pass a number as the limit parameter
+    ).subscribe({
       next: (properties: Property[]) => {
         this.similarProperties = properties.slice(0, 4); // Limit to 4 similar properties
       },
@@ -116,7 +214,9 @@ export class PropertyDetailsComponent implements OnInit {
 
   prevImage(): void {
     if (this.property && this.property.images) {
-      this.activeImageIndex = (this.activeImageIndex - 1 + this.property.images.length) % this.property.images.length;
+      this.activeImageIndex = this.activeImageIndex === 0 
+        ? this.property.images.length - 1 
+        : this.activeImageIndex - 1;
     }
   }
 
@@ -136,62 +236,77 @@ export class PropertyDetailsComponent implements OnInit {
           // Handle success
           this.contactForm.reset();
           this.formSubmitted = false;
-          alert('Your message has been sent successfully!');
+          this.toastr.success('Your message has been sent successfully!');
         },
         error: (error: any) => {
           console.error('Error submitting contact form:', error);
-          alert('Failed to send message. Please try again later.');
+          this.toastr.error('Failed to send message. Please try again later.');
         }
       });
     }
   }
 
   submitScheduleForm(): void {
-    this.scheduleSubmitted = true;
-    
-    if (this.scheduleForm.valid && this.property) {
-      const currentUser = this.authService.getCurrentUser();
-      
-      if (!currentUser) {
-        alert('Please log in to schedule an appointment with the agent.');
-        return;
-      }
-      
-      const formData = {
-        propertyId: this.property.id,
-        propertyTitle: this.property.title,
-        propertyImage: this.property.images[0],
-        buyerId: currentUser.id,
-        buyerName: currentUser.name,
-        agentId: this.property.agent.id,
-        agentName: this.property.agent.name,
-        appointmentDate: this.scheduleForm.value.date,
-        appointmentTime: this.scheduleForm.value.time,
-        notes: this.scheduleForm.value.notes || 'No notes provided',
-        meetingType: 'in-person' as 'online' | 'in-person',
-        meetingLocation: 'At the property location',
-        status: 'pending' as 'pending' | 'confirmed' | 'cancelled' | 'completed'
-      };
-
-      this.appointmentService.createAppointment(formData).subscribe({
-        next: () => {
-          // Handle success
-          this.scheduleForm.reset();
-          this.scheduleSubmitted = false;
-          this.showScheduleForm = false;
-          alert('Your appointment request has been submitted successfully! Please check the Agent Appointments section in your profile.');
-        },
-        error: (error: any) => {
-          console.error('Error scheduling viewing:', error);
-          alert('Unable to schedule the appointment. Please try again later.');
-        }
+    if (this.scheduleForm.invalid) {
+      Object.keys(this.scheduleForm.controls).forEach(key => {
+        this.scheduleForm.get(key)?.markAsTouched();
       });
+      return;
     }
+
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    if (!this.property) {
+      this.toastr.error('Property information is missing');
+      return;
+    }
+
+    this.scheduleSubmitted = true;
+
+    const user = this.authService.getCurrentUser();
+    if (!user) {
+      this.toastr.error('User information is missing');
+      return;
+    }
+
+    // Prepare form data in a way that the AppointmentService can understand
+    const formData = {
+      propertyId: this.property.id,
+      buyerId: user.id,
+      agentId: this.property.agent.id,
+      appointmentDate: this.scheduleForm.get('date')?.value,
+      appointmentTime: this.scheduleForm.get('time')?.value,
+      meetingType: this.scheduleForm.get('meetingType')?.value,
+      meetingLocation: this.scheduleForm.get('meetingType')?.value === 'in-person' ? 
+        this.property.location.address : undefined,
+      notes: this.scheduleForm.get('notes')?.value
+    };
+
+    this.appointmentService.createAppointment(formData).subscribe({
+      next: () => {
+        this.toggleScheduleForm();
+        this.scheduleForm.reset();
+        this.scheduleSubmitted = false;
+        this.toastr.success('Viewing request sent! The agent will contact you to confirm.');
+      },
+      error: (error) => {
+        console.error('Error scheduling viewing:', error);
+        this.toastr.error('Unable to schedule a viewing. Please try again later.');
+        this.scheduleSubmitted = false;
+      }
+    });
+  }
+
+  scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   retryLoading(): void {
     if (this.propertyId) {
-      this.loadPropertyDetails(this.propertyId);
+      this.loadProperty();
     }
   }
 
@@ -217,7 +332,6 @@ export class PropertyDetailsComponent implements OnInit {
     return `https://www.google.com/maps?q=${address}`;
   }
 
-  // Get appropriate icon for each amenity
   getAmenityIcon(amenity: string): string {
     // Convert amenity to lowercase for case-insensitive matching
     const amenityLower = amenity.toLowerCase();
@@ -242,7 +356,6 @@ export class PropertyDetailsComponent implements OnInit {
     return 'fas fa-check-circle';
   }
 
-  // Helper method for form validation in template
   isFieldInvalid(form: FormGroup, fieldName: string): boolean {
     const field = form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched || 

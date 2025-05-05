@@ -10,14 +10,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingStatusUpdateRequest;
 import realestate.webrealestatelistingservice.dto.response.ListingResponse;
-import realestate.webrealestatelistingservice.dto.response.ListingResponseCustom;
 import realestate.webrealestatelistingservice.entity.ListingEntity;
 import realestate.webrealestatelistingservice.exception.NotFoundException;
 import realestate.webrealestatelistingservice.mapper.ListingMapper;
@@ -25,9 +23,7 @@ import realestate.webrealestatelistingservice.repository.ListingRepository;
 import realestate.webrealestatelistingservice.repository.specification.ListingSpecification;
 import realestate.webrealestatelistingservice.service.ListingService;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,12 +56,10 @@ public class ListingServiceImpl implements ListingService {
 
     @Override
     public ListingResponse getListingById(String idListing) {
-        return listingRepository.findById(idListing).map(listingMapper::convertToListingResponse).orElseThrow(() -> new NotFoundException("Not found Listing with id :" + idListing));
-    }
-
-    @Override
-    public List<ListingResponse> getListings() {
-        return listingRepository.findAll().stream().map(listingMapper::convertToListingResponse).collect(Collectors.toList());
+        ListingEntity listingEntity = listingRepository.findById(idListing).orElseThrow(() -> new NotFoundException("Not found Listing with id :" + idListing));
+        listingEntity.setView(listingEntity.getView() + 1);
+        listingRepository.save(listingEntity);
+        return listingMapper.convertToListingResponse(listingEntity);
     }
 
     @Override
@@ -89,11 +83,7 @@ public class ListingServiceImpl implements ListingService {
                 .withBedrooms(searchRequest.getBedrooms())
                 .withBathrooms(searchRequest.getBathrooms())
                 .build();
-
-        // Tạo Pageable (trừ 1 cho page vì Pageable bắt đầu từ 0)
         Pageable pageable = PageRequest.of(searchRequest.getPage() - 1, searchRequest.getSize(), Sort.by("createdAt").descending());
-
-        // Truy vấn với Specification và Pageable
         Page<ListingEntity> pageResult = listingRepository.findAll(spec, pageable);
         List<ListingResponse> items = pageResult.getContent()
                 .stream()
@@ -118,24 +108,15 @@ public class ListingServiceImpl implements ListingService {
     }
 
     @Override
-    public List<ListingResponseCustom> getCustomListings() {
-        List<ListingEntity> listings = listingRepository.findAll();
-        return listings.stream()
-                .map(listingMapper::convertToListingResponseCustom)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public PageDto<ListingResponseCustom> getCustomListingsPaged(int page, int size) {
+    public PageDto<ListingResponse> getListingsPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
         Page<ListingEntity> pageResult = listingRepository.findAll(pageable);
-
-        List<ListingResponseCustom> items = pageResult.getContent()
+        List<ListingResponse> items = pageResult.getContent()
                 .stream()
-                .map(listingMapper::convertToListingResponseCustom)
+                .map(listingMapper::convertToListingResponse)
                 .collect(Collectors.toList());
 
-        return PageDto.<ListingResponseCustom>builder()
+        return PageDto.<ListingResponse>builder()
                 .items(items)
                 .page(page)
                 .size(size)
@@ -198,4 +179,11 @@ public class ListingServiceImpl implements ListingService {
                 .build();
     }
 
+    @Override
+    public List<ListingResponse> getTop5MostViewedListings() {
+        return listingRepository.findTop5ByOrderByViewDesc()
+                .stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+    }
 }

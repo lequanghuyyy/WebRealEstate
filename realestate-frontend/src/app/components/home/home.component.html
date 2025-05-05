@@ -2,148 +2,208 @@
   <!-- Hero Section -->
   <section class="hero-section">
     <div class="hero-content">
-      <h1 *ngIf="!isLoggedIn">Find Your Dream Home</h1>
-      <h1 *ngIf="isLoggedIn">Welcome back, {{ user?.name || 'User' }}!</h1>
+      <h1>Find Your Dream Home</h1>
+      <p class="hero-subtitle">Discover the perfect property that matches your lifestyle and preferences</p>
       
-      <p class="hero-subtitle" *ngIf="!isLoggedIn">Discover the perfect property with our extensive listings</p>
-      <p class="hero-subtitle" *ngIf="isLoggedIn">Continue your property search with personalized recommendations</p>
-      
-      <!-- Search Box -->
       <div class="search-box">
         <div class="search-tabs">
-          <button [class.active]="searchType === 'buy'" (click)="searchType = 'buy'" class="tab-btn">Buy</button>
-          <button [class.active]="searchType === 'rent'" (click)="searchType = 'rent'" class="tab-btn">Rent</button>
+          <button class="tab-btn" [class.active]="searchType === 'buy'" (click)="updateSearchType('buy')">Buy</button>
+          <button class="tab-btn" [class.active]="searchType === 'rent'" (click)="updateSearchType('rent')">Rent</button>
         </div>
         
-        <div class="search-form">
+        <!-- Notification message -->
+        <div *ngIf="notification" class="notification-message" [ngClass]="notification.type">
+          <i [class]="notification.icon"></i> {{ notification.message }}
+        </div>
+        
+        <form class="search-form" [formGroup]="searchForm" (ngSubmit)="searchProperties()">
           <div class="search-input-group">
             <i class="fas fa-search"></i>
-            <input type="text" placeholder="Enter location, zipcode, or address..." class="search-input">
+            <input type="text" class="search-input" placeholder="Enter location, property name, or keyword" formControlName="keyword">
           </div>
           
           <div class="search-filters">
-            <select class="filter-select">
-              <option>Property Type</option>
-              <option>House</option>
-              <option>Apartment</option>
-              <option>Villa</option>
+            <select class="filter-select" formControlName="propertyType">
+              <option value="">Property Type</option>
+              <option value="Apartment">Apartment</option>
+              <option value="House">House</option>
+              <option value="Villa">Villa</option>
             </select>
             
-            <select class="filter-select">
-              <option>Price Range</option>
-              <option>$100k - $200k</option>
-              <option>$200k - $300k</option>
-              <option>$300k - $500k</option>
-              <option>$500k+</option>
+            <select class="filter-select" formControlName="priceRange">
+              <option value="">Price Range</option>
+              <option value="range1">Under 500 Million</option>
+              <option value="range2">500M - 1B</option>
+              <option value="range3">1B - 3B</option>
+              <option value="range4">Above 3B</option>
             </select>
             
-            <select class="filter-select">
-              <option>Bedrooms</option>
-              <option>1+</option>
-              <option>2+</option>
-              <option>3+</option>
-              <option>4+</option>
+            <select class="filter-select" formControlName="bedrooms">
+              <option value="">Bedrooms</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4+</option>
             </select>
           </div>
           
           <div class="search-buttons">
-            <button class="search-btn">Search Properties</button>
-            <button class="save-search-btn" *ngIf="isLoggedIn" (click)="saveSearch()">
+            <button type="submit" class="search-btn">Search Properties</button>
+            <button type="button" class="save-search-btn" (click)="saveSearch()">
               <i class="fas fa-bookmark"></i> Save Search
             </button>
           </div>
-        </div>
+        </form>
       </div>
     </div>
   </section>
   
-  <!-- Personalized Section for Logged In Users -->
-  <section class="recommended-section" *ngIf="isLoggedIn">
-    <div class="section-title">
-      <h2>Recommended for You</h2>
-      <p>Based on your preferences and search history</p>
-    </div>
-    
-    <div class="property-grid">
-      <!-- Recommended Property Cards (loop through recommendedProperties) -->
-      <div class="property-card" *ngFor="let property of recommendedProperties">
-        <div class="property-image" [style.background-image]="'url(' + property.image + ')'">
-          <span class="property-tag">{{ property.tag }}</span>
-        </div>
-        <div class="property-details">
-          <h3 class="property-price">{{ property.price }}</h3>
-          <h4 class="property-address">{{ property.address }}</h4>
-          <div class="property-features">
-            <span><i class="fas fa-bed"></i> {{ property.beds }} Beds</span>
-            <span><i class="fas fa-bath"></i> {{ property.baths }} Baths</span>
-            <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
-          </div>
-          <p class="property-description">{{ property.description }}</p>
-          <div class="property-actions">
-            <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
-            <button class="favorite-btn"><i class="far fa-heart"></i></button>
-          </div>
-        </div>
-      </div>
-    </div>
-    
-    <div class="quick-links" *ngIf="isLoggedIn">
-      <h3>Quick Actions</h3>
-      <div class="quick-links-grid">
-        <a routerLink="/profile" class="quick-link">
-          <i class="fas fa-user-circle"></i>
-          <span>My Profile</span>
-        </a>
-        <a routerLink="/profile/favorites" class="quick-link">
-          <i class="fas fa-heart"></i>
-          <span>Favorites</span>
-        </a>
-        <a routerLink="/profile/saved-searches" class="quick-link">
-          <i class="fas fa-search"></i>
-          <span>Saved Searches</span>
-        </a>
-        <a routerLink="/profile/appointments" class="quick-link">
-          <i class="fas fa-calendar-alt"></i>
-          <span>Agent Appointments</span>
-        </a>
-      </div>
-    </div>
-  </section>
-  
+  <!-- Featured Properties Section -->
   <section class="featured-section">
     <div class="section-title">
-      <h2>Featured Properties</h2>
-      <p>Handpicked properties for you</p>
+      <h2><i class="fas fa-chart-line trending-icon"></i> Featured Properties</h2>
+      <p>Properties with the highest views</p>
     </div>
     
-    <div class="property-grid">
+    <!-- Loading Indicator -->
+    <div *ngIf="featuredLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Đang tải bất động sản nổi bật...</p>
+    </div>
+    
+    <!-- Error Message -->
+    <div *ngIf="featuredError" class="alert alert-danger" role="alert">
+      <p>{{ featuredError }}</p>
+      <button (click)="loadFeaturedProperties()" class="btn btn-primary">
+        <i class="fas fa-sync-alt"></i> Thử lại
+      </button>
+    </div>
+    
+    <!-- Debug Information -->
+    <div *ngIf="!featuredLoading && featuredProperties.length === 0 && !featuredError" class="alert alert-info">
+      <button (click)="loadFeaturedProperties()" class="btn btn-primary mt-2">
+        <i class="fas fa-sync-alt"></i> Tải lại dữ liệu
+      </button>
+    </div>
+    
+    <!-- Properties Grid -->
+    <div *ngIf="!featuredLoading && !featuredError && featuredProperties.length > 0" class="property-grid">
       <div class="property-card" *ngFor="let property of featuredProperties">
-        <div class="property-image" [style.background-image]="'url(' + property.image + ')'">
-          <span class="property-tag">{{ property.tag }}</span>
+        <div class="property-image" [style.background-image]="'url(' + (property.image || 'assets/images/property-placeholder.jpg') + ')'">
+          <div class="property-tag">{{ property.type }}</div>
+          <div class="view-count"><i class="fas fa-eye"></i> {{ property.view || 0 }} views</div>
         </div>
         <div class="property-details">
-          <h3 class="property-price">{{ property.price }}</h3>
-          <h4 class="property-address">{{ property.address }}</h4>
+          <h3 class="property-price">{{ formatPrice(property.price) }}</h3>
+          <p class="property-address">{{ property.address }}, {{ property.city }}</p>
           <div class="property-features">
-            <span><i class="fas fa-bed"></i> {{ property.beds }} Beds</span>
-            <span><i class="fas fa-bath"></i> {{ property.baths }} Baths</span>
-            <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+            <span><i class="fas fa-ruler-combined"></i> {{ formatArea(property.area) }}</span>
+            <span><i class="fas fa-bed"></i> {{ property.bedrooms }} bd</span>
+            <span><i class="fas fa-bath"></i> {{ property.bathrooms }} ba</span>
+            <span><i class="fas fa-eye"></i> {{ property.view || 0 }} views</span>
           </div>
-          <p class="property-description">{{ property.description }}</p>
-          <div class="property-actions">
-            <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
-            <button class="favorite-btn"><i class="far fa-heart"></i></button>
-          </div>
+          <p class="property-description">{{ property.title }}</p>
+          <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
         </div>
       </div>
+    </div>
+    
+    <!-- No Properties Message -->
+    <div *ngIf="!featuredLoading && !featuredError && featuredProperties.length === 0" class="text-center py-4">
+      <p>Đang kết nối tới API để lấy dữ liệu bất động sản nổi bật.</p>
+      <button (click)="loadFeaturedProperties()" class="btn btn-primary mt-2">
+        <i class="fas fa-sync-alt"></i> Tải lại dữ liệu
+      </button>
     </div>
     
     <div class="view-more-container">
       <a routerLink="/properties" class="view-more-btn">View All Properties</a>
     </div>
   </section>
-  
-  <!-- Services Section -->
+
+  <!-- Recommended Properties Section (for logged-in users) -->
+  <section *ngIf="isLoggedIn" class="recommended-section">
+    <div class="section-title">
+      <h2>Recommended For You</h2>
+      <p>Based on your preferences and search history</p>
+    </div>
+    
+    <!-- Loading Indicator -->
+    <div *ngIf="recommendationLoading" class="text-center py-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-2">Finding properties tailored to your preferences...</p>
+    </div>
+    
+    <!-- Error Message -->
+    <div *ngIf="recommendationError" class="alert alert-danger" role="alert">
+      {{ recommendationError }}
+    </div>
+    
+    <!-- Recommendation Reason -->
+    <div *ngIf="userRecommendation && userRecommendation.keywords && userRecommendation.keywords.length > 0" class="alert alert-info mb-4" role="alert">
+      <i class="fas fa-lightbulb"></i> Based on your interests: {{ userRecommendation.keywords.join(', ') }}
+    </div>
+    
+    <!-- Properties Grid -->
+    <div *ngIf="!recommendationLoading && !recommendationError && recommendedProperties.length > 0" class="property-grid">
+      <div class="property-card" *ngFor="let property of recommendedProperties">
+        <div class="property-image" [style.background-image]="'url(' + (property.image || 'assets/images/property-placeholder.jpg') + ')'">
+          <div class="property-tag">{{ property.type }}</div>
+        </div>
+        <div class="property-details">
+          <h3 class="property-price">{{ formatPrice(property.price) }}</h3>
+          <p class="property-address">{{ property.address }}, {{ property.city }}</p>
+          <div class="property-features">
+            <span><i class="fas fa-ruler-combined"></i> {{ formatArea(property.area) }}</span>
+            <span><i class="fas fa-bed"></i> {{ property.bedrooms }} bd</span>
+            <span><i class="fas fa-bath"></i> {{ property.bathrooms }} ba</span>
+          </div>
+          <p class="property-description">{{ property.title }}</p>
+          <div class="property-actions">
+            <a (click)="viewPropertyDetails(property.id)" class="property-link">View Details</a>
+            <button class="favorite-btn"><i class="far fa-heart"></i></button>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- No Recommendations Message -->
+    <div *ngIf="!recommendationLoading && !recommendationError && recommendedProperties.length === 0" class="text-center py-4">
+      <p>We're still learning your preferences. Browse more properties to get personalized recommendations.</p>
+    </div>
+  </section>
+   
+  <!-- Quick Links Section -->
+  <section class="quick-links">
+    <h3>Explore More</h3>
+    
+    <div class="quick-links-grid">
+      <a routerLink="/buy" class="quick-link">
+        <i class="fas fa-home"></i>
+        <span>Buy Property</span>
+      </a>
+      
+      <a routerLink="/rent" class="quick-link">
+        <i class="fas fa-key"></i>
+        <span>Rent Property</span>
+      </a>
+      
+      <a routerLink="/agents" class="quick-link">
+        <i class="fas fa-user-tie"></i>
+        <span>Find Agents</span>
+      </a>
+      
+      <a routerLink="/about" class="quick-link">
+        <i class="fas fa-building"></i>
+        <span>About Us</span>
+      </a>
+    </div>
+  </section>
+
   <section class="services-section">
     <div class="section-title">
       <h2>Our Services</h2>
@@ -185,16 +245,12 @@
     </div>
   </section>
   
-  <!-- CTA Section -->
+  <!-- Call to Action -->
   <section class="cta-section">
     <div class="cta-content">
-      <h2 *ngIf="!isLoggedIn">Ready to Find Your Dream Home?</h2>
-      <h2 *ngIf="isLoggedIn">Need Expert Assistance?</h2>
-      
-      <p *ngIf="!isLoggedIn">Contact our agents today to start your journey.</p>
-      <p *ngIf="isLoggedIn">Our real estate specialists are ready to help you make the best decision.</p>
-      
-      <a routerLink="/contact" class="cta-btn">Contact Us</a>
+      <h2>Ready to find your dream home?</h2>
+      <p>Connect with one of our agents today and start your journey to homeownership.</p>
+      <a routerLink="/agents" class="cta-btn">Connect with an Agent</a>
     </div>
   </section>
 </div>

@@ -26,10 +26,13 @@ public class SavedSearchEntity {
     private String city;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private BigDecimal minArea;
-    private BigDecimal maxArea;
     private String type; // SALE, RENT
+    private int bedrooms;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

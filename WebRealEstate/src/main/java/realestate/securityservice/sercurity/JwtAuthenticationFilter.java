@@ -18,6 +18,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 import realestate.securityservice.dto.request.TokenRequest;
 import realestate.securityservice.repository.InvalidatedTokenRepository;
+import realestate.securityservice.service.CustomUserDetailService;
 
 import java.io.IOException;
 import java.util.Date;
@@ -27,7 +28,7 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenProvider jwtTokenProvider;
-    private final UserDetailsService userDetailsService;
+    private final CustomUserDetailService customUserDetailService;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     @Override
@@ -40,8 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 !jwtTokenProvider.isTokenExpired(token) &&
                 !invalidatedTokenRepository.existsById(jwtTokenProvider.extractId(token))) {
 
-            String username = jwtTokenProvider.extractUsername(token);
-            UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            String userId = jwtTokenProvider.extractUserId(token);
+            UserDetails userDetails = customUserDetailService.loadUserById(userId);
 
             UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));

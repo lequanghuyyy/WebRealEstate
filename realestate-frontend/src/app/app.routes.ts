@@ -20,6 +20,7 @@ import { AgentDashboardComponent } from './components/agent/dashboard/agent-dash
 import { AgentTransactionsComponent } from './components/agent/transactions/agent-transactions.component';
 import { CreateListingComponent } from './components/agent/create-listing/create-listing.component';
 import { ReviewsComponent } from './components/reviews/reviews.component';
+import { ApiTestComponent } from './components/debug/api-test.component';
 
 // Admin components
 import { AdminLayoutComponent } from './components/admin/layout/admin-layout.component';
@@ -45,7 +46,22 @@ const agentGuard = () => {
 };
 
 export const routes: Routes = [
-  { path: '', component: HomeComponent },
+  { 
+    path: '', 
+    component: HomeComponent,
+    canActivate: [() => {
+      const authService = inject(AuthService);
+      const router = inject(Router);
+      
+      // Nếu người dùng đã đăng nhập và có quyền admin, chuyển hướng đến trang admin
+      if (authService.isLoggedIn() && authService.isAdmin()) {
+        router.navigate(['/admin/dashboard']);
+        return false;
+      }
+      
+      return true;
+    }]
+  },
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'contact', component: ContactComponent },
@@ -59,6 +75,7 @@ export const routes: Routes = [
   { path: 'sitemap', component: SitemapComponent },
   { path: 'rent', component: RentComponent },
   { path: 'reviews', component: ReviewsComponent },
+  { path: 'api-test', component: ApiTestComponent },
   { 
     path: 'profile', 
     component: ProfileComponent,
@@ -76,11 +93,21 @@ export const routes: Routes = [
     canActivate: [agentGuard],
     children: [
       { path: 'dashboard', component: AgentDashboardComponent },
+      { path: 'dashboard/viewings', component: AgentDashboardComponent },
       { path: 'transactions', component: AgentTransactionsComponent },
       { path: 'create-listing', component: CreateListingComponent },
       { path: 'edit-listing/:id', component: CreateListingComponent },
       { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
     ]
+  },
+  // Admin direct route for testing
+  { 
+    path: 'admin-test', 
+    component: AdminDashboardComponent,
+    canActivate: [() => {
+      const authService = inject(AuthService);
+      return true; // Allow access for testing
+    }]
   },
   // Admin routes
   {
@@ -88,8 +115,10 @@ export const routes: Routes = [
     component: AdminLayoutComponent,
     canActivate: [adminGuard],
     children: [
-      { path: 'dashboard', component: AdminDashboardComponent },
-      // Lazy loaded admin modules
+      { 
+        path: 'dashboard', 
+        component: AdminDashboardComponent 
+      },
       { 
         path: 'users', 
         loadComponent: () => import('./components/admin/users/admin-users.component').then(m => m.AdminUsersComponent) 
@@ -104,7 +133,7 @@ export const routes: Routes = [
       },
       { 
         path: 'payments', 
-        loadComponent: () => import('./components/admin/payments').then(m => m.AdminPaymentsComponent) 
+        loadComponent: () => import('./components/admin/payments/admin-payments.component').then(m => m.AdminPaymentsComponent) 
       },
       { 
         path: 'reviews', 

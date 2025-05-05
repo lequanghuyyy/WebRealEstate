@@ -9,4 +9,5 @@ export interface Review {
   userName: string;
   userAvatar?: string;
   helpful: number; // số người thấy hữu ích
+  helpfulCount?: number; // alias for helpful to maintain compatibility
 } 

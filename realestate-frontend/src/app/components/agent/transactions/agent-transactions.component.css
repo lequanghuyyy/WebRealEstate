@@ -1,11 +1,17 @@
 .transactions-container {
-    padding: 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-    
-    @media (max-width: 768px) {
-      padding: 1.5rem;
-    }
+    padding: 20px;
+    min-height: calc(100vh - 60px);
+  }
+  
+  .transactions-content {
+    margin-bottom: 40px;
+  }
+  
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
   }
   
   .loading-container {
@@ -13,7 +19,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 5rem 0;
+    padding: 80px 0;
   }
   
   .spinner {
@@ -38,18 +44,16 @@
   
   /* Error Container */
   .error-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5rem 0;
     text-align: center;
+    padding: 60px 20px;
+    max-width: 500px;
+    margin: 0 auto;
   }
   
   .error-icon {
-    font-size: 4rem;
+    font-size: 48px;
     color: #dc3545;
-    margin-bottom: 1rem;
+    margin-bottom: 20px;
   }
   
   .error-container h3 {

@@ -166,15 +166,6 @@
         <button class="btn btn-outline-primary me-2" routerLink="/agent/transactions">
           <i class="fas fa-exchange-alt"></i> Manage Transactions
         </button>
-        <!-- <button class="btn btn-outline-primary me-2">
-          <i class="fas fa-edit"></i> Edit Profile
-        </button>
-        <button class="btn btn-outline-danger" (click)="logout()">
-          <i class="fas fa-sign-out-alt"></i> Logout
-        </button> -->
-        <button class="btn btn-primary" (click)="routeToNewListing()">
-          <i class="fas fa-plus-circle"></i> Add New Listing
-        </button>
       </div>
     </div>
 
@@ -198,15 +189,7 @@
           <h2 class="stat-value">2,543</h2>
         </div>
       </div>
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-envelope"></i>
-        </div>
-        <div class="stat-content">
-          <p class="stat-title">New Messages</p>
-          <h2 class="stat-value">{{getUnreadMessageCount()}}</h2>
-        </div>
-      </div>
+    
       <div class="stat-card">
         <div class="stat-icon">
           <i class="fas fa-dollar-sign"></i>
@@ -224,22 +207,10 @@
         <button [class.active]="activeTab === 'listings'" (click)="setActiveTab('listings')">
           <i class="fas fa-list"></i> My Listings
         </button>
-  
-        <button [class.active]="activeTab === 'activity'" (click)="setActiveTab('activity')">
-          <i class="fas fa-chart-line"></i> Activity
-        </button>
-        
-        <button [class.active]="activeTab === 'contacts'" (click)="setActiveTab('contacts')">
-          <i class="fas fa-address-book"></i> Contact Requests
-        </button>
         
         <button [class.active]="activeTab === 'viewings'" (click)="setActiveTab('viewings')">
           <i class="fas fa-calendar-check"></i> Viewing Schedules
           <span class="badge bg-primary" *ngIf="getUpcomingViewingsCount() > 0">{{ getUpcomingViewingsCount() }}</span>
-        </button>
-
-        <button [class.active]="activeTab === 'profile'" (click)="setActiveTab('profile')">
-          <i class="fas fa-user"></i> Profile
         </button>
       </div>
 
@@ -302,267 +273,6 @@
         </div>
 
       
-        <!-- Activity Tab -->
-        <div class="tab-pane" *ngIf="activeTab === 'activity'">
-          <div class="content-card">
-            <div class="card-header">
-              <h3>Recent Activity</h3>
-            </div>
-            <div class="card-body">
-              <div class="activity-feed">
-                <div *ngFor="let activity of activities" class="activity-item">
-                  <div class="activity-icon" [ngClass]="'activity-' + activity.type">
-                    <i class="fas" [ngClass]="{
-                      'fa-comment': activity.type === 'message',
-                      'fa-eye': activity.type === 'view',
-                      'fa-heart': activity.type === 'favorite',
-                      'fa-question-circle': activity.type === 'inquiry',
-                      'fa-home': activity.type === 'listing'
-                    }"></i>
-                  </div>
-                  <div class="activity-content">
-                    <p>{{activity.content}}</p>
-                    <div class="activity-time">{{activity.time}}</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Latest Property Views -->
-          <div class="content-card">
-            <div class="card-header">
-              <h3>Latest Listing Views</h3>
-            </div>
-            <div class="card-body">
-              <div class="listing-preview" *ngFor="let listing of listings.slice(0, 3)">
-                <img [src]="listing.thumbnail" alt="Property">
-                <div class="listing-preview-details">
-                  <h4>{{listing.title}}</h4>
-                  <div class="listing-meta">
-                    <span class="listing-price">{{formatCurrency(listing.price)}}</span>
-                    <span class="listing-type">{{listing.type}}</span>
-                    <span class="listing-status" [class]="'status-' + listing.status.toLowerCase()">{{listing.status}}</span>
-                  </div>
-                  <div class="listing-stats">
-                    <span><i class="fas fa-eye"></i> {{listing.views}} views</span>
-                    <span><i class="fas fa-heart"></i> {{listing.favorites}} favorites</span>
-                    <span><i class="fas fa-comment"></i> {{listing.inquiries}} inquiries</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Contact Requests Tab -->
-        <div class="tab-pane" *ngIf="activeTab === 'contacts'">
-          <div class="content-card">
-            <div class="card-header">
-              <h3>Contact Requests</h3>
-              <div class="filter-buttons">
-                <button class="btn btn-sm" [class.btn-primary]="!activeContactFilter || activeContactFilter === 'all'" (click)="activeContactFilter = 'all'">
-                  All
-                </button>
-                <button class="btn btn-sm" [class.btn-primary]="activeContactFilter === 'new'" (click)="activeContactFilter = 'new'">
-                  New
-                </button>
-                <button class="btn btn-sm" [class.btn-primary]="activeContactFilter === 'inprogress'" (click)="activeContactFilter = 'inprogress'">
-                  In Progress
-                </button>
-                <button class="btn btn-sm" [class.btn-primary]="activeContactFilter === 'closed'" (click)="activeContactFilter = 'closed'">
-                  Closed
-                </button>
-              </div>
-            </div>
-            <div class="card-body">
-              <div class="table-responsive">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th>Property</th>
-                      <th>Client</th>
-                      <th>Message</th>
-                      <th>Date</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let request of contactRequests | filterContacts:activeContactFilter">
-                      <td>
-                        <div class="property-cell">
-                          <img [src]="request.property.thumbnail" alt="Property">
-                          <div>
-                            <div>{{request.property.title}}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="client-info">
-                          <div class="client-name">{{request.name}}</div>
-                          <div class="client-contact">
-                            <a href="mailto:{{request.email}}">{{request.email}}</a>
-                            <br>
-                            <a href="tel:{{request.phone}}">{{request.phone}}</a>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div class="message-preview">
-                          {{request.message.substring(0, 50)}}{{request.message.length > 50 ? '...' : ''}}
-                        </div>
-                      </td>
-                      <td>{{request.date}}</td>
-                      <td>
-                        <span class="status-badge" [ngClass]="{
-                          'status-new': request.status === 'new',
-                          'status-inprogress': request.status === 'inprogress',
-                          'status-closed': request.status === 'closed'
-                        }">
-                          {{request.status === 'new' ? 'New' : 
-                            request.status === 'inprogress' ? 'In Progress' : 'Closed'}}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="action-buttons">
-                          <button class="btn btn-sm btn-outline-primary" (click)="showContactRequestDetails(request.id)">
-                            <i class="fas fa-eye"></i> View
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Contact Request Details Modal -->
-          <div class="modal fade" id="contactRequestModal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg">
-              <div class="modal-content">
-                <div class="modal-header">
-                  <h5 class="modal-title">Contact Request Details</h5>
-                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body" *ngIf="selectedContactRequest">
-                  <div class="request-property-info">
-                    <img [src]="selectedContactRequest.property.thumbnail" alt="Property">
-                    <div>
-                      <h4>{{selectedContactRequest.property.title}}</h4>
-                    </div>
-                  </div>
-                  
-                  <div class="client-details mt-4">
-                    <h5>Client Information</h5>
-                    <div class="row">
-                      <div class="col-md-6">
-                        <p><strong>Name:</strong> {{selectedContactRequest.name}}</p>
-                        <p><strong>Email:</strong> <a href="mailto:{{selectedContactRequest.email}}">{{selectedContactRequest.email}}</a></p>
-                      </div>
-                      <div class="col-md-6">
-                        <p><strong>Phone:</strong> <a href="tel:{{selectedContactRequest.phone}}">{{selectedContactRequest.phone}}</a></p>
-                        <p>
-                          <strong>Status:</strong> 
-                          <select class="form-select form-select-sm d-inline-block w-auto ms-2" 
-                                  [(ngModel)]="selectedContactRequest.status">
-                            <option value="new">New</option>
-                            <option value="inprogress">In Progress</option>
-                            <option value="closed">Closed</option>
-                          </select>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div class="message-section mt-4">
-                    <h5>Message</h5>
-                    <div class="p-3 bg-light rounded">
-                      {{selectedContactRequest.message}}
-                    </div>
-                  </div>
-                  
-                  <div class="notes-section mt-4">
-                    <h5>Agent Notes</h5>
-                    <textarea class="form-control" rows="4" 
-                              [(ngModel)]="selectedContactRequest.notes"
-                              placeholder="Add your notes about this inquiry..."></textarea>
-                  </div>
-                  
-                  <div class="quick-actions mt-4">
-                    <div class="d-flex gap-2">
-                      <button class="btn btn-outline-primary" (click)="scheduleViewing(selectedContactRequest)">
-                        <i class="fas fa-calendar-plus"></i> Schedule Viewing
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="modal-footer">
-                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                  <button type="button" class="btn btn-primary" (click)="saveContactRequestChanges()">Save Changes</button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Profile Tab -->
-        <div class="tab-pane" *ngIf="activeTab === 'profile'">
-          <div class="content-card">
-            <div class="card-header">
-              <h3>My Profile</h3>
-              <button class="btn btn-primary btn-sm">
-                <i class="fas fa-edit"></i> Edit Profile
-              </button>
-            </div>
-            <div class="card-body">
-              <div class="profile-image-container">
-                <img [src]="agent.avatar || 'assets/images/default-agent.jpg'" alt="Profile Image" class="profile-image">
-              </div>
-              
-              <form>
-                <div class="row mb-3">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">First Name</label>
-                    <input type="text" class="form-control" [value]="agent.firstName" disabled>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Last Name</label>
-                    <input type="text" class="form-control" [value]="agent.lastName" disabled>
-                  </div>
-                </div>
-                
-                <div class="row mb-3">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Email</label>
-                    <input type="email" class="form-control" [value]="agent.email" disabled>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Phone</label>
-                    <input type="tel" class="form-control" [value]="agent.phone" disabled>
-                  </div>
-                </div>
-                
-                <div class="row mb-3">
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">License Number</label>
-                    <input type="text" class="form-control" [value]="agent.licenseNumber" disabled>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="form-label">Office</label>
-                    <input type="text" class="form-control" [value]="agent.office" disabled>
-                  </div>
-                </div>
-                
-                <div class="mb-3">
-                  <label class="form-label">Bio</label>
-                  <textarea class="form-control" rows="5" disabled>{{agent.bio}}</textarea>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
         <!-- Viewing Schedules Tab -->
         <div class="tab-pane" *ngIf="activeTab === 'viewings'">
           <div class="content-card">

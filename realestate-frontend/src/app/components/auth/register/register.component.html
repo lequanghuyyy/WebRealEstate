@@ -12,7 +12,13 @@
   <div class="login-wrapper">
     <!-- Logo section -->
     <div class="logo-section">
-      <img src="/assets/images/logo.jpg" alt="RealEstatePro Logo" class="login-logo" style="width: 200px; height: auto;">
+      <div class="login-logo">
+        <div class="logo-container">
+          <span class="logo-icon"><i class="fas fa-building"></i></span>
+          <span class="logo-text">Prop</span>
+          <span class="logo-highlight">tech</span>
+        </div>
+      </div>
     </div>
     
     <!-- Form section -->
@@ -52,49 +58,83 @@
         </div>
 
         <div class="form-group">
-          <label for="fullName">Full Name</label>
+          <label for="username">Username</label>
           <input 
             type="text" 
             class="form-control" 
-            id="fullName" 
-            formControlName="fullName" 
-            placeholder="Enter your full name"
-            [class.is-invalid]="fullNameControl?.invalid && (fullNameControl?.touched || fullNameControl?.dirty)"
+            id="username" 
+            formControlName="username" 
+            placeholder="Choose a username"
+            [class.is-invalid]="usernameControl?.invalid && (usernameControl?.touched || usernameControl?.dirty)"
           />
-          <div class="invalid-feedback" *ngIf="fullNameControl?.invalid && (fullNameControl?.touched || fullNameControl?.dirty)">
-            <span *ngIf="fullNameControl?.errors?.['required']">Full name is required</span>
+          <div class="input-helper-text">Your username will be used to log in</div>
+          <div class="invalid-feedback" *ngIf="usernameControl?.invalid && (usernameControl?.touched || usernameControl?.dirty)">
+            <span *ngIf="usernameControl?.errors?.['required']">Username is required</span>
+            <span *ngIf="usernameControl?.errors?.['minlength']">Username must be at least 4 characters</span>
           </div>
         </div>
-        
+
         <div class="form-group">
-          <label>I am a:</label>
+          <label for="firstName">First Name</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="firstName" 
+            formControlName="firstName" 
+            placeholder="Enter your first name"
+            [class.is-invalid]="firstNameControl?.invalid && (firstNameControl?.touched || firstNameControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="firstNameControl?.invalid && (firstNameControl?.touched || firstNameControl?.dirty)">
+            <span *ngIf="firstNameControl?.errors?.['required']">First name is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="lastName">Last Name</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            id="lastName" 
+            formControlName="lastName" 
+            placeholder="Enter your last name"
+            [class.is-invalid]="lastNameControl?.invalid && (lastNameControl?.touched || lastNameControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="lastNameControl?.invalid && (lastNameControl?.touched || lastNameControl?.dirty)">
+            <span *ngIf="lastNameControl?.errors?.['required']">Last name is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Select your role:</label>
           <div class="role-options">
             <div class="form-check">
               <input 
                 class="form-check-input" 
                 type="radio" 
-                id="homeSeeker" 
-                value="homeSeeker" 
+                id="userRole" 
+                value="USER" 
                 formControlName="role"
                 [class.is-invalid]="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)"
               >
-              <label class="form-check-label" for="homeSeeker">
+              <label class="form-check-label" for="userRole">
                 <strong>Home Seeker</strong>
                 <span class="role-description">I'm looking to buy or rent a property</span>
+                <small class="text-muted d-block mt-1">(Registers as BUYER and RENTER roles)</small>
               </label>
             </div>
             <div class="form-check mt-2">
               <input 
                 class="form-check-input" 
                 type="radio" 
-                id="propertyOwner" 
-                value="propertyOwner" 
+                id="agentRole" 
+                value="AGENT" 
                 formControlName="role"
                 [class.is-invalid]="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)"
               >
-              <label class="form-check-label" for="propertyOwner">
-                <strong>Property Owner/Agent</strong>
+              <label class="form-check-label" for="agentRole">
+                <strong>Property Agent</strong>
                 <span class="role-description">I want to list properties for sale or rent</span>
+                <small class="text-muted d-block mt-1">(Registers as AGENT role)</small>
               </label>
             </div>
             <div class="invalid-feedback" *ngIf="roleControl?.invalid && (roleControl?.touched || roleControl?.dirty)">
@@ -103,50 +143,27 @@
           </div>
         </div>
 
-        <!-- Conditional fields for Property Owner/Agent -->
-        <div *ngIf="isPropertyOwner()" class="agent-fields">
-          <div class="form-group">
-            <label for="phoneNumber">Phone Number</label>
-            <input 
-              type="tel" 
-              class="form-control" 
-              id="phoneNumber" 
-              formControlName="phoneNumber" 
-              placeholder="Enter your phone number"
-              [class.is-invalid]="phoneNumberControl?.invalid && (phoneNumberControl?.touched || phoneNumberControl?.dirty)"
-            />
-            <div class="invalid-feedback" *ngIf="phoneNumberControl?.invalid && (phoneNumberControl?.touched || phoneNumberControl?.dirty)">
-              <span *ngIf="phoneNumberControl?.errors?.['required']">Phone number is required for agents</span>
-            </div>
+        <!-- Phone field for all users, required for agents -->
+        <div class="form-group">
+          <label for="phone">Phone Number <span *ngIf="isAgent()" class="text-danger">*</span></label>
+          <input 
+            type="tel" 
+            class="form-control" 
+            id="phone" 
+            formControlName="phone" 
+            placeholder="Enter your phone number"
+            [class.is-invalid]="phoneControl?.invalid && (phoneControl?.touched || phoneControl?.dirty)"
+          />
+          <div class="invalid-feedback" *ngIf="phoneControl?.invalid && (phoneControl?.touched || phoneControl?.dirty)">
+            <span *ngIf="phoneControl?.errors?.['required']">Phone number is required for agents</span>
+            <span *ngIf="phoneControl?.errors?.['pattern']">Please enter a valid phone number</span>
           </div>
+        </div>
 
-          <div class="form-group">
-            <label for="licenseNumber">License Number (Optional)</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="licenseNumber" 
-              formControlName="licenseNumber" 
-              placeholder="Enter your real estate license number if available"
-            />
-          </div>
-
-          <div class="form-group">
-            <label for="agencyName">Agency/Company Name (Optional)</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              id="agencyName" 
-              formControlName="agencyName" 
-              placeholder="Enter your agency or company name"
-            />
-          </div>
-
-          <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i> 
-            Note: Agent accounts require verification. Your account will be pending until approved by an administrator. 
-            You'll receive an email verification link to confirm your email address.
-          </div>
+        <!-- Agent note -->
+        <div *ngIf="isAgent()" class="alert alert-info">
+          <i class="fas fa-info-circle"></i> 
+          Note: Agent accounts require verification. Your account will be pending until approved by an administrator.
         </div>
         
         <div class="form-group">

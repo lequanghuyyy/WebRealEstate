@@ -1,9 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { PropertyService } from '../../services/property.service';
-import { Property } from '../../models/property.model';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
+import { TransactionService, Transaction } from '../../services/transaction.service';
+import { TransactionStatus } from '../../models/transaction.model';
 
 @Component({
   selector: 'app-buy',
@@ -13,313 +13,156 @@ import { Router, RouterModule } from '@angular/router';
   imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule]
 })
 export class BuyComponent implements OnInit {
-  properties: Property[] = [];
-  filteredProperties: Property[] = [];
-  paginatedProperties: Property[] = [];
+  transactions: Transaction[] = [];
+  filteredTransactions: Transaction[] = [];
   isLoading: boolean = true;
   errorMessage: string = '';
-  totalItems: number = 0;
   
-  // Filter form
-  filterForm: FormGroup;
+  // Stats
+  totalTransactions: number = 0;
+  completedTransactions: number = 0;
+  pendingTransactions: number = 0;
   
-  // Mobile filter visibility
-  showMobileFilters: boolean = false;
-  
-  // Filter accordion states
-  isFilterOpen: { [key: string]: boolean } = {
-    location: true,
-    propertyType: true,
-    priceRange: true,
-    bedrooms: false,
-    bathrooms: false,
-    area: false,
-    keywords: false
-  };
-  
-  // Property types
-  propertyTypes: string[] = [
-    'Apartment',
-    'House',
-    'Villa'
-  ];
-  
-  // Bedrooms options
-  bedroomsOptions: string[] = [
-    '1',
-    '2',
-    '3',
-    '4',
-    '5+'
-  ];
-  
-  // Bathrooms options
-  bathroomsOptions: string[] = [
-    '1',
-    '2',
-    '3',
-    '4+'
-  ];
-  
-  // Sort options
-  sortOptions: string[] = [
-    'Newest',
-    'Price (Low to High)',
-    'Price (High to Low)',
-    'Most Popular'
-  ];
-  selectedSort: string = 'Newest';
-  
-  // Pagination
-  currentPage: number = 1;
-  itemsPerPage: number = 6;
-  totalPages: number = 0;
+  // Expose enum to the template
+  transactionStatusEnum = TransactionStatus;
   
   constructor(
-    private propertyService: PropertyService,
+    private transactionService: TransactionService,
     private fb: FormBuilder,
     private router: Router
-  ) {
-    this.filterForm = this.fb.group({
-      location: [''],
-      propertyType: [''],
-      minPrice: [''],
-      maxPrice: [''],
-      bedrooms: [''],
-      bathrooms: [''],
-      minArea: [''],
-      maxArea: [''],
-      keywords: ['']
-    });
-  }
+  ) {}
   
   ngOnInit(): void {
-    this.loadProperties();
-    
-    // Subscribe to form value changes for auto-filtering
-    this.filterForm.valueChanges.subscribe(() => {
-      this.applyFilters();
-    });
+    this.loadTransactions();
   }
   
-  loadProperties(): void {
+  loadTransactions(): void {
     this.isLoading = true;
-    this.errorMessage = '';
     
-    // Get only buy properties
-    this.propertyService.getAllProperties().subscribe({
-      next: (properties) => {
-        this.properties = properties.filter(p => p.type === 'buy');
-        this.filteredProperties = [...this.properties];
-        this.totalItems = this.filteredProperties.length;
-        this.calculateTotalPages();
-        this.updatePaginatedProperties();
+    // Use the specific method for buy transactions
+    this.transactionService.getBuyTransactions().subscribe({
+      next: (data) => {
+        this.transactions = data;
+        this.filteredTransactions = [...data];
+        this.calculateStats();
         this.isLoading = false;
       },
       error: (error) => {
-        this.errorMessage = 'Failed to load properties. Please try again later.';
+        console.error('Error loading transactions:', error);
+        this.errorMessage = 'Failed to load transaction data.';
         this.isLoading = false;
-        console.error('Error loading properties:', error);
       }
     });
   }
   
-  applyFilters(): void {
-    const formValues = this.filterForm.value;
-    let filtered = [...this.properties];
-    
-    // Filter by location
-    if (formValues.location) {
-      const locationSearch = formValues.location.toLowerCase();
-      filtered = filtered.filter(property => 
-        property.location.city?.toLowerCase().includes(locationSearch) ||
-        property.location.state?.toLowerCase().includes(locationSearch) ||
-        property.location.zipCode?.toLowerCase().includes(locationSearch) ||
-        property.location.address?.toLowerCase().includes(locationSearch)
-      );
-    }
-    
-    // Filter by property type
-    if (formValues.propertyType) {
-      filtered = filtered.filter(property => 
-        property.tags && property.tags.some(tag => 
-          tag.toLowerCase() === formValues.propertyType.toLowerCase()
-        )
-      );
-    }
-    
-    // Filter by price range
-    if (formValues.minPrice) {
-      filtered = filtered.filter(property => 
-        property.price >= Number(formValues.minPrice)
-      );
-    }
-    
-    if (formValues.maxPrice) {
-      filtered = filtered.filter(property => 
-        property.price <= Number(formValues.maxPrice)
-      );
-    }
-    
-    // Filter by bedrooms
-    if (formValues.bedrooms) {
-      const bedCount = formValues.bedrooms === '5+' ? 5 : Number(formValues.bedrooms);
-      filtered = filtered.filter(property => {
-        if (formValues.bedrooms === '5+') {
-          return property.features.bedrooms >= bedCount;
-        }
-        return property.features.bedrooms === bedCount;
-      });
-    }
-    
-    // Filter by bathrooms
-    if (formValues.bathrooms) {
-      const bathCount = formValues.bathrooms === '4+' ? 4 : Number(formValues.bathrooms);
-      filtered = filtered.filter(property => {
-        if (formValues.bathrooms === '4+') {
-          return property.features.bathrooms >= bathCount;
-        }
-        return property.features.bathrooms === bathCount;
-      });
-    }
-    
-    // Filter by area
-    if (formValues.minArea) {
-      filtered = filtered.filter(property => 
-        property.features.area >= Number(formValues.minArea)
-      );
-    }
-    
-    if (formValues.maxArea) {
-      filtered = filtered.filter(property => 
-        property.features.area <= Number(formValues.maxArea)
-      );
-    }
-    
-    // Filter by keywords
-    if (formValues.keywords) {
-      const keywords = formValues.keywords.toLowerCase();
-      filtered = filtered.filter(property => 
-        property.title.toLowerCase().includes(keywords) ||
-        property.description.toLowerCase().includes(keywords) ||
-        (property.amenities && property.amenities.some(amenity => 
-          amenity.toLowerCase().includes(keywords)
-        ))
-      );
-    }
-    
-    // Apply sorting based on selected option
-    this.applySorting(filtered);
-    
-    this.filteredProperties = filtered;
-    this.totalItems = filtered.length;
-    this.calculateTotalPages();
-    this.currentPage = 1; // Reset to first page
-    this.updatePaginatedProperties();
+  calculateStats(): void {
+    this.totalTransactions = this.transactions.length;
+    this.completedTransactions = this.transactions.filter(t => t.status === TransactionStatus.COMPLETED).length;
+    this.pendingTransactions = this.transactions.filter(t => t.status === TransactionStatus.PENDING).length;
   }
   
-  applySorting(properties: Property[]): void {
-    switch (this.selectedSort) {
-      case 'Newest':
-        properties.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        break;
-      case 'Price (Low to High)':
-        properties.sort((a, b) => a.price - b.price);
-        break;
-      case 'Price (High to Low)':
-        properties.sort((a, b) => b.price - a.price);
-        break;
-      case 'Most Popular':
-        // In a real app, this would sort based on views or favorites count
-        properties.sort((a, b) => (b.views || 0) - (a.views || 0));
-        break;
-      default:
-        break;
-    }
-  }
-  
-  updateSort(option: string): void {
-    this.selectedSort = option;
-    this.applySorting(this.filteredProperties);
-    this.updatePaginatedProperties();
-  }
-  
-  calculateTotalPages(): void {
-    this.totalPages = Math.ceil(this.filteredProperties.length / this.itemsPerPage);
-  }
-  
-  updatePaginatedProperties(): void {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = Math.min(startIndex + this.itemsPerPage, this.filteredProperties.length);
-    this.paginatedProperties = this.filteredProperties.slice(startIndex, endIndex);
-  }
-  
-  goToPage(page: number): void {
-    if (page >= 1 && page <= this.totalPages) {
-      this.currentPage = page;
-      this.updatePaginatedProperties();
-    }
-  }
-  
-  getPageArray(): number[] {
-    const pages: number[] = [];
-    const maxVisiblePages = 5;
+  filterByStatus(event: any): void {
+    const status = event.target.value;
     
-    if (this.totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= this.totalPages; i++) {
-        pages.push(i);
-      }
+    if (status === 'all') {
+      this.filteredTransactions = [...this.transactions];
     } else {
-      // Show ellipsis logic
-      let startPage = Math.max(1, this.currentPage - Math.floor(maxVisiblePages / 2));
-      let endPage = startPage + maxVisiblePages - 1;
-      
-      if (endPage > this.totalPages) {
-        endPage = this.totalPages;
-        startPage = Math.max(1, endPage - maxVisiblePages + 1);
-      }
-      
-      for (let i = startPage; i <= endPage; i++) {
-        pages.push(i);
-      }
+      this.filteredTransactions = this.transactions.filter(t => t.status === status);
+    }
+  }
+  
+  filterByDate(event: any): void {
+    const dateRange = event.target.value;
+    
+    if (dateRange === 'all') {
+      this.filteredTransactions = [...this.transactions];
+      return;
     }
     
-    return pages;
-  }
-  
-  toggleFilterSection(section: string): void {
-    this.isFilterOpen[section] = !this.isFilterOpen[section];
-  }
-  
-  toggleMobileFilters(): void {
-    this.showMobileFilters = !this.showMobileFilters;
+    const now = new Date();
+    let fromDate = new Date();
+    
+    if (dateRange === 'month') {
+      fromDate.setMonth(now.getMonth() - 1);
+    } else if (dateRange === 'quarter') {
+      fromDate.setMonth(now.getMonth() - 3);
+    } else if (dateRange === 'year') {
+      fromDate.setFullYear(now.getFullYear() - 1);
+    }
+    
+    this.filteredTransactions = this.transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transactionDate >= fromDate && transactionDate <= now;
+    });
   }
   
   resetFilters(): void {
-    this.filterForm.reset();
-    this.filteredProperties = [...this.properties];
-    this.totalItems = this.properties.length;
-    this.calculateTotalPages();
-    this.currentPage = 1;
-    this.updatePaginatedProperties();
+    // Reset filters and show all transactions
+    this.filteredTransactions = [...this.transactions];
+    
+    // Reset filter dropdowns to default if you have form controls
+    const statusSelect = document.getElementById('status-filter') as HTMLSelectElement;
+    const dateSelect = document.getElementById('date-filter') as HTMLSelectElement;
+    const propertySelect = document.getElementById('property-filter') as HTMLSelectElement;
+    
+    if (statusSelect) statusSelect.value = 'all';
+    if (dateSelect) dateSelect.value = 'all';
+    if (propertySelect) propertySelect.value = 'all';
   }
   
   formatPrice(price: number): string {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat('vi-VN', { 
+      style: 'currency', 
+      currency: 'VND',
       maximumFractionDigits: 0
     }).format(price);
   }
   
-  viewPropertyDetails(id: string | number): void {
-    this.router.navigate(['/property', id]);
+  formatDate(dateString: string): string {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN');
   }
   
-  toggleFavorite(event: Event, property: Property): void {
-    event.stopPropagation(); // Prevent card click
-    property.isFavorite = !property.isFavorite;
-    console.log(`Property ${property.id} favorite status: ${property.isFavorite}`);
-    // In a real app, you would update this in a service/database
+  getStatusClass(status: string): string {
+    switch (status) {
+      case TransactionStatus.PENDING:
+        return 'pending';
+      case TransactionStatus.COMPLETED:
+        return 'completed';
+      case TransactionStatus.CANCELLED:
+        return 'canceled';
+      default:
+        return '';
+    }
   }
-} 
+  
+  downloadReceipt(transactionId: string): void {
+    // In a real app, this would call a service to generate and download a receipt
+    alert(`Downloading receipt for transaction ${transactionId}`);
+  }
+  
+  cancelTransaction(transactionId: string): void {
+    if (confirm('Are you sure you want to cancel this transaction?')) {
+      // In a real app, this would call a service to cancel the transaction
+      alert(`Transaction ${transactionId} has been cancelled`);
+      
+      // For demo purposes, update the local state
+      this.transactions = this.transactions.map(t => {
+        if (t.id === transactionId) {
+          return { ...t, status: TransactionStatus.CANCELLED, paymentStatus: 'refunded' };
+        }
+        return t;
+      });
+      
+      this.filteredTransactions = this.filteredTransactions.map(t => {
+        if (t.id === transactionId) {
+          return { ...t, status: TransactionStatus.CANCELLED, paymentStatus: 'refunded' };
+        }
+        return t;
+      });
+      
+      // Update stats
+      this.calculateStats();
+    }
+  }
+}

@@ -8,10 +8,8 @@ import java.math.BigDecimal;
 public class SavedSearchRequest {
     private String userId;
     private String keyword;
-    private String city;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;
-    private BigDecimal minArea;
-    private BigDecimal maxArea;
+    private int bedrooms;
     private String type; // SALE or RENT
 }

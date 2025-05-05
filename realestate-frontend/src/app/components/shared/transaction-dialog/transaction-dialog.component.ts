@@ -1,11 +1,11 @@
 import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { Transaction } from '../../../services/transaction.service';
 import { PropertyService } from '../../../services/property.service';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Property } from '../../../models/property.model';
+import { ExtendedTransaction } from '../../../components/agent/transactions/agent-transactions.component';
 
 interface PropertyItem {
   id: string | number;
@@ -21,10 +21,10 @@ interface PropertyItem {
   imports: [CommonModule, ReactiveFormsModule, FormsModule]
 })
 export class TransactionDialogComponent implements OnInit {
-  @Input() transaction: Transaction | null = null;
+  @Input() transaction: ExtendedTransaction | null = null;
   @Input() visible: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>();
-  @Output() save = new EventEmitter<Partial<Transaction>>();
+  @Output() save = new EventEmitter<Partial<ExtendedTransaction>>();
   
   transactionForm: FormGroup;
   properties: PropertyItem[] = [];
@@ -43,8 +43,34 @@ export class TransactionDialogComponent implements OnInit {
       commission: [0, [Validators.required, Validators.min(0)]],
       status: ['pending', Validators.required],
       paymentStatus: ['pending', Validators.required],
-      date: [this.getCurrentDate(), Validators.required]
+      date: [this.getCurrentDate(), Validators.required],
+      startDate: [this.getCurrentDate()],
+      endDate: [this.getOneYearLaterDate()],
+      paymentMethod: ['Bank Transfer'],
+      notes: ['']
     });
+
+    // Add dynamic validation based on transaction type
+    this.transactionForm.get('type')?.valueChanges.subscribe(type => {
+      this.updateFormValidation(type);
+    });
+  }
+  
+  // Update validation rules based on transaction type
+  updateFormValidation(type: string): void {
+    const startDateControl = this.transactionForm.get('startDate');
+    const endDateControl = this.transactionForm.get('endDate');
+    
+    if (type === 'rent') {
+      startDateControl?.setValidators([Validators.required]);
+      endDateControl?.setValidators([Validators.required]);
+    } else {
+      startDateControl?.clearValidators();
+      endDateControl?.clearValidators();
+    }
+    
+    startDateControl?.updateValueAndValidity();
+    endDateControl?.updateValueAndValidity();
   }
   
   ngOnInit(): void {
@@ -61,7 +87,11 @@ export class TransactionDialogComponent implements OnInit {
         commission: this.transaction.commission,
         status: this.transaction.status,
         paymentStatus: this.transaction.paymentStatus,
-        date: this.transaction.date
+        date: this.transaction.date,
+        startDate: this.transaction.startDate || this.transaction.date,
+        endDate: this.transaction.endDate || this.getOneYearLaterDate(this.transaction.date),
+        paymentMethod: this.transaction.paymentMethod || 'Bank Transfer',
+        notes: this.transaction.notes || ''
       });
     }
   }
@@ -69,8 +99,8 @@ export class TransactionDialogComponent implements OnInit {
   loadProperties(): void {
     this.isLoading = true;
     
-    // Load properties from PropertyService - using getAllProperties instead of getProperties
-    this.propertyService.getAllProperties().subscribe({
+    // Load properties from PropertyService
+    this.propertyService.getProperties().subscribe({
       next: (properties: Property[]) => {
         // Map to the format we need
         this.properties = properties.map((p: Property) => ({
@@ -92,6 +122,18 @@ export class TransactionDialogComponent implements OnInit {
   closeDialog(): void {
     this.visible = false;
     this.visibleChange.emit(false);
+    // Reset form when closing
+    this.transactionForm.reset({
+      type: 'sale',
+      amount: 0,
+      commission: 0,
+      status: 'pending',
+      paymentStatus: 'pending',
+      date: this.getCurrentDate(),
+      startDate: this.getCurrentDate(),
+      endDate: this.getOneYearLaterDate(),
+      paymentMethod: 'Bank Transfer'
+    });
   }
   
   saveTransaction(): void {
@@ -112,7 +154,7 @@ export class TransactionDialogComponent implements OnInit {
       return;
     }
     
-    const transactionData: Partial<Transaction> = {
+    const transactionData: Partial<ExtendedTransaction> = {
       property: {
         id: property.id,
         title: property.title,
@@ -127,8 +169,16 @@ export class TransactionDialogComponent implements OnInit {
       commission: formValue.commission,
       status: formValue.status,
       paymentStatus: formValue.paymentStatus,
-      date: formValue.date
+      date: formValue.date,
+      paymentMethod: formValue.paymentMethod,
+      notes: formValue.notes
     };
+    
+    // Add rent-specific fields if this is a rental transaction
+    if (formValue.type === 'rent') {
+      transactionData.startDate = formValue.startDate;
+      transactionData.endDate = formValue.endDate;
+    }
     
     // If editing, include the ID
     if (this.transaction) {
@@ -145,6 +195,17 @@ export class TransactionDialogComponent implements OnInit {
     const year = today.getFullYear();
     const month = (today.getMonth() + 1).toString().padStart(2, '0');
     const day = today.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  // Utility function to get a date 1 year later in YYYY-MM-DD format
+  private getOneYearLaterDate(fromDate?: string): string {
+    const date = fromDate ? new Date(fromDate) : new Date();
+    date.setFullYear(date.getFullYear() + 1);
+    
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
 } 

@@ -6,6 +6,14 @@ import { AuthService } from '../../../services/auth.service';
 import { TransactionService, Transaction } from '../../../services/transaction.service';
 import { TransactionDialogComponent } from '../../shared/transaction-dialog/transaction-dialog.component';
 
+// Extended Transaction interface to include rent-specific fields
+export interface ExtendedTransaction extends Transaction {
+  startDate?: string;
+  endDate?: string;
+  paymentMethod?: string;
+  notes?: string;
+}
+
 @Component({
   selector: 'app-agent-transactions',
   templateUrl: './agent-transactions.component.html',
@@ -20,15 +28,17 @@ import { TransactionDialogComponent } from '../../shared/transaction-dialog/tran
   ]
 })
 export class AgentTransactionsComponent implements OnInit {
-  transactions: Transaction[] = [];
-  filteredTransactions: Transaction[] = [];
+  transactions: ExtendedTransaction[] = [];
+  filteredTransactions: ExtendedTransaction[] = [];
   isLoading: boolean = true;
   errorMessage: string | null = null;
   agent: any = null;
   isAgent: boolean = true;
   
+  // Active tab
+  activeTab: 'buy' | 'rent' = 'buy';
+  
   // Filters
-  filterType: string = 'ALL';
   filterTransactionStatus: string = 'ALL';
   filterPaymentStatus: string = 'ALL';
   searchQuery: string = '';
@@ -46,7 +56,6 @@ export class AgentTransactionsComponent implements OnInit {
   // Pagination
   pageSize: number = 10;
   currentPage: number = 1;
-  totalPages: number = 1;
   
   // Math object for template use
   Math = Math;
@@ -56,7 +65,7 @@ export class AgentTransactionsComponent implements OnInit {
   
   // Transaction dialog properties
   showTransactionDialog: boolean = false;
-  selectedTransaction: Transaction | null = null;
+  selectedTransaction: ExtendedTransaction | null = null;
 
   constructor(
     private router: Router,
@@ -66,7 +75,6 @@ export class AgentTransactionsComponent implements OnInit {
   ) {
     this.filterForm = this.fb.group({
       searchQuery: [''],
-      typeFilter: ['all'],
       statusFilter: ['all'],
       paymentStatusFilter: ['all']
     });
@@ -91,13 +99,44 @@ export class AgentTransactionsComponent implements OnInit {
     });
   }
 
+  // Change active tab
+  changeTab(tab: 'buy' | 'rent'): void {
+    this.activeTab = tab;
+    this.currentPage = 1; // Reset to first page when changing tabs
+  }
+
   loadTransactions(): void {
     this.isLoading = true;
     
     // Use the transaction service to get data
     this.transactionService.getTransactions().subscribe({
       next: (transactions) => {
-        this.transactions = transactions;
+        this.transactions = transactions as ExtendedTransaction[];
+        
+        // Add mock start and end dates for rent transactions if not present
+        this.transactions = this.transactions.map(t => {
+          if (t.type === 'rent' && !t.startDate) {
+            const date = new Date(t.date);
+            const endDate = new Date(date);
+            endDate.setMonth(endDate.getMonth() + 12); // 1 year lease by default
+            
+            return {
+              ...t,
+              startDate: t.date,
+              endDate: endDate.toISOString().split('T')[0],
+              paymentMethod: 'Bank Transfer',
+              notes: 'Standard 1-year lease agreement'
+            };
+          } else if (t.type === 'sale' && !t.paymentMethod) {
+            return {
+              ...t,
+              paymentMethod: 'Bank Transfer',
+              notes: 'Standard sale agreement'
+            };
+          }
+          return t;
+        });
+        
         this.applyFilters();
         this.calculateSummary();
         this.isLoading = false;
@@ -113,16 +152,10 @@ export class AgentTransactionsComponent implements OnInit {
   applyFilters(): void {
     const values = this.filterForm.value;
     this.searchQuery = values.searchQuery || '';
-    const typeFilter = values.typeFilter;
     const statusFilter = values.statusFilter;
     const paymentStatusFilter = values.paymentStatusFilter;
     
     this.filteredTransactions = this.transactions.filter(transaction => {
-      // Type filter
-      if (typeFilter !== 'all' && transaction.type !== typeFilter) {
-        return false;
-      }
-      
       // Transaction status filter
       if (statusFilter !== 'all' && transaction.status !== statusFilter) {
         return false;
@@ -149,14 +182,6 @@ export class AgentTransactionsComponent implements OnInit {
     
     // Apply sorting
     this.sortTransactions();
-    
-    // Update total pages
-    this.totalPages = Math.ceil(this.filteredTransactions.length / this.pageSize);
-    
-    // Reset to first page if current page is now invalid
-    if (this.currentPage > this.totalPages) {
-      this.currentPage = 1;
-    }
   }
   
   sortTransactions(): void {
@@ -228,7 +253,6 @@ export class AgentTransactionsComponent implements OnInit {
   resetFilters(): void {
     this.filterForm.setValue({
       searchQuery: '',
-      typeFilter: 'all',
       statusFilter: 'all',
       paymentStatusFilter: 'all'
     });
@@ -249,8 +273,39 @@ export class AgentTransactionsComponent implements OnInit {
     );
   }
 
+  // Get filtered transactions based on current tab
+  getFilteredTransactionsByType(): ExtendedTransaction[] {
+    return this.filteredTransactions.filter(t => 
+      this.activeTab === 'buy' ? t.type === 'sale' : t.type === 'rent'
+    );
+  }
+
+  // Get filtered sale transactions
+  getFilteredSaleTransactions(): ExtendedTransaction[] {
+    return this.filteredTransactions.filter(t => t.type === 'sale');
+  }
+
+  // Get filtered rental transactions
+  getFilteredRentalTransactions(): ExtendedTransaction[] {
+    return this.filteredTransactions.filter(t => t.type === 'rent');
+  }
+
+  // Get paginated transactions for the current tab
+  getPaginatedSaleTransactions(): ExtendedTransaction[] {
+    const filtered = this.getFilteredSaleTransactions();
+    const start = (this.currentPage - 1) * this.pageSize;
+    return filtered.slice(start, start + this.pageSize);
+  }
+
+  // Get paginated rental transactions
+  getPaginatedRentalTransactions(): ExtendedTransaction[] {
+    const filtered = this.getFilteredRentalTransactions();
+    const start = (this.currentPage - 1) * this.pageSize;
+    return filtered.slice(start, start + this.pageSize);
+  }
+
   changePage(newPage: number): void {
-    if (newPage > 0 && newPage <= this.totalPages) {
+    if (newPage >= 1 && newPage <= this.getTotalPages()) {
       this.currentPage = newPage;
     }
   }
@@ -259,87 +314,132 @@ export class AgentTransactionsComponent implements OnInit {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
-      minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount);
   }
 
   getDateFormatted(dateString: string): string {
+    if (!dateString) return 'N/A';
+    
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+      month: '2-digit',
+      day: '2-digit'
     });
   }
-
-  getPaginatedTransactions(): Transaction[] {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredTransactions.slice(start, start + this.pageSize);
+  
+  // Get count of sale transactions
+  getSaleTransactionsCount(): number {
+    return this.transactions.filter(t => t.type === 'sale').length;
   }
   
-  // Add a new transaction
+  // Get count of rental transactions
+  getRentalTransactionsCount(): number {
+    return this.transactions.filter(t => t.type === 'rent').length;
+  }
+  
+  // Get total pages for current tab
+  getTotalPages(): number {
+    const count = this.getFilteredTransactionsByType().length;
+    return Math.ceil(count / this.pageSize);
+  }
+  
+  // Get array of page numbers for pagination
+  getPageNumbers(): number[] {
+    const totalPages = this.getTotalPages();
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+  
+  // Get starting index of current page
+  getCurrentPageStart(): number {
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+  
+  // Get ending index of current page
+  getCurrentPageEnd(): number {
+    const end = this.currentPage * this.pageSize;
+    const total = this.getFilteredTransactionsByType().length;
+    return Math.min(end, total);
+  }
+
+  // View transaction details in modal
+  viewTransactionDetails(transaction: ExtendedTransaction): void {
+    this.selectedTransaction = transaction;
+    
+    // Open modal using Bootstrap
+    const modal = document.getElementById('transactionDetailsModal');
+    if (modal) {
+      // @ts-ignore
+      const bsModal = new window.bootstrap.Modal(modal);
+      bsModal.show();
+    }
+  }
+
   openAddTransactionDialog(): void {
     this.selectedTransaction = null;
     this.showTransactionDialog = true;
   }
-  
-  // Edit an existing transaction
-  openEditTransactionDialog(transaction: Transaction): void {
+
+  openEditTransactionDialog(transaction: ExtendedTransaction): void {
     this.selectedTransaction = transaction;
     this.showTransactionDialog = true;
   }
-  
-  // Handle transaction save from dialog
-  handleSaveTransaction(transactionData: Partial<Transaction>): void {
-    if (transactionData.id) {
-      // Editing existing transaction
-      this.transactionService.updateTransaction(transactionData as Transaction).subscribe({
-        next: (updatedTransaction) => {
-          // Update in local array
-          const index = this.transactions.findIndex(t => t.id === updatedTransaction.id);
+
+  handleSaveTransaction(transactionData: Partial<ExtendedTransaction>): void {
+    this.showTransactionDialog = false;
+    
+    if (!transactionData) return;
+    
+    if (this.selectedTransaction) {
+      // Update existing transaction
+      const updatedTransaction = {
+        ...this.selectedTransaction,
+        ...transactionData
+      };
+      
+      this.transactionService.updateTransaction(updatedTransaction as Transaction).subscribe({
+        next: (updated) => {
+          const index = this.transactions.findIndex(t => t.id === updated.id);
           if (index !== -1) {
-            this.transactions[index] = updatedTransaction;
+            this.transactions[index] = updated as ExtendedTransaction;
+            this.applyFilters();
+            this.calculateSummary();
           }
-          this.applyFilters();
-          this.calculateSummary();
         },
         error: (error) => {
           console.error('Error updating transaction:', error);
-          // Show error notification
           alert('Failed to update transaction. Please try again.');
         }
       });
     } else {
-      // Adding new transaction
-      this.transactionService.addTransaction(transactionData as Omit<Transaction, 'id'>).subscribe({
+      // Add new transaction
+      this.transactionService.addTransaction(transactionData as Transaction).subscribe({
         next: (newTransaction) => {
-          // Add to local array
-          this.transactions.push(newTransaction);
+          this.transactions.push(newTransaction as ExtendedTransaction);
           this.applyFilters();
           this.calculateSummary();
         },
         error: (error) => {
           console.error('Error adding transaction:', error);
-          // Show error notification
           alert('Failed to add transaction. Please try again.');
         }
       });
     }
   }
-  
-  // Delete a transaction
-  deleteTransaction(transaction: Transaction): void {
-    if (confirm(`Are you sure you want to delete transaction ${transaction.id}?`)) {
-      this.transactionService.deleteTransaction(String(transaction.id)).subscribe({
+
+  deleteTransaction(transaction: ExtendedTransaction): void {
+    const confirmDelete = confirm(`Are you sure you want to delete transaction #${transaction.id}?`);
+    
+    if (confirmDelete) {
+      this.transactionService.deleteTransaction(transaction.id as string).subscribe({
         next: (success) => {
           if (success) {
-            // Remove from local array
             this.transactions = this.transactions.filter(t => t.id !== transaction.id);
             this.applyFilters();
             this.calculateSummary();
           } else {
-            alert('Could not delete transaction. Please try again.');
+            alert('Failed to delete transaction. Please try again.');
           }
         },
         error: (error) => {

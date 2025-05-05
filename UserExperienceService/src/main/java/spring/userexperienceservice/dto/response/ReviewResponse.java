@@ -12,6 +12,7 @@ public class ReviewResponse {
     private String listingId;
     private String brId;
     private String contentReview;
+    private String title;
     private Integer rate;
     private Integer countLike;
     private LocalDateTime createdAt;

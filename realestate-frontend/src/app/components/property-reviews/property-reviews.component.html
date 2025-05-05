@@ -43,7 +43,7 @@
     <!-- Add Review Button -->
     <div class="add-review-action">
       <button 
-        *ngIf="!hasReviewed && !showAddReview" 
+        *ngIf="!hasReviewed && !showAddReview && isLoggedIn()" 
         class="btn btn-primary" 
         (click)="toggleAddReview()">
         <i class="fas fa-pen"></i> Write a Review
@@ -51,6 +51,10 @@
       
       <div *ngIf="hasReviewed && !showAddReview" class="already-reviewed">
         <i class="fas fa-check-circle"></i> You've already reviewed this property
+      </div>
+      
+      <div *ngIf="!isLoggedIn() && !showAddReview" class="login-to-review">
+        <i class="fas fa-lock"></i> <a [routerLink]="['/auth/login']" [queryParams]="{returnUrl: currentRoute}">Login</a> to write a review
       </div>
     </div>
 
@@ -126,7 +130,8 @@
       <div class="no-reviews" *ngIf="reviews.length === 0">
         <i class="fas fa-comment-slash fa-3x"></i>
         <h3>No Reviews Yet</h3>
-        <p>Be the first to review this property</p>
+        <p *ngIf="isLoggedIn()">Be the first to review this property</p>
+        <p *ngIf="!isLoggedIn()"><a [routerLink]="['/auth/login']" [queryParams]="{returnUrl: currentRoute}">Login</a> to be the first to review this property</p>
       </div>
 
       <div class="review-item" *ngFor="let review of reviews">

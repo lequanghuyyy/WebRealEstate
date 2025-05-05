@@ -13,11 +13,9 @@ import java.util.List;
 public interface UserService {
     UserResponse createUser(UserCreationRequest userCreationRequest);
     UserResponse getUserById(String id);
-    UserResponse getUserByUsername(String username);
     UserResponse updateUserForUser(UserUpdateRequest userUpdateRequest);
     UserResponse updateUserForAdmin(String userid, UserUpdateRequest userUpdateRequest);
     void deleteUser(String id);
     List<UserResponse> getAllUsers();
-
 
 }

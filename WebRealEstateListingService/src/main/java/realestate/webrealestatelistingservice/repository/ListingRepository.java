@@ -16,4 +16,5 @@ public interface ListingRepository extends JpaRepository<ListingEntity,String>, 
     List<ListingEntity> findByOwnerId(String ownerId);
     List<ListingEntity> findByType(ListingType type);
     Page<ListingEntity> findByType(ListingType type, Pageable pageable);
+    List<ListingEntity> findTop5ByOrderByViewDesc();
 }

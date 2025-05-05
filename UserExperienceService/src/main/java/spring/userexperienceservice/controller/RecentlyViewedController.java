@@ -10,7 +10,7 @@ import spring.userexperienceservice.service.RecentlyViewedService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/recently-viewed")
+@RequestMapping("api/v1/ux/recently-viewed")
 @RequiredArgsConstructor
 public class RecentlyViewedController {
 

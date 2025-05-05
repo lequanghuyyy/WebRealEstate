@@ -4,7 +4,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import realestate.webrealestatesaleservice.constant.TransactionStatus;
-import realestate.webrealestatesaleservice.constant.TransactionType;
 import realestate.webrealestatesaleservice.dto.request.SalesTransactionRequest;
 import realestate.webrealestatesaleservice.dto.response.SalesTransactionResponse;
 import realestate.webrealestatesaleservice.entity.SalesTransactionEntity;

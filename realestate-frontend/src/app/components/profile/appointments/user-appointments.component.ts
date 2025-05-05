@@ -114,7 +114,7 @@ export class UserAppointmentsComponent implements OnInit {
 
   cancelAppointment(id: string | number): void {
     if (confirm('Are you sure you want to cancel this appointment?')) {
-      this.appointmentService.updateAppointmentStatus(id, 'cancelled').subscribe({
+      this.appointmentService.updateAppointmentStatus(id.toString(), 'cancelled').subscribe({
         next: (updated) => {
           if (updated) {
             // Update the list

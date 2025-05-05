@@ -56,8 +56,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("timestamp", new Date());
         body.put("status", HttpStatus.UNAUTHORIZED.value());
-        body.put("message", "Invalid credentials");
-        body.put("details", ex.getMessage());
+        body.put("message", ex.getMessage());
+        body.put("details", request.getDescription(false));
 
         return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }

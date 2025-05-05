@@ -24,6 +24,9 @@ public class ReviewEntity {
     @Column(name = "br_id", nullable = false)
     private String brId;
 
+    @Column(name = "title",nullable = false)
+    private String title;
+
     @Column(name = "content_review", columnDefinition = "TEXT")
     private String contentReview;
 
@@ -35,4 +38,8 @@ public class ReviewEntity {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = LocalDateTime.now();
+    }
 }

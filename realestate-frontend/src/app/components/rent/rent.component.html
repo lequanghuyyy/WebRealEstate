@@ -1,480 +1,321 @@
-<div class="rent-container">
+<div class="rental-management-container">
   <div class="hero-section">
     <div class="container">
       <div class="hero-content">
-        <h1>Find Your Perfect Rental Home</h1>
-        <p>Discover properties available for rent in your preferred location</p>
+        <h1>Rental Management</h1>
+        <p>Manage your rental agreements and payments</p>
       </div>
     </div>
   </div>
 
-  <div class="container-fluid mt-4">
-    <div class="row">
-      <!-- Vertical Filter Column -->
-      <div class="col-lg-3 col-md-4">
-        <div class="filter-sidebar" [class.open]="mobileFiltersOpen">
-          <div class="filter-sidebar-header">
-            <h3>Filter Properties</h3>
-            <p>{{ totalItems }} properties found</p>
-            <button *ngIf="mobileFiltersOpen" class="close-filters" (click)="toggleMobileFilters()">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
+  <!-- Loading and Error States -->
+  <div class="container mt-5" *ngIf="isLoading">
+    <div class="loading-state text-center p-5">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="mt-3">Loading your rental data...</p>
+    </div>
+  </div>
 
-          <form [formGroup]="filterForm">
-            <!-- Accordion style filters -->
-            <div class="filter-accordion">
-              <!-- Location Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('location')">
-                  <h4>Location</h4>
-                  <i class="fas" [ngClass]="filtersOpen['location'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['location']}">
-                  <div class="filter-input-group">
-                    <input 
-                      type="text" 
-                      formControlName="location" 
-                      placeholder="City, State, or Zip"
-                      class="form-control"
-                    >
-                  </div>
-                </div>
-              </div>
+  <div class="container mt-5" *ngIf="!isLoading && errorMessage">
+    <div class="error-state text-center p-5 bg-light rounded">
+      <i class="fas fa-exclamation-circle text-danger fa-3x mb-3"></i>
+      <h4>Error Loading Data</h4>
+      <p>{{ errorMessage }}</p>
+      <button class="btn btn-primary mt-3" (click)="loadTransactions()">Try Again</button>
+    </div>
+  </div>
 
-              <!-- Property Type Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('propertyType')">
-                  <h4>Property Type</h4>
-                  <i class="fas" [ngClass]="filtersOpen['propertyType'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['propertyType']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let type of propertyTypes">
-                      <input 
-                        type="radio" 
-                        [id]="'property-type-' + type.id" 
-                        [value]="type.id" 
-                        formControlName="propertyType"
-                      >
-                      <label [for]="'property-type-' + type.id">{{ type.label }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Price Range Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('price')">
-                  <h4>Price Range</h4>
-                  <i class="fas" [ngClass]="filtersOpen['price'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['price']}">
-                  <div class="range-inputs">
-                    <div class="min-input">
-                      <label>Min</label>
-                      <input 
-                        type="number" 
-                        formControlName="priceMin" 
-                        placeholder="Min" 
-                        class="form-control"
-                      >
-                    </div>
-                    <div class="max-input">
-                      <label>Max</label>
-                      <input 
-                        type="number" 
-                        formControlName="priceMax" 
-                        placeholder="Max" 
-                        class="form-control"
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bedrooms Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('beds')">
-                  <h4>Bedrooms</h4>
-                  <i class="fas" [ngClass]="filtersOpen['beds'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['beds']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let option of bedOptions">
-                      <input 
-                        type="radio" 
-                        [id]="'bed-' + option.id" 
-                        [value]="option.id" 
-                        [checked]="filterForm.get('beds')?.value === option.id"
-                        (change)="filterForm.get('beds')?.setValue(option.id)"
-                      >
-                      <label [for]="'bed-' + option.id">{{ option.label }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bathrooms Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('baths')">
-                  <h4>Bathrooms</h4>
-                  <i class="fas" [ngClass]="filtersOpen['baths'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['baths']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let option of bathOptions">
-                      <input 
-                        type="radio" 
-                        [id]="'bath-' + option.id" 
-                        [value]="option.id" 
-                        [checked]="filterForm.get('baths')?.value === option.id"
-                        (change)="filterForm.get('baths')?.setValue(option.id)"
-                      >
-                      <label [for]="'bath-' + option.id">{{ option.label }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Area Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('area')">
-                  <h4>Square Feet</h4>
-                  <i class="fas" [ngClass]="filtersOpen['area'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['area']}">
-                  <div class="range-inputs">
-                    <div class="min-input">
-                      <label>Min</label>
-                      <input 
-                        type="number" 
-                        formControlName="areaMin" 
-                        placeholder="Min" 
-                        class="form-control"
-                      >
-                    </div>
-                    <div class="max-input">
-                      <label>Max</label>
-                      <input 
-                        type="number" 
-                        formControlName="areaMax" 
-                        placeholder="Max" 
-                        class="form-control"
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Keywords Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilter('keywords')">
-                  <h4>Keywords</h4>
-                  <i class="fas" [ngClass]="filtersOpen['keywords'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': filtersOpen['keywords']}">
-                  <div class="filter-input-group">
-                    <input 
-                      type="text" 
-                      formControlName="keywords" 
-                      placeholder="e.g. garage, pool, renovated" 
-                      class="form-control"
-                    >
-                  </div>
-                </div>
-              </div>
+  <!-- Main Content -->
+  <div class="container my-5" *ngIf="!isLoading && !errorMessage">
+    <!-- Stats Row -->
+    <div class="rental-stats-row">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <i class="fas fa-home"></i>
             </div>
-
-            <!-- Filter Actions -->
-            <div class="filter-actions">
-              <button type="button" class="btn btn-reset" (click)="resetFilters()">
-                <i class="fas fa-undo"></i> Reset All
-              </button>
-              <button type="button" class="btn btn-apply" (click)="applyFiltersAction()">
-                <i class="fas fa-filter"></i> Apply Filters
-              </button>
-            </div>
-          </form>
-        </div>
-
-          <!-- Useful Rental Tips Section -->
-          <div class="sidebar-card mt-4 enhanced-card">
-            <div class="card-header premium-header">
-              <div class="icon-wrapper gold">
-                <i class="fas fa-lightbulb"></i>
-              </div>
-              <h3>Useful Rental Tips</h3>
-            </div>
-            <div class="card-body">
-              <ul class="enhanced-tips-list">
-                <li class="tip-item">
-                  <div class="tip-icon">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  <p>Always inspect the property in person before signing a lease</p>
-                </li>
-                <li class="tip-item">
-                  <div class="tip-icon">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  <p>Read the lease agreement thoroughly before signing</p>
-                </li>
-                <li class="tip-item">
-                  <div class="tip-icon">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  <p>Document property condition during move-in</p>
-                </li>
-                <li class="tip-item">
-                  <div class="tip-icon">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  <p>Understand your rights as a tenant</p>
-                </li>
-                <li class="tip-item">
-                  <div class="tip-icon">
-                    <i class="fas fa-check-circle"></i>
-                  </div>
-                  <p>Check utility costs before committing</p>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <!-- Have a property to rent section -->
-          <div class="sidebar-card premium-card mt-4">
-            <div class="premium-gradient">
-              <div class="card-header border-0">
-                <div class="icon-wrapper premium">
-                  <i class="fas fa-home"></i>
-                </div>
-                <h3 style="margin-left: 10px;">Have a property to rent?</h3>
-              </div>
-              <div class="card-body pb-4">
-                <div class="feature-list">
-                  <div class="feature-item">
-                    <div class="feature-icon">
-                      <i class="fas fa-users"></i>
-                    </div>
-                    <p>Reach thousands of potential tenants</p>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">
-                      <i class="fas fa-tasks"></i>
-                    </div>
-                    <p>Professional property management services</p>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">
-                      <i class="fas fa-money-bill-wave"></i>
-                    </div>
-                    <p>Competitive rates with quick matches</p>
-                  </div>
-                  <div class="feature-item">
-                    <div class="feature-icon">
-                      <i class="fas fa-shield-alt"></i>
-                    </div>
-                    <p>Secure tenant screening process</p>
-                  </div>
-                </div>
-                <div class="button-group mt-4">
-                  <a href="/contact" class="premium-btn btn-light" style="margin-left: 10px;">
-                    <span class="btn-content">
-                      <i class="fas fa-phone-alt"></i>
-                      <span>Contact Us</span>
-                    </span>
-                  </a>
-                  <a href="/login" class="premium-btn btn-outline" style="margin-right: 10px;">
-                    <span class="btn-content">
-                      <i class="fas fa-info-circle"></i>
-                      <span>Login with Agent</span>
-                    </span>
-                    <i class="fas fa-long-arrow-alt-right btn-arrow"></i>
-                  </a>
-                </div>
-              </div>
+            <div class="stat-content">
+              <h3>{{ totalRentals }}</h3>
+              <p>Total Rentals</p>
             </div>
           </div>
         </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon active">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ activeRentals }}</h3>
+              <p>Active Rentals</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon pending">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ pendingApprovals }}</h3>
+              <p>Pending Approvals</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- Results Section -->
-      <div class="col-lg-9 col-md-8">
-        <div class="results-section">
-          <!-- Sorting and Results Count -->
-          <div class="results-header">
-            <div class="mobile-filter-toggle d-lg-none">
-              <button class="btn btn-filter" (click)="toggleMobileFilters()">
-                <i class="fas fa-filter"></i> Filters
+    <!-- Filters and Actions -->
+    <div class="card mt-4">
+      <div class="card-body">
+        <form [formGroup]="filterForm" class="filter-form">
+          <div class="row align-items-end">
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="statusFilter">Status</label>
+                <select id="statusFilter" class="form-select" formControlName="status">
+                  <option value="all">All Statuses</option>
+                  <option [value]="rentalStatusEnum.PENDING">Pending</option>
+                  <option [value]="rentalStatusEnum.APPROVED">Approved</option>
+                  <option [value]="rentalStatusEnum.REJECTED">Rejected</option>
+                  <option [value]="rentalStatusEnum.COMPLETED">Completed</option>
+                  <option [value]="rentalStatusEnum.CANCELLED">Cancelled</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="dateFilter">Date Range</label>
+                <select id="dateFilter" class="form-select" formControlName="dateRange">
+                  <option value="all">All Time</option>
+                  <option value="month">This Month</option>
+                  <option value="quarter">This Quarter</option>
+                  <option value="year">This Year</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="form-group">
+                <label for="propertyFilter">Property Type</label>
+                <select id="propertyFilter" class="form-select" formControlName="propertyType">
+                  <option value="all">All Types</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="house">House</option>
+                  <option value="villa">Villa</option>
+                </select>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <button type="button" class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+                Reset Filters
               </button>
             </div>
-            
-            <div class="sorting-options">
-              <label for="sortBy">Sort By:</label>
-              <select 
-                id="sortBy" 
-                [(ngModel)]="selectedSort" 
-                (change)="updateSort(selectedSort)" 
-                class="form-control"
-              >
-                <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
-              </select>
-            </div>
           </div>
-          
-          <!-- Loading State -->
-          <div class="loading-container" *ngIf="isLoading">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading properties...</p>
-          </div>
-          
-          <!-- Error State -->
-          <div class="alert alert-danger" *ngIf="errorMessage">
-            {{ errorMessage }}
-            <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadProperties()">
-              Try Again
-            </button>
-          </div>
-          
-          <!-- No Results -->
-          <div class="no-results" *ngIf="!isLoading && !errorMessage && filteredProperties.length === 0">
-            <i class="fas fa-search"></i>
-            <h3>No properties found</h3>
-            <p>Try adjusting your filters to see more results</p>
-            <button class="btn btn-primary" (click)="resetFilters()">Reset Filters</button>
-          </div>
-          
-          <!-- Property Grid -->
-          <div class="property-grid" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
-            <div class="property-card" *ngFor="let property of getPaginatedProperties(); trackBy: trackById" (click)="viewPropertyDetails(property.id)">
-              <div class="property-image">
-                <img [src]="property.images[0]" [alt]="property.title">
-                <div class="property-tag" *ngIf="property.tags && property.tags.includes('New')">New</div>
-                <div class="property-status">{{ property.status }}</div>
-                <button class="favorite-btn" (click)="toggleFavorite($event, property.id)">
-                  <i class="fas" [ngClass]="property.isFavorite ? 'fa-heart' : 'fa-heart'"></i>
-                </button>
-              </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Rental Transactions Table -->
+    <div class="card mt-4">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h3 class="mb-0">Rental Agreements</h3>
+        <button class="btn btn-primary" routerLink="/properties">
+          <i class="fas fa-plus me-2"></i> New Rental
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table rental-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Start Date</th>
+                <th>Duration</th>
+                <th>Monthly Rent</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- Empty state -->
+              <tr *ngIf="filteredTransactions.length === 0">
+                <td colspan="6" class="text-center py-5">
+                  <div class="empty-state">
+                    <i class="fas fa-home fa-3x mb-3"></i>
+                    <h4>No rentals found</h4>
+                    <p>You don't have any rental agreements yet</p>
+                    <button class="btn btn-primary mt-3" routerLink="/properties">Browse Properties</button>
+                  </div>
+                </td>
+              </tr>
               
-              <div class="property-content">
-                <div class="property-price">{{ property.price | currency:'USD':'symbol':'1.0-0' }} <span class="price-period">/month</span></div>
-                <h3 class="property-title">{{ property.title }}</h3>
-                <div class="property-address">
-                  <i class="fas fa-map-marker-alt"></i>
-                  {{ property.location.address }}
-                </div>
-                <div class="property-features">
-                  <span><i class="fas fa-bed"></i> {{ property.features.bedrooms }} Beds</span>
-                  <span><i class="fas fa-bath"></i> {{ property.features.bathrooms }} Baths</span>
-                  <span><i class="fas fa-ruler-combined"></i> {{ property.features.area }} sq ft</span>
-                </div>
-                <div class="property-footer">
-                  <div class="agent-info" *ngIf="property.agent">
-                    <img [src]="property.agent.photo" [alt]="property.agent.name" class="agent-image">
-                    <span class="agent-name">{{ property.agent.name }}</span>
+              <!-- Rental items -->
+              <tr *ngFor="let transaction of filteredTransactions">
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img [src]="transaction.property.image || 'assets/images/properties/placeholder.jpg'" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>{{ transaction.property.title }}</h5>
+                      <p class="client-name">Tenant: {{ transaction.client.name }}</p>
+                    </div>
                   </div>
-                  <button class="view-details-btn">View Details</button>
+                </td>
+                <td>{{ formatDate(transaction.date) }}</td>
+                <td>
+                  <!-- Using a fixed value since we don't have actual start/end dates -->
+                  12 months
+                </td>
+                <td>{{ formatCurrency(transaction.amount) }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="transaction.status.toLowerCase()">
+                    {{ transaction.status }}
+                  </span>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="btn btn-sm btn-outline-primary me-1" title="View details"
+                      routerLink="/transaction/{{ transaction.id || '' }}">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-success me-1" title="Download agreement" 
+                      (click)="downloadAgreement(transaction.id?.toString() || '')">
+                      <i class="fas fa-file-download"></i>
+                    </button>
+                    <button *ngIf="transaction.status === rentalStatusEnum.APPROVED" 
+                      class="btn btn-sm btn-outline-info me-1" title="Renew lease" 
+                      (click)="renewRental(transaction.id?.toString() || '')">
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upcoming Payments Section -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h3 class="mb-0">Upcoming Payments</h3>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="upcoming-payment-card">
+              <div class="payment-date">
+                <span class="month">OCT</span>
+                <span class="day">15</span>
+              </div>
+              <div class="payment-details">
+                <h5>Monthly Rent Payment</h5>
+                <p>Masteri An Phu Apartment</p>
+                <p class="amount">{{ formatCurrency(25000000) }}</p>
+              </div>
+              <div class="payment-actions">
+                <button class="btn btn-sm btn-primary">Pay Now</button>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="upcoming-payment-card">
+              <div class="payment-date">
+                <span class="month">NOV</span>
+                <span class="day">01</span>
+              </div>
+              <div class="payment-details">
+                <h5>Monthly Rent Payment</h5>
+                <p>Urban Loft</p>
+                <p class="amount">{{ formatCurrency(35000000) }}</p>
+              </div>
+              <div class="payment-actions">
+                <button class="btn btn-sm btn-primary">Pay Now</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rental Tips Section -->
+    <div class="row mt-4">
+      <div class="col-md-6">
+        <div class="card tips-card">
+          <div class="card-header">
+            <h3>Tenant Resources</h3>
+          </div>
+          <div class="card-body">
+            <ul class="resource-list">
+              <li>
+                <i class="fas fa-file-contract"></i>
+                <div>
+                  <h5>Understanding Your Lease</h5>
+                  <p>Learn about your rights and responsibilities as a tenant</p>
+                  <a href="#" class="more-link">Learn More</a>
+                </div>
+              </li>
+              <li>
+                <i class="fas fa-tools"></i>
+                <div>
+                  <h5>Maintenance Requests</h5>
+                  <p>How to submit and track property maintenance issues</p>
+                  <a href="#" class="more-link">Learn More</a>
+                </div>
+              </li>
+              <li>
+                <i class="fas fa-hand-holding-usd"></i>
+                <div>
+                  <h5>Rent Payment Options</h5>
+                  <p>Various methods to pay your rent on time</p>
+                  <a href="#" class="more-link">Learn More</a>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card reminder-card">
+          <div class="card-header">
+            <h3>Important Reminders</h3>
+          </div>
+          <div class="card-body">
+            <div class="reminder-list">
+              <div class="reminder-item">
+                <div class="reminder-icon warning">
+                  <i class="fas fa-exclamation-circle"></i>
+                </div>
+                <div class="reminder-content">
+                  <h5>Lease Renewal Coming Up</h5>
+                  <p>Your lease for Urban Loft expires in 45 days. Consider renewal options.</p>
+                </div>
+              </div>
+              <div class="reminder-item">
+                <div class="reminder-icon info">
+                  <i class="fas fa-info-circle"></i>
+                </div>
+                <div class="reminder-content">
+                  <h5>Property Inspection</h5>
+                  <p>Annual property inspection scheduled for October 20th, 2023.</p>
+                </div>
+              </div>
+              <div class="reminder-item">
+                <div class="reminder-icon success">
+                  <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="reminder-content">
+                  <h5>Rent Increase Notice</h5>
+                  <p>Your rent may increase by 3% upon renewal according to market rates.</p>
                 </div>
               </div>
             </div>
           </div>
-          
-          <!-- Pagination -->
-          <div class="pagination-container" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
-            <button 
-              class="btn btn-outline-secondary"
-              [disabled]="currentPage === 1"
-              (click)="setPage(currentPage - 1)"
-            >
-              <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            
-            <div class="page-numbers">
-              <button 
-                *ngFor="let page of getPageNumbers()"
-                class="btn"
-                [ngClass]="{
-                  'btn-primary': page === currentPage,
-                  'btn-outline-secondary': page !== currentPage
-                }"
-                (click)="setPage(page)"
-              >{{ page }}</button>
-            </div>
-            
-            <button 
-              class="btn btn-outline-secondary"
-              [disabled]="currentPage === totalPages"
-              (click)="setPage(currentPage + 1)"
-            >
-              Next <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Rental Information Section -->
-  <div class="rental-info-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Renting with Confidence</h2>
-        <p>Everything you need to know about renting a property</p>
-      </div>
-      
-      <div class="info-cards">
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-file-signature"></i>
-          </div>
-          <h3>Understand Your Lease</h3>
-          <p>Learn about common lease terms, your rights, and responsibilities as a tenant.</p>
-          <a href="/rental-tips/leases" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-coins"></i>
-          </div>
-          <h3>Rental Costs</h3>
-          <p>Understand the costs associated with renting, including deposits, fees, and monthly expenses.</p>
-          <a href="/rental-tips/costs" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-clipboard-check"></i>
-          </div>
-          <h3>Inspection Tips</h3>
-          <p>What to look for during property viewings to ensure your new home meets your expectations.</p>
-          <a href="/rental-tips/inspections" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Property Owner CTA Section -->
-  <div class="owner-cta-section">
-    <div class="container">
-      <div class="cta-content">
-        <div class="cta-text">
-          <h2>Do you have a property to rent?</h2>
-          <p>List your property with us and get access to thousands of potential tenants. We offer comprehensive property management services to make renting your property hassle-free.</p>
-          <ul class="benefits-list">
-            <li><i class="fas fa-check"></i> Professional property listing with high-quality photos</li>
-            <li><i class="fas fa-check"></i> Tenant screening and verification</li>
-            <li><i class="fas fa-check"></i> Lease agreement preparation</li>
-            <li><i class="fas fa-check"></i> Rent collection and property maintenance</li>
-          </ul>
-          <div class="cta-buttons">
-            <a href="/contact" class="btn btn-primary">List Your Property</a>
-            <a href="/property-management" class="btn btn-outline-primary">Learn More</a>
-          </div>
-        </div>
-        <div class="cta-image">
-          <img src="assets/images/property-owner.jpg" alt="Property Owner">
         </div>
       </div>
     </div>

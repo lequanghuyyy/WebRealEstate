@@ -2,8 +2,10 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute, RouterModule } from '@angular/router';
-import { PropertyService } from '../../../services/property.service';
+import { PropertyApiService } from '../../../services/property-api.service';
 import { AuthService } from '../../../services/auth.service';
+import { Property } from '../../../models/property.model';
+import { UserAdapters } from '../../../utils/user-adapters';
 
 @Component({
   selector: 'app-create-listing',
@@ -47,7 +49,7 @@ export class CreateListingComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private propertyService: PropertyService,
+    private propertyApiService: PropertyApiService,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute
@@ -89,36 +91,36 @@ export class CreateListingComponent implements OnInit {
   loadListingData(id: string): void {
     this.isLoading = true;
     
-    this.propertyService.getPropertyById(id).subscribe({
-      next: (property) => {
-        // Populate the form with property data
-        this.listingForm.patchValue({
-          title: property.title,
-          description: property.description,
-          address: property.location.address,
-          city: property.location.city,
-          price: property.price,
-          area: property.features.area,
-          bedrooms: property.features.bedrooms,
-          bathrooms: property.features.bathrooms,
-          type: property.type,
-          status: property.status,
-          style: property.type.toLowerCase(),
-          tags: property.tags || []
-        });
+    this.propertyApiService.getListingById(id).subscribe({
+      // next: (property: Property) => {
+      //   // Populate the form with property data
+      //   this.listingForm.patchValue({
+      //     title: property.title,
+      //     description: property.description,
+      //     address: property.location.address,
+      //     city: property.location.city,
+      //     price: property.price,
+      //     area: property.features.area,
+      //     bedrooms: property.features.bedrooms,
+      //     bathrooms: property.features.bathrooms,
+      //     type: property.type,
+      //     status: property.status,
+      //     style: property.type.toLowerCase(),
+      //     tags: property.tags || []
+      //   });
         
-        // Load images if any
-        if (property.images && property.images.length > 0) {
-          this.imagePreviewUrls = property.images;
-        }
+      //   // Load images if any
+      //   if (property.images && property.images.length > 0) {
+      //     this.imagePreviewUrls = property.images;
+      //   }
         
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading property:', error);
-        this.errorMessage = 'Failed to load property details. Please try again.';
-        this.isLoading = false;
-      }
+      //   this.isLoading = false;
+      // },
+      // error: (error) => {
+      //   console.error('Error loading property:', error);
+      //   this.errorMessage = 'Failed to load property details. Please try again.';
+      //   this.isLoading = false;
+      // }
     });
   }
 
@@ -131,10 +133,27 @@ export class CreateListingComponent implements OnInit {
       return;
     }
     
+    // Check if user is logged in and is an agent
+    const currentUser = this.authService.getCurrentUser();
+    if (!currentUser || !this.authService.isAgent()) {
+      this.errorMessage = 'You must be logged in as an agent to create a listing.';
+      this.isSubmitting = false;
+      return;
+    }
+    
     this.isSubmitting = true;
     
     // Prepare property data from form
     const formValue = this.listingForm.value;
+    
+    // Create agent object from user data
+    const agent = UserAdapters.toPropertyAgent(currentUser);
+    if (!agent) {
+      this.errorMessage = 'Unable to create property with current user information.';
+      this.isSubmitting = false;
+      return;
+    }
+    
     const propertyData = {
       title: formValue.title,
       description: formValue.description,
@@ -156,49 +175,49 @@ export class CreateListingComponent implements OnInit {
       },
       images: this.imagePreviewUrls,
       amenities: [], // Required field, empty array
-      agent: this.authService.getCurrentUser(),
+      agent: agent, // Now we're sure this is not undefined
       tags: [], // Empty array
       createdAt: new Date(),
       updatedAt: new Date()
     };
     
-    if (this.editMode && this.listingId) {
-      // Update existing property
-      this.propertyService.updateProperty(this.listingId, propertyData).subscribe({
-        next: (updatedProperty) => {
-          this.isSubmitting = false;
-          this.successMessage = 'Property listing updated successfully!';
+    // if (this.editMode && this.listingId) {
+    //   // Update existing property
+    //   this.propertyService.updateProperty(this.listingId, propertyData).subscribe({
+    //     next: (updatedProperty) => {
+    //       this.isSubmitting = false;
+    //       this.successMessage = 'Property listing updated successfully!';
           
-          // Redirect to property details page after a short delay
-          setTimeout(() => {
-            this.router.navigate(['/property', updatedProperty.id]);
-          }, 1500);
-        },
-        error: (error) => {
-          console.error('Error updating property:', error);
-          this.errorMessage = 'Failed to update property. Please try again.';
-          this.isSubmitting = false;
-        }
-      });
-    } else {
-      // Create new property
-      this.propertyService.createProperty(propertyData).subscribe({
-        next: (newProperty) => {
-          this.isSubmitting = false;
-          this.successMessage = 'Property listing created successfully!';
+    //       // Redirect to property details page after a short delay
+    //       setTimeout(() => {
+    //         this.router.navigate(['/property', updatedProperty.id]);
+    //       }, 1500);
+    //     },
+    //     error: (error) => {
+    //       console.error('Error updating property:', error);
+    //       this.errorMessage = 'Failed to update property. Please try again.';
+    //       this.isSubmitting = false;
+    //     }
+    //   });
+    // } else {
+    //   // Create new property
+    //   this.propertyService.createProperty(propertyData).subscribe({
+    //     next: (newProperty) => {
+    //       this.isSubmitting = false;
+    //       this.successMessage = 'Property listing created successfully!';
           
-          // Redirect to property details page after a short delay
-          setTimeout(() => {
-            this.router.navigate(['/property', newProperty.id]);
-          }, 1500);
-        },
-        error: (error) => {
-          console.error('Error creating property:', error);
-          this.errorMessage = 'Failed to create property. Please try again.';
-          this.isSubmitting = false;
-        }
-      });
-    }
+    //       // Redirect to property details page after a short delay
+    //       setTimeout(() => {
+    //         this.router.navigate(['/property', newProperty.id]);
+    //       }, 1500);
+    //     },
+    //     error: (error) => {
+    //       console.error('Error creating property:', error);
+    //       this.errorMessage = 'Failed to create property. Please try again.';
+    //       this.isSubmitting = false;
+    //     }
+    //   });
+    // }
   }
   
   // Handle image selection

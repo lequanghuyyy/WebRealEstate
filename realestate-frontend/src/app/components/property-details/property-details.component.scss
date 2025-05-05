@@ -1165,6 +1165,28 @@
       }
     }
     
+    &.favorite-button {
+      background: linear-gradient(to right, #e74c3c, #ff7675);
+      color: white;
+      
+      &:hover {
+        box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
+        transform: translateY(-2px);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+      
+      &.is-favorite {
+        background: linear-gradient(to right, #2ecc71, #27ae60);
+        
+        &:hover {
+          box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+        }
+      }
+    }
+    
     &.schedule-button {
       background: linear-gradient(to right, #3498db, #5dade2);
       color: white;
@@ -1395,6 +1417,46 @@
           }
         }
       }
+    }
+  }
+}
+
+.favorite-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+  padding: 10px 20px;
+  background-color: white;
+  border: 2px solid #e74c3c;
+  color: #e74c3c;
+  border-radius: 25px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  
+  i {
+    margin-right: 10px;
+    font-size: 20px;
+  }
+  
+  &:hover {
+    background-color: #e74c3c;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  }
+  
+  &.is-favorite {
+    background-color: #e74c3c;
+    color: white;
+    
+    &:hover {
+      background-color: white;
+      color: #e74c3c;
     }
   }
 } 

@@ -42,7 +42,9 @@ public final class ListingSpecification {
             specifications.add((root, query, cb) ->
                     cb.or(
                             cb.like(cb.upper(root.get(FIELD_TITLE)), like(keyword)),
-                            cb.like(cb.upper(root.get(FIELD_DESCRIPTION)), like(keyword))
+                            cb.like(cb.upper(root.get(FIELD_DESCRIPTION)), like(keyword)),
+                            cb.like(cb.upper(root.get(FIELD_ADDRESS)), like(keyword)),
+                            cb.like(cb.upper(root.get(FIELD_CITY)), like(keyword))
                     )
             );
         }
@@ -53,7 +55,7 @@ public final class ListingSpecification {
     public ListingSpecification withCity(final String city) {
         if (!ObjectUtils.isEmpty(city)) {
             specifications.add((root, query, cb) ->
-                    cb.equal(cb.upper(root.get(FIELD_CITY)), city.toUpperCase())
+                    cb.like(cb.upper(root.get(FIELD_CITY)), city.toUpperCase())
             );
         }
         return this;
@@ -78,8 +80,6 @@ public final class ListingSpecification {
         }
         return this;
     }
-
-    // Lọc theo diện tích tối đa
     public ListingSpecification withMaxArea(final BigDecimal maxArea) {
         if (maxArea != null) {
             specifications.add((root, query, cb) ->
@@ -102,7 +102,7 @@ public final class ListingSpecification {
     public ListingSpecification withBedrooms(final Integer bedrooms) {
         if (bedrooms != null) {
             specifications.add((root, query, cb) ->
-                    cb.equal(root.get(FIELD_BEDROOMS), bedrooms)
+                    cb.greaterThanOrEqualTo(root.get(FIELD_BEDROOMS), bedrooms)
             );
         }
         return this;
@@ -111,7 +111,7 @@ public final class ListingSpecification {
     public ListingSpecification withBathrooms(final Integer bathrooms) {
         if (bathrooms != null) {
             specifications.add((root, query, cb) ->
-                    cb.equal(root.get(FIELD_BATHROOMS), bathrooms)
+                    cb.greaterThanOrEqualTo(root.get(FIELD_BATHROOMS), bathrooms)
             );
         }
         return this;

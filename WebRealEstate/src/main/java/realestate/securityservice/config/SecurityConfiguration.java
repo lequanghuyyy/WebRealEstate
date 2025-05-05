@@ -23,7 +23,7 @@ import realestate.securityservice.sercurity.JwtAuthenticationFilter;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfiguration {
-    private static final String[] WHITE_LIST = {"/api/v1/auth/**"};
+    private static final String[] WHITE_LIST = {"/api/v1/users/auth/**","/api/v1/health"};
 
 
     private final JwtAuthenticationFilter jwtRequestFilter;
@@ -65,9 +65,9 @@ public class SecurityConfiguration {
         http.csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auths -> auths
 
-                        .requestMatchers("/api/v1/delete/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/update/{userId}").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/update").authenticated()
+                        .requestMatchers("/api/v1/users/delete/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/users/update/{userId}").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/users/update").authenticated()
                         .requestMatchers(WHITE_LIST).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

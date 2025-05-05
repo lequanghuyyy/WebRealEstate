@@ -3,23 +3,19 @@ package realestate.webrealestatelistingservice.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingStatusUpdateRequest;
 import realestate.webrealestatelistingservice.dto.response.BaseResponse;
 import realestate.webrealestatelistingservice.dto.response.ListingResponse;
-import realestate.webrealestatelistingservice.dto.response.ListingResponseCustom;
 import realestate.webrealestatelistingservice.dto.response.ResponseFactory;
 import realestate.webrealestatelistingservice.service.ListingService;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("api/v1/listing")
+@RequestMapping("api/v1/listings")
 public class ListingController {
     private final ListingService listingService;
     @Autowired
@@ -30,11 +26,6 @@ public class ListingController {
     @PostMapping("/create")
     public ResponseEntity<BaseResponse<ListingResponse>> create(@RequestBody ListingRequest listingRequest) {
         return ResponseFactory.ok(listingService.createListing(listingRequest));
-    }
-
-    @GetMapping("/find")
-    public ResponseEntity<BaseResponse<List<ListingResponse>>> find() {
-        return ResponseFactory.ok(listingService.getListings());
     }
 
     @GetMapping("/findById/{listingId}")
@@ -72,16 +63,16 @@ public class ListingController {
         return ResponseFactory.ok(pageResult);
     }
 
-    @GetMapping("/findCustom")
-    public ResponseEntity<BaseResponse<List<ListingResponseCustom>>> getCustomListings() {
-        return ResponseFactory.ok(listingService.getCustomListings());
-    }
-
-    @GetMapping("/custom/paged")
-    public ResponseEntity<BaseResponse<PageDto<ListingResponseCustom>>> getCustomListingsPaged(
+    @GetMapping("")
+    public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> getListingsPaged(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        return ResponseFactory.ok(listingService.getCustomListingsPaged(page, size));
+        return ResponseFactory.ok(listingService.getListingsPaged(page, size));
+    }
+
+    @GetMapping("/byViews")
+    public ResponseEntity<BaseResponse<List<ListingResponse>>> getListingsBy5ViewMost() {
+        return ResponseFactory.ok(listingService.getTop5MostViewedListings());
     }
 
     @GetMapping("/sale")
@@ -107,6 +98,4 @@ public class ListingController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseFactory.ok(listingService.getListingsByRentTypePaged(page, size));
     }
-
-
 }

@@ -26,11 +26,11 @@ export class RegisterComponent implements OnInit {
   ) {
     this.registerForm = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
-      fullName: ['', Validators.required],
-      role: ['', Validators.required],
-      phoneNumber: [''],
-      licenseNumber: [''],
-      agencyName: [''],
+      username: ['', [Validators.required, Validators.minLength(4)]],
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      phone: ['', Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)],
+      role: ['USER', Validators.required],
       password: ['', [Validators.required, Validators.minLength(8)]],
       confirmPassword: ['', Validators.required],
       termsAccepted: [false, Validators.requiredTrue]
@@ -42,21 +42,30 @@ export class RegisterComponent implements OnInit {
   ngOnInit(): void {
     // Add conditional validators when role changes
     this.registerForm.get('role')?.valueChanges.subscribe(role => {
-      const phoneNumberControl = this.registerForm.get('phoneNumber');
+      const phoneControl = this.registerForm.get('phone');
       
-      if (role === 'propertyOwner') {
-        phoneNumberControl?.setValidators([Validators.required]);
+      if (role === 'AGENT') {
+        phoneControl?.setValidators([Validators.required, Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)]);
       } else {
-        phoneNumberControl?.clearValidators();
+        phoneControl?.setValidators([Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)]);
       }
       
-      phoneNumberControl?.updateValueAndValidity();
+      phoneControl?.updateValueAndValidity();
+    });
+
+    // Auto-populate username from email
+    this.registerForm.get('email')?.valueChanges.subscribe(email => {
+      if (email && !this.registerForm.get('username')?.value) {
+        // Use email as the default username (without the domain part)
+        const username = email.split('@')[0];
+        this.registerForm.get('username')?.setValue(username);
+      }
     });
   }
 
-  // Check if the selected role is Property Owner/Agent
-  isPropertyOwner(): boolean {
-    return this.registerForm.get('role')?.value === 'propertyOwner';
+  // Check if the selected role is AGENT
+  isAgent(): boolean {
+    return this.registerForm.get('role')?.value === 'AGENT';
   }
 
   // Custom validator to check if password and confirm password match
@@ -77,16 +86,24 @@ export class RegisterComponent implements OnInit {
     return this.registerForm.get('email');
   }
 
-  get fullNameControl() {
-    return this.registerForm.get('fullName');
+  get usernameControl() {
+    return this.registerForm.get('username');
+  }
+
+  get firstNameControl() {
+    return this.registerForm.get('firstName');
+  }
+
+  get lastNameControl() {
+    return this.registerForm.get('lastName');
   }
 
   get roleControl() {
     return this.registerForm.get('role');
   }
 
-  get phoneNumberControl() {
-    return this.registerForm.get('phoneNumber');
+  get phoneControl() {
+    return this.registerForm.get('phone');
   }
 
   get passwordControl() {
@@ -116,30 +133,37 @@ export class RegisterComponent implements OnInit {
     this.serverError = null;
 
     const formData = this.registerForm.value;
-    const isAgent = formData.role === 'propertyOwner';
-
-    // Create a registration object with the form data
+    
+    // Map roles according to backend expectations
+    let roles: string[] = [];
+    if (formData.role === 'AGENT') {
+      roles = ['AGENT'];
+    } else {
+      // For Home Seekers, set both BUYER and RENTER roles
+      roles = ['BUYER', 'RENTER'];
+    }
+    
+    // Create a registration object with the form data formatted for the Spring backend
     const registrationData = {
+      username: formData.username,
       email: formData.email,
       password: formData.password,
-      fullName: formData.fullName,
-      role: isAgent ? 'agent' : 'user',
-      status: isAgent ? 'pending' : 'active',
-      // Include agent-specific data if the role is propertyOwner
-      ...(isAgent && {
-        phoneNumber: formData.phoneNumber,
-        licenseNumber: formData.licenseNumber || null,
-        agencyName: formData.agencyName || null,
-      })
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      phone: formData.phone || '',
+      roles: roles // Set the roles array based on the selected role
     };
 
+    console.log('Sending registration data to backend:', registrationData);
+
     // Call the auth service to register the user
-    this.authService.registerWithRole(registrationData).subscribe({
-      next: (response: { success: boolean, requiresVerification?: boolean, message: string }) => {
+    this.authService.register(registrationData).subscribe({
+      next: (response) => {
         this.isLoading = false;
         this.registrationSuccess = true;
+        console.log('Registration successful:', response);
         
-        if (isAgent) {
+        if (formData.role === 'AGENT') {
           // For agents, show a verification message and stay on the page
           this.verificationSent = true;
         } else {
@@ -149,14 +173,19 @@ export class RegisterComponent implements OnInit {
           });
         }
       },
-      error: (error: { status: number, error: string }) => {
+      error: (error) => {
         this.isLoading = false;
-        if (error.status === 409) {
-          this.serverError = 'This email is already registered. Please try another one.';
-        } else {
-          this.serverError = 'Registration failed. Please try again later.';
-        }
         console.error('Registration error:', error);
+        
+        if (error.status === 409 || 
+            (error.error && typeof error.error === 'string' && error.error.includes('already exists')) ||
+            (error.error && error.error.message && error.error.message.includes('already exists'))) {
+          this.serverError = 'This username or email is already registered. Please try another one.';
+        } else if (error.status === 400 || error.message?.includes('Invalid')) {
+          this.serverError = 'Invalid registration data. Please check your information.';
+        } else {
+          this.serverError = error.message || 'Registration failed. Please try again later.';
+        }
       }
     });
   }

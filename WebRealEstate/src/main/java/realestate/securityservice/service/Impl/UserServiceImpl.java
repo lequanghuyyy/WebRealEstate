@@ -90,11 +90,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserResponse getUserByUsername(String username) {
-        return userRepository.findByUsername(username).map(userMapper::convertToUserResponse).orElseThrow(() -> new NotFoundException("User","UserName",username));
-    }
-
-    @Override
     public UserResponse updateUserForUser(UserUpdateRequest userUpdateRequest) {
         String idCurrent = getIdUserCurrent();
         UserEntity userEntity = userRepository.findById(idCurrent).orElseThrow(() -> new NotFoundException("User","UserId",idCurrent));
@@ -126,6 +121,8 @@ public class UserServiceImpl implements UserService {
                 .map(userMapper::convertToUserResponse)
                 .collect(Collectors.toList());
     }
+
+
 
     public String getIdUserCurrent(){
         CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();

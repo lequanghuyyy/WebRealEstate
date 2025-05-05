@@ -4,20 +4,6 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 
-// Custom pipe for filtering contact requests
-@Pipe({
-  name: 'filterContacts',
-  standalone: true
-})
-export class FilterContactsPipe implements PipeTransform {
-  transform(contacts: any[], filter: string): any[] {
-    if (!contacts || !filter || filter === 'all') {
-      return contacts;
-    }
-    return contacts.filter(contact => contact.status === filter);
-  }
-}
-
 // Custom pipe for filtering viewing schedules
 @Pipe({
   name: 'filterViewings',
@@ -37,24 +23,22 @@ export class FilterViewingsPipe implements PipeTransform {
   templateUrl: './agent-dashboard.component.html',
   styleUrls: ['./agent-dashboard.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FilterContactsPipe, FilterViewingsPipe]
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, FilterViewingsPipe]
 })
 export class AgentDashboardComponent implements OnInit {
   agent: any = null;
   isLoading = true;
-  activeTab = 'overview';
+  activeTab = 'listings';
   
-  // Các trạng thái trang
+  // Page states
   isNewListingPage = false;
   isEditListingPage = false;
   editingListingId: number | null = null;
   
   // Filter states
-  activeContactFilter: string = 'all';
   activeViewingFilter: string = 'all';
   
   // Selected items for modals
-  selectedContactRequest: any = null;
   selectedViewing: any = null;
   
   listings = [
@@ -96,15 +80,6 @@ export class AgentDashboardComponent implements OnInit {
     }
   ];
   
-  // Mock data for recent activities
-  activities = [
-    { type: 'message', content: 'New message from John Smith about Modern Apartment', time: '10 minutes ago' },
-    { type: 'view', content: 'Your listing "Luxury Villa with Pool" was viewed by 25 people', time: '2 hours ago' },
-    { type: 'favorite', content: '5 users added "Office Space" to their favorites', time: '5 hours ago' },
-    { type: 'inquiry', content: 'New inquiry about "Modern Apartment" from Sarah Johnson', time: '1 day ago' },
-    { type: 'listing', content: 'Your listing "Luxury Villa with Pool" was approved', time: '2 days ago' }
-  ];
-  
   // Mock data for messages
   messages = [
     { 
@@ -139,55 +114,6 @@ export class AgentDashboardComponent implements OnInit {
       date: '2023-04-10',
       read: true,
       propertyId: 3
-    }
-  ];
-  
-  // Mock data for contact requests
-  contactRequests = [
-    {
-      id: 1,
-      name: 'Emily Wilson',
-      email: 'emily@example.com',
-      phone: '123-456-7890',
-      message: 'Hi, I\'m interested in the Modern Apartment. I would like to know if there are any discounts for long-term leases.',
-      property: {
-        id: 1,
-        title: 'Modern Apartment in Downtown',
-        thumbnail: '/assets/images/properties/property-1.jpg'
-      },
-      date: '2023-05-15',
-      status: 'new',
-      notes: ''
-    },
-    {
-      id: 2,
-      name: 'David Lee',
-      email: 'david@example.com',
-      phone: '234-567-8901',
-      message: 'Hello, I have some questions about the Luxury Villa with Pool. Could you provide more details about the neighborhood?',
-      property: {
-        id: 2,
-        title: 'Luxury Villa with Pool',
-        thumbnail: '/assets/images/properties/property-2.jpg'
-      },
-      date: '2023-05-14',
-      status: 'inprogress',
-      notes: 'Called back on May 15, customer has more questions about schools in the area'
-    },
-    {
-      id: 3,
-      name: 'Lisa Johnson',
-      email: 'lisa@example.com',
-      phone: '345-678-9012',
-      message: 'I would like to get more information about the Office Space. Our company is looking to move in the next 3 months.',
-      property: {
-        id: 3,
-        title: 'Office Space in Business District',
-        thumbnail: '/assets/images/properties/property-3.jpg'
-      },
-      date: '2023-05-12',
-      status: 'closed',
-      notes: 'Scheduled a meeting for May 20 to discuss details'
     }
   ];
   
@@ -252,12 +178,12 @@ export class AgentDashboardComponent implements OnInit {
   ) {}
   
   ngOnInit() {
-    // Xác định loại trang hiện tại
+    // Determine current page type
     const currentUrl = this.router.url;
     this.isNewListingPage = currentUrl.includes('/listings/new');
     this.isEditListingPage = currentUrl.includes('/listings/edit');
     
-    // Nếu đang ở trang chỉnh sửa, lấy ID từ URL
+    // If on edit page, get ID from URL
     if (this.isEditListingPage) {
       const urlSegments = currentUrl.split('/');
       const idStr = urlSegments[urlSegments.length - 1];
@@ -273,10 +199,23 @@ export class AgentDashboardComponent implements OnInit {
     // Get agent data
     this.agent = this.authService.getCurrentUser();
     this.isLoading = false;
+    
+    // Set active tab based on URL
+    if (currentUrl.includes('/viewings')) {
+      this.activeTab = 'viewings';
+    } else {
+      this.activeTab = 'listings';
+    }
   }
   
-  setActiveTab(tab: string) {
+  setActiveTab(tab: string): void {
     this.activeTab = tab;
+    
+    if (tab === 'listings') {
+      this.router.navigate(['/agent/dashboard']);
+    } else if (tab === 'viewings') {
+      this.router.navigate(['/agent/dashboard/viewings']);
+    }
   }
   
   // Methods for agent actions
@@ -311,10 +250,6 @@ export class AgentDashboardComponent implements OnInit {
     // In a real application, open a reply form or navigate to messaging interface
   }
   
-  getUnreadMessageCount(): number {
-    return this.messages.filter(m => !m.read).length;
-  }
-  
   formatCurrency(value: number): string {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(value);
   }
@@ -330,91 +265,6 @@ export class AgentDashboardComponent implements OnInit {
     if (!listing) return '';
     
     return listing[property as keyof typeof listing] || '';
-  }
-  
-  // Contact Request Methods
-  updateContactRequestStatus(requestId: number, status: string) {
-    const request = this.contactRequests.find(r => r.id === requestId);
-    if (request) {
-      request.status = status;
-    }
-  }
-  
-  saveContactRequestNotes(requestId: number, notes: string) {
-    const request = this.contactRequests.find(r => r.id === requestId);
-    if (request) {
-      request.notes = notes;
-    }
-  }
-  
-  showContactRequestDetails(requestId: number) {
-    this.selectedContactRequest = this.contactRequests.find(r => r.id === requestId);
-    // Open modal using Bootstrap
-    const modal = document.getElementById('contactRequestModal');
-    if (modal) {
-      // Use window.bootstrap to access the Bootstrap API
-      // @ts-ignore
-      const bsModal = new window.bootstrap.Modal(modal);
-      bsModal.show();
-    }
-  }
-  
-  saveContactRequestChanges() {
-    if (this.selectedContactRequest) {
-      const index = this.contactRequests.findIndex(r => r.id === this.selectedContactRequest.id);
-      if (index !== -1) {
-        this.contactRequests[index] = {...this.selectedContactRequest};
-      }
-      
-      // Close modal
-      const modal = document.getElementById('contactRequestModal');
-      if (modal) {
-        // @ts-ignore
-        const bsModal = window.bootstrap.Modal.getInstance(modal);
-        if (bsModal) {
-          bsModal.hide();
-        }
-      }
-    }
-  }
-  
-  scheduleViewing(contactRequest: any) {
-    // Create a new viewing schedule from the contact request
-    const newViewing = {
-      id: this.viewingSchedules.length + 1,
-      name: contactRequest.name,
-      email: contactRequest.email,
-      phone: contactRequest.phone,
-      date: new Date().toISOString().split('T')[0], // Today
-      time: '10:00', // Default time
-      property: contactRequest.property,
-      status: 'pending',
-      notes: '',
-      additionalNotes: contactRequest.message
-    };
-    
-    this.viewingSchedules.push(newViewing);
-    this.selectedViewing = newViewing;
-    
-    // Close current modal
-    const contactModal = document.getElementById('contactRequestModal');
-    if (contactModal) {
-      // @ts-ignore
-      const bsModal = window.bootstrap.Modal.getInstance(contactModal);
-      if (bsModal) {
-        bsModal.hide();
-      }
-    }
-    
-    // Open viewing modal
-    setTimeout(() => {
-      const viewingModal = document.getElementById('viewingScheduleModal');
-      if (viewingModal) {
-        // @ts-ignore
-        const bsModal = new window.bootstrap.Modal(viewingModal);
-        bsModal.show();
-      }
-    }, 500);
   }
   
   // Viewing Schedule Methods

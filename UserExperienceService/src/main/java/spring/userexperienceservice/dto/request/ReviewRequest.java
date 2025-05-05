@@ -14,6 +14,8 @@ public class ReviewRequest {
     @NotBlank(message = "Buyer/Renter ID cannot be blank")
     private String brId;
 
+    private String title;
+
     private String contentReview;
 
     @NotNull(message = "Rating is required")

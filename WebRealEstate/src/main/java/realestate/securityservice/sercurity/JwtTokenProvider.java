@@ -31,7 +31,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getUsername())
+                .setSubject(user.getId())
                 .claim("role", user.getUser().getRoles().stream().map(RoleEntity::getRoleName).toList())
                 .setIssuer("LeQuangHuy.com")
                 .setIssuedAt(new Date(System.currentTimeMillis()))
@@ -45,7 +45,7 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 
-    public String extractUsername(String token) {
+    public String extractUserId(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 

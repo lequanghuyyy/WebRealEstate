@@ -13,7 +13,7 @@ import spring.userexperienceservice.service.AppointmentService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/appointments")
+@RequestMapping("api/v1/ux/appointments")
 @RequiredArgsConstructor
 public class AppointmentController {
     private final AppointmentService appointmentService;

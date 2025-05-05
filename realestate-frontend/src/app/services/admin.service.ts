@@ -7,12 +7,13 @@ import { Payment } from '../models/payment.model';
 import { Property } from '../models/property.model';
 import { Review } from '../models/review.model';
 import { Contact } from '../models/contact.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = 'http://localhost:8080/api/admin'; // Replace with your actual API
+  private apiUrl = `${environment.apiUrl}/admin`;
 
   // Mock data for demo purposes
   private mockUsers: User[] = [

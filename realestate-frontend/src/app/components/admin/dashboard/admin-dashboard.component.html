@@ -1,4 +1,9 @@
 <div class="admin-dashboard">
+  <!-- Test Content to verify rendering -->
+  <div class="test-banner" style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #3b82f6;">
+    <h2 style="color: #3b82f6; margin: 0;">Admin Dashboard</h2>
+  </div>
+
   <!-- Loading State -->
   <div class="loading-container" *ngIf="isLoading">
     <div class="spinner-border text-primary" role="status">
@@ -10,10 +15,11 @@
   <!-- Error Message -->
   <div class="alert alert-danger" *ngIf="error">
     <i class="fas fa-exclamation-circle"></i> {{ error }}
+    <button class="btn btn-sm btn-outline-danger ms-3" (click)="retryLoading()">Try Again</button>
   </div>
 
   <!-- Dashboard Content -->
-  <div class="dashboard-content" *ngIf="!isLoading && !error">
+  <div class="dashboard-content" *ngIf="!isLoading">
     <h1 class="page-title">Dashboard</h1>
     <p class="subtitle">Welcome to the admin dashboard</p>
 
@@ -122,56 +128,10 @@
       </div>
     </div>
 
-    <!-- Recent Transactions -->
-    <div class="recent-transactions">
-      <div class="section-header">
-        <h2>Recent Transactions</h2>
-        <a [routerLink]="['/admin/transactions']" class="btn btn-link">
-          View All <i class="fas fa-arrow-right"></i>
-        </a>
-      </div>
-
-      <div class="table-responsive">
-        <table class="table table-hover">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Property</th>
-              <th>Type</th>
-              <th>Amount</th>
-              <th>Status</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="recentTransactions.length === 0">
-              <td colspan="6" class="text-center">No transactions found</td>
-            </tr>
-            <tr *ngFor="let transaction of recentTransactions">
-              <td>{{ transaction.id }}</td>
-              <td>{{ transaction.propertyTitle }}</td>
-              <td>
-                <span class="badge" [ngClass]="transaction.transactionType === 'sale' ? 'bg-success' : 'bg-primary'">
-                  {{ transaction.transactionType === 'sale' ? 'Sale' : 'Rent' }}
-                </span>
-              </td>
-              <td>{{ formatCurrency(transaction.amount) }}</td>
-              <td>
-                <span class="badge" 
-                  [ngClass]="{
-                    'bg-success': transaction.status === 'completed',
-                    'bg-warning': transaction.status === 'pending',
-                    'bg-danger': transaction.status === 'cancelled',
-                    'bg-info': transaction.status === 'refunded'
-                  }">
-                  {{ transaction.status }}
-                </span>
-              </td>
-              <td>{{ formatDate(transaction.date) }}</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+    <!-- User Info -->
+    <div class="user-info-section" style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+      <h3>Current User Info</h3>
+      <pre style="background-color: #fff; padding: 15px; border-radius: 4px; overflow: auto;">{{ currentUser | json }}</pre>
     </div>
   </div>
 </div> 

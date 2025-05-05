@@ -1,7 +1,9 @@
 <div class="transactions-container">
   <!-- Loading State -->
   <div class="loading-container" *ngIf="isLoading">
-    <div class="spinner"></div>
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
     <p>Loading transaction data...</p>
   </div>
 
@@ -12,210 +14,491 @@
     </div>
     <h3>You need to log in as an agent</h3>
     <p>To view transaction information, please log in with an agent account.</p>
-    <button class="primary-button" routerLink="/auth/login">Log in now</button>
+    <button class="btn btn-primary" routerLink="/auth/login">Log in now</button>
   </div>
 
   <!-- Main Content -->
   <div class="transactions-content" *ngIf="!isLoading && isAgent">
-    <h2 class="section-title">Transaction Management</h2>
+    <div class="dashboard-header">
+      <div class="header-content">
+        <h2 class="section-title">Transaction Management</h2>
+        <p class="text-muted">Manage your sale and rental transactions</p>
+      </div>
+      <div>
+        <button class="btn btn-primary add-transaction-button" (click)="openAddTransactionDialog()">
+          <i class="fas fa-plus me-2"></i> Add New Transaction
+        </button>
+      </div>
+    </div>
     
     <!-- Stats Cards -->
-    <div class="stats-container">
-      <div class="stat-card">
-        <div class="stat-icon">
+    <div class="modern-stats-grid">
+      <div class="stat-card commission-card">
+        <div class="card-value">{{ getFormattedCurrency(totalCommission) }}</div>
+        <div class="card-label">Total Commission</div>
+        <div class="card-icon">
           <i class="fas fa-money-bill-wave"></i>
         </div>
-        <div class="stat-info">
-          <h4>Total Commission</h4>
-          <p class="stat-value">{{ getFormattedCurrency(totalCommission) }}</p>
-        </div>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon">
+      <div class="stat-card pending-card">
+        <div class="card-value">{{ getFormattedCurrency(pendingCommission) }}</div>
+        <div class="card-label">Pending Commission</div>
+        <div class="card-icon">
           <i class="fas fa-hourglass-half"></i>
         </div>
-        <div class="stat-info">
-          <h4>Pending Commission</h4>
-          <p class="stat-value">{{ getFormattedCurrency(pendingCommission) }}</p>
+      </div>
+      
+      <div class="stat-card sale-card">
+        <div class="card-value">{{ getSaleTransactionsCount() }}</div>
+        <div class="card-label">Sale Transactions</div>
+        <div class="card-icon">
+          <i class="fas fa-home"></i>
         </div>
       </div>
       
-      <div class="stat-card">
-        <div class="stat-icon">
-          <i class="fas fa-check-circle"></i>
-        </div>
-        <div class="stat-info">
-          <h4>Successful Transactions</h4>
-          <p class="stat-value">{{ successfulTransactions }}</p>
+      <div class="stat-card rental-card">
+        <div class="card-value">{{ getRentalTransactionsCount() }}</div>
+        <div class="card-label">Rental Transactions</div>
+        <div class="card-icon">
+          <i class="fas fa-key"></i>
         </div>
       </div>
     </div>
     
-    <!-- Action Button -->
-    <div class="action-button-container">
-      <button class="btn btn-primary add-transaction-button" (click)="openAddTransactionDialog()">
-        <i class="fas fa-plus"></i> Add New Transaction
-      </button>
-    </div>
+    <!-- Transaction Type Tabs -->
+    <ul class="nav nav-tabs transaction-tabs">
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'buy'" (click)="changeTab('buy')">
+          <i class="fas fa-shopping-cart me-2"></i> Sale Transactions
+        </a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" [class.active]="activeTab === 'rent'" (click)="changeTab('rent')">
+          <i class="fas fa-key me-2"></i> Rental Transactions
+        </a>
+      </li>
+    </ul>
     
     <!-- Filters Section -->
-    <div class="filters-container">
+    <div class="filters-container mb-4">
       <form [formGroup]="filterForm" class="filter-form">
-        <div class="search-filter">
-          <input 
-            type="text" 
-            formControlName="searchQuery" 
-            placeholder="Search by ID, property, or client"
-            class="search-input">
-          <button class="reset-button" (click)="resetFilters()" title="Reset filters">
-            <i class="fas fa-undo"></i>
-          </button>
-        </div>
-        
-        <div class="select-filters">
-          <div class="filter-group">
-            <label for="typeFilter">Type</label>
-            <select id="typeFilter" formControlName="typeFilter">
-              <option value="all">All</option>
-              <option value="sale">Sale</option>
-              <option value="rent">Rent</option>
-            </select>
+        <div class="row g-3 align-items-end">
+          <div class="col-md-6">
+            <div class="search-filter">
+              <label for="searchQuery" class="form-label">Search</label>
+              <div class="input-group">
+                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                <input 
+                  type="text"
+                  id="searchQuery"
+                  formControlName="searchQuery" 
+                  placeholder="Search by ID, property, or client"
+                  class="form-control">
+              </div>
+            </div>
           </div>
           
-          <div class="filter-group">
-            <label for="statusFilter">Status</label>
-            <select id="statusFilter" formControlName="statusFilter">
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="completed">Completed</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+          <div class="col-md-3">
+            <div class="filter-group">
+              <label for="statusFilter" class="form-label">Status</label>
+              <select id="statusFilter" formControlName="statusFilter" class="form-select">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
           </div>
           
-          <div class="filter-group">
-            <label for="paymentStatusFilter">Payment</label>
-            <select id="paymentStatusFilter" formControlName="paymentStatusFilter">
-              <option value="all">All</option>
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="refunded">Refunded</option>
-            </select>
+          <div class="col-md-3">
+            <div class="filter-group">
+              <label for="paymentStatusFilter" class="form-label">Payment</label>
+              <select id="paymentStatusFilter" formControlName="paymentStatusFilter" class="form-select">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="refunded">Refunded</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="col-md-12 text-end">
+            <button class="btn btn-outline-secondary" (click)="resetFilters()">
+              <i class="fas fa-undo me-2"></i> Reset Filters
+            </button>
           </div>
         </div>
       </form>
     </div>
-    
-    <!-- Transactions Table -->
-    <div class="table-responsive">
-      <table class="transactions-table">
-        <thead>
-          <tr>
-            <th (click)="updateSort('id')">
-              Transaction ID
-              <i class="fas" [ngClass]="sortField === 'id' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('property')">
-              Property
-              <i class="fas" [ngClass]="sortField === 'property' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('client')">
-              Client
-              <i class="fas" [ngClass]="sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('type')">
-              Type
-              <i class="fas" [ngClass]="sortField === 'type' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('amount')">
-              Amount
-              <i class="fas" [ngClass]="sortField === 'amount' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('commission')">
-              Commission
-              <i class="fas" [ngClass]="sortField === 'commission' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('status')">
-              Status
-              <i class="fas" [ngClass]="sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('paymentStatus')">
-              Payment
-              <i class="fas" [ngClass]="sortField === 'paymentStatus' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th (click)="updateSort('date')">
-              Date
-              <i class="fas" [ngClass]="sortField === 'date' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
-            </th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngIf="filteredTransactions.length === 0">
-            <td colspan="10" class="no-data">
-              <p>No transactions found matching your search criteria.</p>
-            </td>
-          </tr>
-          <tr *ngFor="let transaction of getPaginatedTransactions()">
-            <td>{{ transaction.id }}</td>
-            <td class="property-cell">
-              <div class="property-info">
-                <img [src]="transaction.property.image" alt="Property image" class="property-thumbnail">
-                <span>{{ transaction.property.title }}</span>
-              </div>
-            </td>
-            <td>
-              <div class="client-info">
-                <span class="client-name">{{ transaction.client.name }}</span>
-                <span class="client-email">{{ transaction.client.email }}</span>
-              </div>
-            </td>
-            <td>
-              <span class="transaction-type" [ngClass]="transaction.type">
-                {{ transaction.type === 'sale' ? 'Sale' : 'Rent' }}
-              </span>
-            </td>
-            <td>{{ getFormattedCurrency(transaction.amount) }}</td>
-            <td>{{ getFormattedCurrency(transaction.commission) }}</td>
-            <td>
-              <span class="status-badge" [ngClass]="transaction.status">
-                {{ transaction.status === 'completed' ? 'Completed' : 
-                   transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
-              </span>
-            </td>
-            <td>
-              <span class="status-badge" [ngClass]="transaction.paymentStatus">
-                {{ transaction.paymentStatus === 'paid' ? 'Paid' : 
-                   transaction.paymentStatus === 'pending' ? 'Pending' : 'Refunded' }}
-              </span>
-            </td>
-            <td>{{ getDateFormatted(transaction.date) }}</td>
-            <td class="action-buttons">
-              <button class="btn btn-sm btn-outline-primary edit-btn" (click)="openEditTransactionDialog(transaction)" title="Edit transaction">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger delete-btn" (click)="deleteTransaction(transaction)" title="Delete transaction">
-                <i class="fas fa-trash"></i>
-              </button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+
+    <!-- Sale Transactions Table -->
+    <div class="tab-content">
+      <div class="tab-pane" [class.active]="activeTab === 'buy'" [class.show]="activeTab === 'buy'">
+        <div class="card">
+          <div class="card-header bg-light">
+            <h3 class="card-title mb-0">Sale Transactions</h3>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th (click)="updateSort('id')">
+                      ID
+                      <i class="fas" [ngClass]="sortField === 'id' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('property')">
+                      Property
+                      <i class="fas" [ngClass]="sortField === 'property' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('client')">
+                      Client
+                      <i class="fas" [ngClass]="sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('amount')">
+                      Amount
+                      <i class="fas" [ngClass]="sortField === 'amount' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('commission')">
+                      Commission
+                      <i class="fas" [ngClass]="sortField === 'commission' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('status')">
+                      Status
+                      <i class="fas" [ngClass]="sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="getFilteredSaleTransactions().length === 0">
+                    <td colspan="7" class="text-center py-4">
+                      <p class="mb-0 text-muted">No sale transactions found matching your search criteria.</p>
+                    </td>
+                  </tr>
+                  <tr *ngFor="let transaction of getPaginatedSaleTransactions()">
+                    <td>{{ transaction.id }}</td>
+                    <td class="property-cell">
+                      <div class="property-info d-flex align-items-center">
+                        <img [src]="transaction.property.image" alt="Property image" class="property-thumbnail rounded me-2">
+                        <span>{{ transaction.property.title }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="client-info">
+                        <span class="client-name fw-bold d-block">{{ transaction.client.name }}</span>
+                        <span class="client-email text-muted small">{{ transaction.client.email }}</span>
+                      </div>
+                    </td>
+                    <td>{{ getFormattedCurrency(transaction.amount) }}</td>
+                    <td>{{ getFormattedCurrency(transaction.commission) }}</td>
+                    <td>
+                      <span class="badge rounded-pill" [ngClass]="{
+                        'bg-success': transaction.status === 'completed',
+                        'bg-warning text-dark': transaction.status === 'pending',
+                        'bg-danger': transaction.status === 'cancelled'
+                      }">
+                        {{ transaction.status === 'completed' ? 'Completed' : 
+                          transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary me-1" (click)="viewTransactionDetails(transaction)" title="View details">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEditTransactionDialog(transaction)" title="Edit transaction">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteTransaction(transaction)" title="Delete transaction">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rental Transactions Table -->
+      <div class="tab-pane" [class.active]="activeTab === 'rent'" [class.show]="activeTab === 'rent'">
+        <div class="card">
+          <div class="card-header bg-light">
+            <h3 class="card-title mb-0">Rental Transactions</h3>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover table-striped mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th (click)="updateSort('id')">
+                      ID
+                      <i class="fas" [ngClass]="sortField === 'id' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('property')">
+                      Property
+                      <i class="fas" [ngClass]="sortField === 'property' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('client')">
+                      Client
+                      <i class="fas" [ngClass]="sortField === 'client' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th (click)="updateSort('deposit')">
+                      Deposit
+                      <i class="fas" [ngClass]="sortField === 'deposit' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th>
+                      Start Date
+                    </th>
+                    <th>
+                      End Date
+                    </th>
+                    <th (click)="updateSort('status')">
+                      Status
+                      <i class="fas" [ngClass]="sortField === 'status' ? (sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down') : 'fa-sort'"></i>
+                    </th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngIf="getFilteredRentalTransactions().length === 0">
+                    <td colspan="8" class="text-center py-4">
+                      <p class="mb-0 text-muted">No rental transactions found matching your search criteria.</p>
+                    </td>
+                  </tr>
+                  <tr *ngFor="let transaction of getPaginatedRentalTransactions()">
+                    <td>{{ transaction.id }}</td>
+                    <td class="property-cell">
+                      <div class="property-info d-flex align-items-center">
+                        <img [src]="transaction.property.image" alt="Property image" class="property-thumbnail rounded me-2">
+                        <span>{{ transaction.property.title }}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div class="client-info">
+                        <span class="client-name fw-bold d-block">{{ transaction.client.name }}</span>
+                        <span class="client-email text-muted small">{{ transaction.client.email }}</span>
+                      </div>
+                    </td>
+                    <td>{{ getFormattedCurrency(transaction.amount) }}</td>
+                    <td>{{ getDateFormatted(transaction.startDate || transaction.date) }}</td>
+                    <td>{{ getDateFormatted(transaction.endDate || transaction.date) }}</td>
+                    <td>
+                      <span class="badge rounded-pill" [ngClass]="{
+                        'bg-success': transaction.status === 'completed',
+                        'bg-warning text-dark': transaction.status === 'pending',
+                        'bg-danger': transaction.status === 'cancelled'
+                      }">
+                        {{ transaction.status === 'completed' ? 'Completed' : 
+                          transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="action-buttons">
+                        <button class="btn btn-sm btn-outline-primary me-1" (click)="viewTransactionDetails(transaction)" title="View details">
+                          <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-secondary me-1" (click)="openEditTransactionDialog(transaction)" title="Edit transaction">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" (click)="deleteTransaction(transaction)" title="Delete transaction">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
     
     <!-- Pagination -->
-    <div class="pagination-container" *ngIf="totalPages > 1">
-      <button class="pagination-button" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
-        <i class="fas fa-chevron-left"></i>
-      </button>
+    <div class="pagination-container d-flex justify-content-between align-items-center mt-3" *ngIf="getTotalPages() > 1">
+      <div class="pagination-info">
+        Showing {{ getCurrentPageStart() }}-{{ getCurrentPageEnd() }} of {{ getFilteredTransactionsByType().length }} transactions
+      </div>
       
-      <span class="pagination-info">
-        Page {{ currentPage }} of {{ totalPages }}
-      </span>
-      
-      <button class="pagination-button" [disabled]="currentPage === totalPages" (click)="changePage(currentPage + 1)">
-        <i class="fas fa-chevron-right"></i>
-      </button>
+      <nav aria-label="Transaction navigation">
+        <ul class="pagination mb-0">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage - 1)" aria-label="Previous">
+              <span aria-hidden="true">&laquo;</span>
+            </a>
+          </li>
+          
+          <li class="page-item" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage">
+            <a class="page-link" href="javascript:void(0)" (click)="changePage(page)">{{ page }}</a>
+          </li>
+          
+          <li class="page-item" [class.disabled]="currentPage === getTotalPages()">
+            <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage + 1)" aria-label="Next">
+              <span aria-hidden="true">&raquo;</span>
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </div>
+  </div>
+
+  <!-- Transaction Details Modal -->
+  <div class="modal fade" id="transactionDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content" *ngIf="selectedTransaction">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            Transaction Details - {{ selectedTransaction.type === 'sale' ? 'Sale' : 'Rental' }}
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="property-detail-section">
+                <h6 class="section-title">Property Information</h6>
+                <div class="property-image-container">
+                  <img [src]="selectedTransaction.property.image" alt="Property" class="property-image img-fluid rounded">
+                </div>
+                <h5 class="property-title mt-3">{{ selectedTransaction.property.title }}</h5>
+              </div>
+            </div>
+            
+            <div class="col-md-6">
+              <div class="client-detail-section">
+                <h6 class="section-title">Client Information</h6>
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <strong>Name:</strong> {{ selectedTransaction.client.name }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Email:</strong> {{ selectedTransaction.client.email }}
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <hr class="my-4">
+          
+          <!-- Sale Transaction Details -->
+          <div class="transaction-details" *ngIf="selectedTransaction.type === 'sale'">
+            <h6 class="section-title">Transaction Details</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <strong>Transaction ID:</strong> {{ selectedTransaction.id }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Amount:</strong> {{ getFormattedCurrency(selectedTransaction.amount) }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Commission:</strong> {{ getFormattedCurrency(selectedTransaction.commission) }}
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <strong>Payment Method:</strong> {{ selectedTransaction.paymentMethod || 'Bank Transfer' }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Payment Status:</strong> 
+                    <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': selectedTransaction.paymentStatus === 'paid',
+                      'bg-warning text-dark': selectedTransaction.paymentStatus === 'pending',
+                      'bg-danger': selectedTransaction.paymentStatus === 'refunded'
+                    }">
+                      {{ selectedTransaction.paymentStatus === 'paid' ? 'Paid' : 
+                         selectedTransaction.paymentStatus === 'pending' ? 'Pending' : 'Refunded' }}
+                    </span>
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Transaction Status:</strong>
+                    <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': selectedTransaction.status === 'completed',
+                      'bg-warning text-dark': selectedTransaction.status === 'pending',
+                      'bg-danger': selectedTransaction.status === 'cancelled'
+                    }">
+                      {{ selectedTransaction.status === 'completed' ? 'Completed' : 
+                         selectedTransaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Rent Transaction Details -->
+          <div class="transaction-details" *ngIf="selectedTransaction.type === 'rent'">
+            <h6 class="section-title">Transaction Details</h6>
+            <div class="row">
+              <div class="col-md-6">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <strong>Transaction ID:</strong> {{ selectedTransaction.id }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Deposit:</strong> {{ getFormattedCurrency(selectedTransaction.amount) }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Start Date:</strong> {{ getDateFormatted(selectedTransaction.startDate || selectedTransaction.date) }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>End Date:</strong> {{ getDateFormatted(selectedTransaction.endDate || selectedTransaction.date) }}
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-6">
+                <ul class="list-group">
+                  <li class="list-group-item">
+                    <strong>Payment Method:</strong> {{ selectedTransaction.paymentMethod || 'Bank Transfer' }}
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Payment Status:</strong> 
+                    <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': selectedTransaction.paymentStatus === 'paid',
+                      'bg-warning text-dark': selectedTransaction.paymentStatus === 'pending',
+                      'bg-danger': selectedTransaction.paymentStatus === 'refunded'
+                    }">
+                      {{ selectedTransaction.paymentStatus === 'paid' ? 'Paid' : 
+                         selectedTransaction.paymentStatus === 'pending' ? 'Pending' : 'Refunded' }}
+                    </span>
+                  </li>
+                  <li class="list-group-item">
+                    <strong>Transaction Status:</strong>
+                    <span class="badge rounded-pill" [ngClass]="{
+                      'bg-success': selectedTransaction.status === 'completed',
+                      'bg-warning text-dark': selectedTransaction.status === 'pending',
+                      'bg-danger': selectedTransaction.status === 'cancelled'
+                    }">
+                      {{ selectedTransaction.status === 'completed' ? 'Completed' : 
+                         selectedTransaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                    </span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+          
+          <div class="transaction-notes mt-4">
+            <h6 class="section-title">Notes</h6>
+            <div class="notes-content p-3 bg-light rounded">
+              {{ selectedTransaction.notes || 'No notes available.' }}
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary" (click)="openEditTransactionDialog(selectedTransaction)">Edit Transaction</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>

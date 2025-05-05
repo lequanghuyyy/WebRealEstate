@@ -55,8 +55,6 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .propertyType(latestSearch.getType())
                 .minPrice(latestSearch.getMinPrice())
                 .maxPrice(latestSearch.getMaxPrice())
-                .minArea(latestSearch.getMinArea())
-                .maxArea(latestSearch.getMaxArea())
                 .keywords(keywords)
                 .build());
     }

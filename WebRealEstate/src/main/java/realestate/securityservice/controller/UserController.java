@@ -17,8 +17,8 @@ import realestate.securityservice.service.UserService;
 
 import java.util.List;
 
-@Controller
-@RequestMapping("api/v1")
+@RestController
+@RequestMapping("api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
     private final UserService userService;
@@ -28,16 +28,15 @@ public class UserController {
         return ResponseEntity.ok(userService.createUser(userCreationRequest));
     }
 
-    @GetMapping("/find")
+    @GetMapping("")
     public ResponseEntity<BaseResponse<List<UserResponse>>> getUser() {
         return ResponseFactory.ok(userService.getAllUsers());
     }
 
-    @GetMapping("/find/{userId}")
+    @GetMapping("/{userId}")
     public ResponseEntity<BaseResponse<UserResponse>> getUserById(@PathVariable String userId) {
         return ResponseFactory.ok(userService.getUserById(userId));
     }
-
 
     @PutMapping("/update")
     public ResponseEntity<BaseResponse<UserResponse>> updateUserForUser(

@@ -4,11 +4,12 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { Review } from '../../models/review.model';
 import { ReviewService } from '../../services/review.service';
 import { AuthService } from '../../services/auth.service';
+import { Router, RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-property-reviews',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule],
   templateUrl: './property-reviews.component.html',
   styleUrls: ['./property-reviews.component.scss']
 })
@@ -19,6 +20,7 @@ export class PropertyReviewsComponent implements OnInit {
   isLoading: boolean = true;
   showAddReview: boolean = false;
   reviewForm: FormGroup;
+  currentRoute: string = ''; // Đường dẫn hiện tại
   
   // Simulated current user
   currentUser = {
@@ -28,17 +30,23 @@ export class PropertyReviewsComponent implements OnInit {
   };
   
   hasReviewed: boolean = false;
+  submitSuccessful: boolean = false;
+  errorMessage: string = '';
 
   constructor(
     private reviewService: ReviewService,
     private fb: FormBuilder,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router
   ) {
     this.reviewForm = this.fb.group({
       rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
       title: ['', [Validators.required, Validators.minLength(5)]],
       comment: ['', [Validators.required, Validators.minLength(20)]]
     });
+    
+    // Lưu đường dẫn hiện tại để chuyển hướng sau khi đăng nhập
+    this.currentRoute = this.router.url;
   }
 
   ngOnInit(): void {
@@ -75,34 +83,56 @@ export class PropertyReviewsComponent implements OnInit {
 
   submitReview(): void {
     if (this.reviewForm.invalid) {
-      // Mark invalid fields
       Object.keys(this.reviewForm.controls).forEach(key => {
         this.reviewForm.get(key)?.markAsTouched();
       });
       return;
     }
-    
+
+    if (!this.authService.isLoggedIn()) {
+      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+
+    const currentUser = this.authService.getCurrentUser();
+
+    // Create review request
     const newReview = {
-      propertyId: this.propertyId,
-      userId: this.currentUser.id,
-      rating: this.reviewForm.value.rating,
-      title: this.reviewForm.value.title,
-      comment: this.reviewForm.value.comment,
-      userName: this.currentUser.name,
-      userAvatar: this.currentUser.avatar
+      listingId: this.propertyId,
+      brId: currentUser?.id || '',
+      title: this.reviewForm.get('title')?.value,
+      contentReview: this.reviewForm.get('comment')?.value,
+      rate: this.reviewForm.get('rating')?.value
     };
-    
-    this.reviewService.addReview(newReview).subscribe({
-      next: (review) => {
-        this.reviews.unshift(review);
+
+    this.reviewService.createReview(newReview).subscribe({
+      next: (response) => {
+        // Convert to local review format
+        const addedReview = {
+          id: response.id,
+          propertyId: response.listingId,
+          userId: response.brId,
+          rating: response.rate,
+          title: response.title || '',
+          comment: response.contentReview || '',
+          date: new Date(response.createdAt),
+          userName: currentUser?.firstName + ' ' + currentUser?.lastName || 'Anonymous',
+          userAvatar: '/assets/images/avatar-placeholder.jpg',
+          helpful: 0
+        };
+        
+        this.reviews.unshift(addedReview);
+        this.reviewForm.reset();
+        this.submitSuccessful = true;
         this.hasReviewed = true;
-        this.showAddReview = false;
-        this.reviewForm.reset({
-          rating: 5
-        });
+        
+        setTimeout(() => {
+          this.submitSuccessful = false;
+        }, 5000);
       },
       error: (error) => {
-        console.error('Error adding review:', error);
+        console.error('Error submitting review:', error);
+        this.errorMessage = 'There was an error submitting your review. Please try again.';
       }
     });
   }
@@ -151,5 +181,15 @@ export class PropertyReviewsComponent implements OnInit {
   formatDate(date: Date): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-US');
+  }
+
+  // Calculate average rating (add this missing method)
+  calculateAverageRating(): number {
+    return this.getAverageRating();
+  }
+
+  // Kiểm tra người dùng đã đăng nhập chưa
+  isLoggedIn(): boolean {
+    return this.authService.isLoggedIn();
   }
 } 

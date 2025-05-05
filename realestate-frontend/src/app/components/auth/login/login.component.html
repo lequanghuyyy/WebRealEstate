@@ -12,31 +12,38 @@
   <div class="login-wrapper">
     <!-- Logo section -->
     <div class="logo-section">
-      <img src="/assets/images/logo.jpg" alt="RealEstatePro Logo" class="login-logo" style="width: 200px; height: auto;">
+      <div class="login-logo">
+        <div class="logo-container">
+          <span class="logo-icon"><i class="fas fa-building"></i></span>
+          <span class="logo-text">Prop</span>
+          <span class="logo-highlight">tech</span>
+        </div>
+      </div>
     </div>
-    
-    <!-- Form section -->
     <div class="login-form-section">
-      <h1>Sign in</h1>
-      
-      <!-- Error message alert -->
+      <h1>Login</h1>
+
       <div *ngIf="errorMessage" class="alert alert-danger mb-4">
         {{ errorMessage }}
+      </div>
+      <!-- Success message for registration -->
+      <div *ngIf="registrationSuccess" class="alert alert-success mb-4">
+        Registration successful! Please log in with your credentials.
       </div>
       
       <form (ngSubmit)="onSignIn()" #loginForm="ngForm">
         <div class="form-group">
-          <label for="email">Email address</label>
+          <label for="username">Username</label>
           <input 
-            type="email" 
+            type="text" 
             class="form-control" 
-            id="email" 
-            name="email"
-            [(ngModel)]="loginData.email"
-            placeholder="Enter your email"
+            id="username" 
+            name="username"
+            [(ngModel)]="loginData.username"
+            placeholder="Enter your username"
             required
           >
-          <div class="input-helper-text">We'll never share your email</div>
+          
         </div>
         
         <div class="form-group">
@@ -52,7 +59,7 @@
           >
           <div class="input-helper-text">
             <div class="d-flex justify-content-between">
-              <span>Enter your password to sign in</span>
+              <span>Enter your password to login</span>
               <a routerLink="/auth/forgot-password" class="forgot-link">Forgot password?</a>
             </div>
           </div>
@@ -74,9 +81,9 @@
           class="btn btn-primary btn-continue"
           [disabled]="isLoading || !loginForm.form.valid"
         >
-          <span *ngIf="!isLoading">Sign In</span>
+          <span *ngIf="!isLoading">Login</span>
           <span *ngIf="isLoading">
-            <i class="fas fa-spinner fa-spin me-2"></i> Signing in...
+            <i class="fas fa-spinner fa-spin me-2"></i> Logging in...
           </span>
         </button>
         

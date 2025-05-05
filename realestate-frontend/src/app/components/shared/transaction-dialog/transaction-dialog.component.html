@@ -1,169 +1,202 @@
-<div class="dialog-overlay" *ngIf="visible">
-  <div class="dialog-container">
-    <div class="dialog-header">
-      <h2>{{ transaction ? 'Edit Transaction' : 'Add New Transaction' }}</h2>
-      <button class="close-button" (click)="closeDialog()">
-        <i class="fas fa-times"></i>
-      </button>
-    </div>
-
-    <div class="dialog-content">
-      <!-- Loading state -->
-      <div class="loading-container" *ngIf="isLoading">
-        <div class="spinner"></div>
-        <p>Loading data...</p>
+<div class="modal-overlay" *ngIf="visible">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">{{ transaction ? 'Edit Transaction' : 'Add New Transaction' }}</h5>
+        <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
       </div>
-
-      <!-- Form content -->
-      <form [formGroup]="transactionForm" (ngSubmit)="saveTransaction()" *ngIf="!isLoading">
-        <!-- Property Selection -->
-        <div class="form-group">
-          <label for="propertyId">Property <span class="required">*</span></label>
-          <select 
-            id="propertyId"
-            formControlName="propertyId" 
-            class="form-control"
-            [class.is-invalid]="transactionForm.get('propertyId')?.invalid && transactionForm.get('propertyId')?.touched">
-            <option value="" disabled>Select a property</option>
-            <option *ngFor="let property of properties" [value]="property.id">
-              {{ property.title }}
-            </option>
-          </select>
-          <div class="invalid-feedback" *ngIf="transactionForm.get('propertyId')?.hasError('required') && transactionForm.get('propertyId')?.touched">
-            Please select a property
+      
+      <div class="modal-body">
+        <!-- Loading state -->
+        <div class="d-flex justify-content-center" *ngIf="isLoading">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
           </div>
         </div>
 
-        <!-- Client Information -->
-        <div class="form-row">
-          <div class="form-group col">
-            <label for="clientName">Client Name <span class="required">*</span></label>
-            <input 
-              type="text" 
-              id="clientName"
-              formControlName="clientName" 
-              class="form-control"
-              [class.is-invalid]="transactionForm.get('clientName')?.invalid && transactionForm.get('clientName')?.touched">
-            <div class="invalid-feedback" *ngIf="transactionForm.get('clientName')?.hasError('required') && transactionForm.get('clientName')?.touched">
-              Client name is required
-            </div>
-          </div>
-          
-          <div class="form-group col">
-            <label for="clientEmail">Client Email <span class="required">*</span></label>
-            <input 
-              type="email" 
-              id="clientEmail"
-              formControlName="clientEmail" 
-              class="form-control"
-              [class.is-invalid]="transactionForm.get('clientEmail')?.invalid && transactionForm.get('clientEmail')?.touched">
-            <div class="invalid-feedback" *ngIf="transactionForm.get('clientEmail')?.hasError('required') && transactionForm.get('clientEmail')?.touched">
-              Client email is required
-            </div>
-            <div class="invalid-feedback" *ngIf="transactionForm.get('clientEmail')?.hasError('email') && transactionForm.get('clientEmail')?.touched">
-              Please enter a valid email address
-            </div>
-          </div>
-        </div>
-
-        <!-- Transaction Details -->
-        <div class="form-row">
-          <div class="form-group col">
-            <label for="type">Transaction Type <span class="required">*</span></label>
+        <!-- Form content -->
+        <form [formGroup]="transactionForm" (ngSubmit)="saveTransaction()" *ngIf="!isLoading">
+          <!-- Transaction Type Selection -->
+          <div class="mb-3">
+            <label for="type" class="form-label">Transaction Type <span class="text-danger">*</span></label>
             <select 
               id="type"
               formControlName="type" 
-              class="form-control"
-              [class.is-invalid]="transactionForm.get('type')?.invalid && transactionForm.get('type')?.touched">
+              class="form-select">
               <option value="sale">Sale</option>
               <option value="rent">Rent</option>
             </select>
           </div>
           
-          <div class="form-group col">
-            <label for="date">Date <span class="required">*</span></label>
+          <!-- Property Selection -->
+          <div class="mb-3">
+            <label for="propertyId" class="form-label">Property <span class="text-danger">*</span></label>
+            <select 
+              id="propertyId"
+              formControlName="propertyId" 
+              class="form-select">
+              <option value="" disabled>Select a property</option>
+              <option *ngFor="let property of properties" [value]="property.id">
+                {{ property.title }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Client Information -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="clientName" class="form-label">Client Name <span class="text-danger">*</span></label>
+              <input 
+                type="text" 
+                id="clientName"
+                formControlName="clientName" 
+                class="form-control">
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label for="clientEmail" class="form-label">Client Email <span class="text-danger">*</span></label>
+              <input 
+                type="email" 
+                id="clientEmail"
+                formControlName="clientEmail" 
+                class="form-control">
+            </div>
+          </div>
+
+          <!-- Date -->
+          <div class="mb-3">
+            <label for="date" class="form-label">Transaction Date <span class="text-danger">*</span></label>
             <input 
               type="date" 
               id="date"
               formControlName="date" 
-              class="form-control"
-              [class.is-invalid]="transactionForm.get('date')?.invalid && transactionForm.get('date')?.touched">
-            <div class="invalid-feedback" *ngIf="transactionForm.get('date')?.hasError('required') && transactionForm.get('date')?.touched">
-              Date is required
-            </div>
+              class="form-control">
           </div>
-        </div>
 
-        <!-- Amount and Commission -->
-        <div class="form-row">
-          <div class="form-group col">
-            <label for="amount">Amount (VND) <span class="required">*</span></label>
-            <input 
-              type="number" 
-              id="amount"
-              formControlName="amount" 
-              class="form-control"
-              min="0"
-              [class.is-invalid]="transactionForm.get('amount')?.invalid && transactionForm.get('amount')?.touched">
-            <div class="invalid-feedback" *ngIf="transactionForm.get('amount')?.hasError('required') && transactionForm.get('amount')?.touched">
-              Amount is required
+          <!-- Transaction Details Based on Type -->
+          <ng-container *ngIf="transactionForm.get('type')?.value === 'sale'">
+            <h6 class="mt-4 mb-3 border-bottom pb-2">Sale Details</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="amount" class="form-label">Amount (VND) <span class="text-danger">*</span></label>
+                <input 
+                  type="number" 
+                  id="amount"
+                  formControlName="amount" 
+                  class="form-control">
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="commission" class="form-label">Commission (VND) <span class="text-danger">*</span></label>
+                <input 
+                  type="number" 
+                  id="commission"
+                  formControlName="commission" 
+                  class="form-control">
+              </div>
             </div>
-            <div class="invalid-feedback" *ngIf="transactionForm.get('amount')?.hasError('min') && transactionForm.get('amount')?.touched">
-              Amount cannot be negative
+          </ng-container>
+
+          <ng-container *ngIf="transactionForm.get('type')?.value === 'rent'">
+            <h6 class="mt-4 mb-3 border-bottom pb-2">Rental Details</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="amount" class="form-label">Deposit (VND) <span class="text-danger">*</span></label>
+                <input 
+                  type="number" 
+                  id="amount"
+                  formControlName="amount" 
+                  class="form-control">
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="commission" class="form-label">Commission (VND) <span class="text-danger">*</span></label>
+                <input 
+                  type="number" 
+                  id="commission"
+                  formControlName="commission" 
+                  class="form-control">
+              </div>
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label for="startDate" class="form-label">Lease Start Date <span class="text-danger">*</span></label>
+                <input 
+                  type="date" 
+                  id="startDate"
+                  formControlName="startDate" 
+                  class="form-control">
+              </div>
+              
+              <div class="col-md-6 mb-3">
+                <label for="endDate" class="form-label">Lease End Date <span class="text-danger">*</span></label>
+                <input 
+                  type="date" 
+                  id="endDate"
+                  formControlName="endDate" 
+                  class="form-control">
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Common Fields -->
+          <h6 class="mt-4 mb-3 border-bottom pb-2">Payment Details</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label for="paymentMethod" class="form-label">Payment Method</label>
+              <select 
+                id="paymentMethod"
+                formControlName="paymentMethod" 
+                class="form-select">
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cash">Cash</option>
+                <option value="Credit Card">Credit Card</option>
+                <option value="Digital Wallet">Digital Wallet</option>
+              </select>
+            </div>
+            
+            <div class="col-md-6 mb-3">
+              <label for="paymentStatus" class="form-label">Payment Status <span class="text-danger">*</span></label>
+              <select 
+                id="paymentStatus"
+                formControlName="paymentStatus" 
+                class="form-select">
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="refunded">Refunded</option>
+              </select>
             </div>
           </div>
           
-          <div class="form-group col">
-            <label for="commission">Commission (VND) <span class="required">*</span></label>
-            <input 
-              type="number" 
-              id="commission"
-              formControlName="commission" 
-              class="form-control"
-              min="0"
-              [class.is-invalid]="transactionForm.get('commission')?.invalid && transactionForm.get('commission')?.touched">
-            <div class="invalid-feedback" *ngIf="transactionForm.get('commission')?.hasError('required') && transactionForm.get('commission')?.touched">
-              Commission is required
-            </div>
-            <div class="invalid-feedback" *ngIf="transactionForm.get('commission')?.hasError('min') && transactionForm.get('commission')?.touched">
-              Commission cannot be negative
-            </div>
-          </div>
-        </div>
-
-        <!-- Status Information -->
-        <div class="form-row">
-          <div class="form-group col">
-            <label for="status">Transaction Status <span class="required">*</span></label>
+          <div class="mb-3">
+            <label for="status" class="form-label">Transaction Status <span class="text-danger">*</span></label>
             <select 
               id="status"
               formControlName="status" 
-              class="form-control">
+              class="form-select">
               <option value="pending">Pending</option>
               <option value="completed">Completed</option>
               <option value="cancelled">Cancelled</option>
             </select>
           </div>
-          
-          <div class="form-group col">
-            <label for="paymentStatus">Payment Status <span class="required">*</span></label>
-            <select 
-              id="paymentStatus"
-              formControlName="paymentStatus" 
-              class="form-control">
-              <option value="pending">Pending</option>
-              <option value="paid">Paid</option>
-              <option value="refunded">Refunded</option>
-            </select>
+
+          <div class="mb-3">
+            <label for="notes" class="form-label">Notes</label>
+            <textarea 
+              id="notes"
+              formControlName="notes" 
+              class="form-control"
+              rows="3"
+              placeholder="Add any additional information about this transaction..."></textarea>
           </div>
-        </div>
-        
-        <!-- Form Actions -->
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Transaction</button>
-        </div>
-      </form>
+          
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeDialog()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Transaction</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div> 

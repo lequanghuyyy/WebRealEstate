@@ -4,6 +4,37 @@
 .properties-container {
   min-height: 100vh;
   background-color: #f8f9fa;
+  .active-filters {
+    margin-top: 10px;
+    
+    .filter-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      
+      .filter-tag {
+        background-color: rgba(255, 90, 95, 0.1);
+        color: #ff5a5f;
+        border: 1px solid rgba(255, 90, 95, 0.2);
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        
+        i {
+          cursor: pointer;
+          margin-left: 5px;
+          font-size: 12px;
+          opacity: 0.7;
+          
+          &:hover {
+            opacity: 1;
+          }
+        }
+      }
+    }
+  }
 }
 
 // Hero Section

@@ -11,7 +11,7 @@ import spring.userexperienceservice.service.RecommendationService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/recommendations")
+@RequestMapping("api/v1/ux/recommendations")
 @RequiredArgsConstructor
 public class RecommendationController {
     private final RecommendationService recommendationService;

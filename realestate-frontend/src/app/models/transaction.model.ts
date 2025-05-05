@@ -1,3 +1,17 @@
+export enum TransactionStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
+export enum RentalStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  COMPLETED = 'COMPLETED',
+  CANCELLED = 'CANCELLED'
+}
+
 export interface Transaction {
   id: string | number;
   propertyId: string | number;
@@ -5,7 +19,7 @@ export interface Transaction {
   propertyType: 'house' | 'apartment' | 'land' | 'commercial';
   transactionType: 'sale' | 'rent';
   amount: number;
-  status: 'pending' | 'completed' | 'cancelled' | 'refunded';
+  status: string; // Use TransactionStatus or RentalStatus depending on transactionType
   buyerId: string | number;
   buyerName: string;
   sellerId: string | number;

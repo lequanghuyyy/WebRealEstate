@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { delay } from 'rxjs/operators';
 import { Agent } from '../models/agent.model';
+import { environment } from '../../environments/environment';
 
 export interface AgentApplication {
   id: number;
@@ -20,9 +21,7 @@ export interface AgentApplication {
   providedIn: 'root'
 })
 export class AgentService {
-  private apiUrl = 'http://localhost:8080/api/agents'; // Replace with your actual API endpoint
-
-  // Mock agents data
+  private apiUrl = `${environment.apiUrl}/agents`;
   private mockAgents: Agent[] = [
     {
       id: 'a1',

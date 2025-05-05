@@ -1,206 +1,336 @@
-<div class="buy-container">
+<div class="purchase-history-container">
   <div class="hero-section">
     <div class="container">
       <div class="hero-content">
-        <h1>Find Your Dream Home</h1>
-        <p>Discover properties for sale in your preferred location</p>
+        <h1>Purchasing History</h1>
+        <p>Track and manage your real estate purchases</p>
       </div>
     </div>
   </div>
 
-  <div class="container-fluid mt-4">
-    <div class="row">
-      <!-- Vertical Filter Column -->
-      <div class="col-lg-3 col-md-4">
-        <div class="filter-sidebar" [class.open]="showMobileFilters">
-          <div class="filter-sidebar-header">
-            <h3>Filter Properties</h3>
-            <p>{{ totalItems }} properties found</p>
-            <button *ngIf="showMobileFilters" class="close-filters" (click)="toggleMobileFilters()">
-              <i class="fas fa-times"></i>
+  <div class="container my-5">
+    <!-- Stats Row -->
+    <div class="rental-stats-row">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon total">
+              <i class="fas fa-home"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ totalTransactions }}</h3>
+              <p>Total Transactions</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon active">
+              <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ completedTransactions }}</h3>
+              <p>Completed</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon pending">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="stat-content">
+              <h3>{{ pendingTransactions }}</h3>
+              <p>Pending</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="card mt-4">
+      <div class="card-body">
+        <div class="row align-items-end">
+          <div class="col-md-3">
+            <div class="form-group">
+              <label for="status-filter">Status</label>
+              <select id="status-filter" class="form-select" (change)="filterByStatus($event)">
+                <option value="all">All Statuses</option>
+                <option [value]="transactionStatusEnum.PENDING">Pending</option>
+                <option [value]="transactionStatusEnum.COMPLETED">Completed</option>
+                <option [value]="transactionStatusEnum.CANCELLED">Cancelled</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label for="date-filter">Date Range</label>
+              <select id="date-filter" class="form-select" (change)="filterByDate($event)">
+                <option value="all">All Time</option>
+                <option value="month">This Month</option>
+                <option value="quarter">This Quarter</option>
+                <option value="year">This Year</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="form-group">
+              <label for="property-filter">Property Type</label>
+              <select id="property-filter" class="form-select">
+                <option value="all">All Types</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+                <option value="villa">Villa</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <button type="button" class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+              Reset Filters
             </button>
           </div>
-
-          <form [formGroup]="filterForm">
-            <!-- Accordion style filters -->
-            <div class="filter-accordion">
-              <!-- Location Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('location')">
-                  <h4>Location</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['location'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['location']}">
-                  <div class="filter-input-group">
-                    <input 
-                      type="text" 
-                      formControlName="location" 
-                      placeholder="City, State, or Zip"
-                      class="form-control"
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <!-- Property Type Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('propertyType')">
-                  <h4>Property Type</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['propertyType'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['propertyType']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let type of propertyTypes">
-                      <input 
-                        type="radio" 
-                        [id]="'type-' + type.replace(' ', '')" 
-                        [value]="type"
-                        [checked]="filterForm.get('propertyType')?.value === type"
-                        (change)="filterForm.get('propertyType')?.setValue(type)"
-                      >
-                      <label [for]="'type-' + type.replace(' ', '')">{{ type }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Price Range Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('priceRange')">
-                  <h4>Price Range</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['priceRange'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['priceRange']}">
-                  <div class="range-inputs">
-                    <div class="min-input">
-                      <label>Min</label>
-                      <input 
-                        type="number" 
-                        formControlName="minPrice" 
-                        placeholder="Min" 
-                        class="form-control"
-                      >
-                    </div>
-                    <div class="max-input">
-                      <label>Max</label>
-                      <input 
-                        type="number" 
-                        formControlName="maxPrice" 
-                        placeholder="Max" 
-                        class="form-control"
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bedrooms Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('bedrooms')">
-                  <h4>Bedrooms</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['bedrooms'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['bedrooms']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let option of bedroomsOptions">
-                      <input 
-                        type="radio" 
-                        [id]="'bed-' + option.replace('+', 'plus')" 
-                        [value]="option" 
-                        [checked]="filterForm.get('bedrooms')?.value === option"
-                        (change)="filterForm.get('bedrooms')?.setValue(option)"
-                      >
-                      <label [for]="'bed-' + option.replace('+', 'plus')">{{ option }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Bathrooms Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('bathrooms')">
-                  <h4>Bathrooms</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['bathrooms'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['bathrooms']}">
-                  <div class="filter-options">
-                    <div class="custom-radio" *ngFor="let option of bathroomsOptions">
-                      <input 
-                        type="radio" 
-                        [id]="'bath-' + option.replace('+', 'plus')" 
-                        [value]="option" 
-                        [checked]="filterForm.get('bathrooms')?.value === option"
-                        (change)="filterForm.get('bathrooms')?.setValue(option)"
-                      >
-                      <label [for]="'bath-' + option.replace('+', 'plus')">{{ option }}</label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Area Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('area')">
-                  <h4>Square Feet</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['area'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['area']}">
-                  <div class="range-inputs">
-                    <div class="min-input">
-                      <label>Min</label>
-                      <input 
-                        type="number" 
-                        formControlName="minArea" 
-                        placeholder="Min" 
-                        class="form-control"
-                      >
-                    </div>
-                    <div class="max-input">
-                      <label>Max</label>
-                      <input 
-                        type="number" 
-                        formControlName="maxArea" 
-                        placeholder="Max" 
-                        class="form-control"
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Keywords Filter -->
-              <div class="filter-section">
-                <div class="filter-header" (click)="toggleFilterSection('keywords')">
-                  <h4>Keywords</h4>
-                  <i class="fas" [ngClass]="isFilterOpen['keywords'] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-                </div>
-                <div class="filter-content" [ngClass]="{'show': isFilterOpen['keywords']}">
-                  <div class="filter-input-group">
-                    <input 
-                      type="text" 
-                      formControlName="keywords" 
-                      placeholder="e.g. garage, pool, renovated" 
-                      class="form-control"
-                    >
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Filter Actions -->
-            <div class="filter-actions">
-              <button type="button" class="btn btn-reset" (click)="resetFilters()">
-                <i class="fas fa-undo"></i> Reset All
-              </button>
-              <button type="button" class="btn btn-apply" (click)="applyFilters()">
-                <i class="fas fa-filter"></i> Apply Filters
-              </button>
-            </div>
-          </form>
         </div>
+      </div>
+    </div>
 
-        <!-- Home Buying Tips Section -->
-        <div class="sidebar-card mt-4 enhanced-card">
+    <!-- Transactions table -->
+    <div class="card transaction-card mt-4">
+      <div class="card-header">
+        <h3>Purchase Transactions</h3>
+        <button class="btn btn-primary" routerLink="/checkout">
+          <i class="fas fa-plus"></i> New Purchase
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table transaction-table">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Date</th>
+                <th>Amount</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- If there are no transactions -->
+              <tr *ngIf="!transactions || transactions.length === 0">
+                <td colspan="5" class="text-center py-5">
+                  <div class="empty-state">
+                    <i class="fas fa-home fa-3x"></i>
+                    <h4>No purchases yet</h4>
+                    <p>Your property purchase transactions will appear here</p>
+                    <button class="btn btn-primary mt-3" routerLink="/properties">Browse Properties</button>
+                  </div>
+                </td>
+              </tr>
+              
+              <!-- Example transaction rows (replace with actual data) -->
+              <tr>
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img src="https://placehold.co/70x50/3498db/ffffff" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>Luxury Villa with Pool</h5>
+                      <p>123 Main Street, City</p>
+                    </div>
+                  </div>
+                </td>
+                <td>May 12, 2023</td>
+                <td>$450,000</td>
+                <td><span class="status-badge completed">Completed</span></td>
+                <td>
+                  <button class="btn btn-icon" routerLink="/transaction/1">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-icon" (click)="downloadReceipt('1')">
+                    <i class="fas fa-download"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img src="https://placehold.co/70x50/2ecc71/ffffff" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>Modern Apartment Downtown</h5>
+                      <p>456 Park Avenue, City</p>
+                    </div>
+                  </div>
+                </td>
+                <td>June 3, 2023</td>
+                <td>$320,000</td>
+                <td><span class="status-badge confirmed">Confirmed</span></td>
+                <td>
+                  <button class="btn btn-icon" routerLink="/transaction/2">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-icon" (click)="downloadReceipt('2')">
+                    <i class="fas fa-download"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img src="https://placehold.co/70x50/e74c3c/ffffff" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>Seaside Bungalow</h5>
+                      <p>789 Beach Road, Coastal City</p>
+                    </div>
+                  </div>
+                </td>
+                <td>July 18, 2023</td>
+                <td>$275,000</td>
+                <td><span class="status-badge pending">Pending</span></td>
+                <td>
+                  <button class="btn btn-icon" routerLink="/transaction/3">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-icon cancel-button" (click)="cancelTransaction('3')">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img src="https://placehold.co/70x50/9b59b6/ffffff" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>Country Estate</h5>
+                      <p>101 Rural Route, Countryside</p>
+                    </div>
+                  </div>
+                </td>
+                <td>Aug 5, 2023</td>
+                <td>$580,000</td>
+                <td><span class="status-badge canceled">Canceled</span></td>
+                <td>
+                  <button class="btn btn-icon" routerLink="/transaction/4">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>
+                  <div class="property-info">
+                    <div class="property-image">
+                      <img src="https://placehold.co/70x50/f39c12/ffffff" alt="Property">
+                    </div>
+                    <div class="property-details">
+                      <h5>Urban Loft</h5>
+                      <p>222 Downtown Ave, Metro City</p>
+                    </div>
+                  </div>
+                </td>
+                <td>Sep 14, 2023</td>
+                <td>$395,000</td>
+                <td><span class="status-badge pending">Pending</span></td>
+                <td>
+                  <button class="btn btn-icon" routerLink="/transaction/5">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-icon cancel-button" (click)="cancelTransaction('5')">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="pagination-container">
+          <ul class="pagination">
+            <li class="page-item disabled">
+              <a class="page-link" href="#" tabindex="-1">Previous</a>
+            </li>
+            <li class="page-item active"><a class="page-link" href="#">1</a></li>
+            <li class="page-item"><a class="page-link" href="#">2</a></li>
+            <li class="page-item"><a class="page-link" href="#">3</a></li>
+            <li class="page-item">
+              <a class="page-link" href="#">Next</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transaction Timeline -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h3>Recent Activity</h3>
+      </div>
+      <div class="card-body">
+        <div class="transaction-timeline">
+          <div class="timeline-item">
+            <div class="timeline-marker completed">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-date">September 14, 2023</div>
+              <h4>Transaction Initiated: Urban Loft</h4>
+              <p>You've started the purchase process for Urban Loft property.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker canceled">
+              <i class="fas fa-times"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-date">August 5, 2023</div>
+              <h4>Transaction Canceled: Country Estate</h4>
+              <p>The transaction was canceled due to financing issues.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker pending">
+              <i class="fas fa-clock"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-date">July 18, 2023</div>
+              <h4>Offer Accepted: Seaside Bungalow</h4>
+              <p>Your offer has been accepted. Pending final documentation.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker completed">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-date">June 3, 2023</div>
+              <h4>Transaction Confirmed: Modern Apartment</h4>
+              <p>The purchase agreement has been signed by all parties.</p>
+            </div>
+          </div>
+          <div class="timeline-item">
+            <div class="timeline-marker completed">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="timeline-content">
+              <div class="timeline-date">May 12, 2023</div>
+              <h4>Transaction Completed: Luxury Villa</h4>
+              <p>Congratulations! You've completed the purchase of your new property.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Helpful Tips Section -->
+    <div class="row mt-5">
+      <div class="col-md-6">
+        <div class="card enhanced-card">
           <div class="card-header premium-header">
             <div class="icon-wrapper gold">
               <i class="fas fa-lightbulb"></i>
@@ -213,270 +343,71 @@
                 <div class="tip-icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
-                <p>Get pre-approved for a mortgage before house hunting</p>
+                <p>Keep all transaction documents for tax purposes</p>
               </li>
               <li class="tip-item">
                 <div class="tip-icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
-                <p>Consider all costs including taxes, insurance and maintenance</p>
+                <p>Review your closing costs carefully before signing</p>
               </li>
               <li class="tip-item">
                 <div class="tip-icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
-                <p>Have a professional home inspection before purchase</p>
+                <p>Set up automatic payments for your mortgage</p>
               </li>
               <li class="tip-item">
                 <div class="tip-icon">
                   <i class="fas fa-check-circle"></i>
                 </div>
-                <p>Research the neighborhood and property values</p>
-              </li>
-              <li class="tip-item">
-                <div class="tip-icon">
-                  <i class="fas fa-check-circle"></i>
-                </div>
-                <p>Work with a trusted real estate agent</p>
+                <p>Consider setting up a home maintenance fund</p>
               </li>
             </ul>
           </div>
         </div>
-
-        <!-- Want to sell section -->
-        <div class="sidebar-card premium-card mt-4">
+      </div>
+      <div class="col-md-6">
+        <div class="card premium-card">
           <div class="premium-gradient">
             <div class="card-header border-0">
               <div class="icon-wrapper premium">
                 <i class="fas fa-home"></i>
               </div>
-              <h3 style="margin-left: 6px;">Want to sell your property?</h3>
+              <h3>Need Help With Your Transaction?</h3>
             </div>
-            <div class="card-body pb-4">
+            <div class="card-body">
+              <p>Our real estate experts are here to help you through every step of your purchase.</p>
               <div class="feature-list">
                 <div class="feature-item">
                   <div class="feature-icon">
-                    <i class="fas fa-camera"></i>
+                    <i class="fas fa-handshake"></i>
                   </div>
-                  <p>Professional photography and virtual tours</p>
+                  <p>Transaction assistance</p>
                 </div>
                 <div class="feature-item">
                   <div class="feature-icon">
-                    <i class="fas fa-chart-line"></i>
+                    <i class="fas fa-file-contract"></i>
                   </div>
-                  <p>Strategic pricing and market analysis</p>
+                  <p>Document review</p>
                 </div>
                 <div class="feature-item">
                   <div class="feature-icon">
-                    <i class="fas fa-bullhorn"></i>
+                    <i class="fas fa-comments-dollar"></i>
                   </div>
-                  <p>Expert marketing and advertising</p>
-                </div>
-                <div class="feature-item">
-                  <div class="feature-icon">
-                    <i class="fas fa-users"></i>
-                  </div>
-                  <p>Qualified buyer screening and showings</p>
+                  <p>Financial guidance</p>
                 </div>
               </div>
-              <div class="button-group mt-4">
-                <a href="/contact" class="premium-btn btn-light" style="margin-left: 10px;">
+              <div class="button-group mt-3">
+                <a href="/contact" class="premium-btn btn-light">
                   <span class="btn-content">
                     <i class="fas fa-phone-alt"></i>
                     <span>Contact Us</span>
                   </span>
                 </a>
-                <a href="auth/login" class="premium-btn btn-outline" style="margin-right: 10px;">
-                  <span class="btn-content">
-                    <i class="fas fa-info-circle"></i>
-                    <span>Login with Agent</span>
-                  </span>
-                  <i class="fas fa-long-arrow-alt-right btn-arrow"></i>
-                </a>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Results Section -->
-      <div class="col-lg-9 col-md-8">
-        <div class="results-section">
-          <!-- Sorting and Results Count -->
-          <div class="results-header">
-            <div class="mobile-filter-toggle d-lg-none">
-              <button class="btn btn-filter" (click)="toggleMobileFilters()">
-                <i class="fas fa-filter"></i> Filters
-              </button>
-            </div>
-            
-            <div class="sorting-options">
-              <label for="sortBy">Sort By:</label>
-              <select 
-                id="sortBy" 
-                [(ngModel)]="selectedSort" 
-                (change)="updateSort(selectedSort)" 
-                class="form-control"
-              >
-                <option *ngFor="let option of sortOptions" [value]="option">{{ option }}</option>
-              </select>
-            </div>
-          </div>
-          
-          <!-- Loading State -->
-          <div class="loading-container" *ngIf="isLoading">
-            <div class="spinner-border text-primary" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-            <p>Loading properties...</p>
-          </div>
-          
-          <!-- Error State -->
-          <div class="alert alert-danger" *ngIf="errorMessage">
-            {{ errorMessage }}
-            <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadProperties()">
-              Try Again
-            </button>
-          </div>
-          
-          <!-- No Results -->
-          <div class="no-results" *ngIf="!isLoading && !errorMessage && filteredProperties.length === 0">
-            <i class="fas fa-search"></i>
-            <h3>No properties found</h3>
-            <p>Try adjusting your filters to see more results</p>
-            <button class="btn btn-primary" (click)="resetFilters()">Reset Filters</button>
-          </div>
-          
-          <!-- Property Grid -->
-          <div class="property-grid" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
-            <div class="property-card" *ngFor="let property of paginatedProperties" (click)="viewPropertyDetails(property.id)">
-              <div class="property-image">
-                <img [src]="property.images[0]" alt="{{ property.title }}">
-                <div class="property-tag" *ngIf="property.tags && property.tags.length > 0">
-                  {{ property.tags[0] }}
-                </div>
-                <button class="favorite-btn" (click)="toggleFavorite($event, property)">
-                  <i class="fas" [ngClass]="property.isFavorite ? 'fa-heart' : 'fa-heart'"></i>
-                </button>
-              </div>
-              
-              <div class="property-content">
-                <div class="property-price">{{ formatPrice(property.price) }}</div>
-                <h3 class="property-title">{{ property.title }}</h3>
-                <div class="property-address">
-                  <i class="fas fa-map-marker-alt"></i>
-                  {{ property.location.address }}
-                </div>
-                <div class="property-features">
-                  <span><i class="fas fa-bed"></i> {{ property.features.bedrooms }} Beds</span>
-                  <span><i class="fas fa-bath"></i> {{ property.features.bathrooms }} Baths</span>
-                  <span><i class="fas fa-ruler-combined"></i> {{ property.features.area }} sq ft</span>
-                </div>
-                <div class="property-footer">
-                  <div class="agent-info" *ngIf="property.agent">
-                    <img [src]="property.agent.photo" alt="{{ property.agent.name }}" class="agent-image">
-                    <span class="agent-name">{{ property.agent.name }}</span>
-                  </div>
-                  <button class="view-details-btn">View Details</button>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Pagination -->
-          <div class="pagination-container" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
-            <button 
-              class="btn btn-outline-secondary"
-              [disabled]="currentPage === 1"
-              (click)="goToPage(currentPage - 1)"
-            >
-              <i class="fas fa-chevron-left"></i> Previous
-            </button>
-            
-            <div class="page-numbers">
-              <button 
-                *ngFor="let page of getPageArray()"
-                class="btn"
-                [ngClass]="{
-                  'btn-primary': page === currentPage,
-                  'btn-outline-secondary': page !== currentPage
-                }"
-                (click)="goToPage(page)"
-              >{{ page }}</button>
-            </div>
-            
-            <button 
-              class="btn btn-outline-secondary"
-              [disabled]="currentPage === totalPages"
-              (click)="goToPage(currentPage + 1)"
-            >
-              Next <i class="fas fa-chevron-right"></i>
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Buying Guide Section -->
-  <div class="rental-info-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Buying With Confidence</h2>
-        <p>Everything you need to know about purchasing your perfect home</p>
-      </div>
-      
-      <div class="info-cards">
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-home"></i>
-          </div>
-          <h3>First-Time Buyers</h3>
-          <p>Navigate the home buying process with confidence using our comprehensive guide for first-time buyers.</p>
-          <a href="/buying-guide/first-time" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-dollar-sign"></i>
-          </div>
-          <h3>Financing Options</h3>
-          <p>Explore mortgage options, calculate payments, and find the best financing solution for your budget.</p>
-          <a href="/buying-guide/financing" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-        
-        <div class="info-card">
-          <div class="info-icon">
-            <i class="fas fa-clipboard-check"></i>
-          </div>
-          <h3>Negotiation Tips</h3>
-          <p>Get the best deal with expert strategies for negotiating price, terms, and contingencies.</p>
-          <a href="/buying-guide/negotiation" class="info-link">Learn More <i class="fas fa-arrow-right"></i></a>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Property Seller CTA Section -->
-  <div class="owner-cta-section">
-    <div class="container">
-      <div class="cta-content">
-        <div class="cta-text">
-          <h2>Ready to sell your property?</h2>
-          <p>List your property with us and get access to thousands of potential buyers. We offer comprehensive real estate services to make selling your property simple and profitable.</p>
-          <ul class="benefits-list">
-            <li><i class="fas fa-check"></i> Professional photography and virtual tours</li>
-            <li><i class="fas fa-check"></i> Strategic pricing and market analysis</li>
-            <li><i class="fas fa-check"></i> Expert marketing and advertising</li>
-            <li><i class="fas fa-check"></i> Qualified buyer screening and showings</li>
-          </ul>
-          <div class="cta-buttons">
-            <a href="/contact" class="btn btn-primary">List Your Property</a>
-            <a href="/selling-guide" class="btn btn-outline-primary">Learn More</a>
-          </div>
-        </div>
-        <div class="cta-image">
-          <img src="assets/images/property-seller.jpg" alt="Property Seller">
         </div>
       </div>
     </div>

@@ -5,14 +5,28 @@
       <div class="col-lg-3">
         <div class="profile-sidebar">
           <div class="user-info text-center mb-4">
-            <div class="avatar-container">
-              <img src="/assets/images/avatar-placeholder.jpg" alt="User Avatar" class="user-avatar">
-              <div class="avatar-edit">
-                <i class="fas fa-camera"></i>
+            <div *ngIf="isLoading" class="text-center py-3">
+              <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
               </div>
             </div>
-            <h4 class="mt-3">{{ user?.name || 'User' }}</h4>
-            <p class="text-muted">Member since {{ user?.createdAt || 'Recently' }}</p>
+            
+            <div *ngIf="!isLoading && user">
+              <div class="avatar-container">
+                <img src="/assets/images/avatar-placeholder.jpg" alt="User Avatar" class="user-avatar">
+                <div class="avatar-edit">
+                  <i class="fas fa-camera"></i>
+                </div>
+              </div>
+              <h4 class="mt-3">{{ user.firstName }} {{ user.lastName }}</h4>
+              <p class="text-muted">
+                <span *ngIf="user?.createAt">Member since {{ user.createAt | date:'MMM yyyy' }}</span>
+                <span *ngIf="!user?.createAt">Member since recently</span>
+              </p>
+              <div class="user-roles">
+                <span *ngFor="let role of user.roles" class="badge bg-primary me-1">{{ role }}</span>
+              </div>
+            </div>
           </div>
           
           <div class="sidebar-menu">
@@ -23,7 +37,7 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" [class.active]="activeTab === 'appointments'" (click)="setActiveTab('appointments')">
+                <a *ngIf="!isAgent && !isAdmin" class="nav-link" [class.active]="activeTab === 'appointments'" (click)="setActiveTab('appointments')">
                   <i class="fas fa-calendar-check me-2"></i> Agent Appointments
                 </a>
               </li>
@@ -43,8 +57,8 @@
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" routerLink="/logout">
-                  <i class="fas fa-sign-out-alt me-2"></i> Logout
+                <a class="nav-link" [class.active]="activeTab === 'reviews'" (click)="setActiveTab('reviews')">
+                  <i class="fas fa-star me-2"></i> My Reviews
                 </a>
               </li>
             </ul>
@@ -59,40 +73,102 @@
           <div class="card profile-card">
             <div class="card-header d-flex justify-content-between align-items-center">
               <h5 class="mb-0">Personal Information</h5>
-              <button class="btn btn-sm" [class.btn-primary]="!isEditing" [class.btn-success]="isEditing" (click)="isEditing ? saveProfile() : toggleEdit()">
+              <button class="btn btn-sm" [class.btn-primary]="!isEditing" [class.btn-success]="isEditing" (click)="isEditing ? saveProfile() : toggleEdit()" [disabled]="isLoading">
                 <i class="fas" [class.fa-edit]="!isEditing" [class.fa-save]="isEditing"></i>
                 {{ isEditing ? 'Save Changes' : 'Edit Profile' }}
               </button>
             </div>
             <div class="card-body">
-              <div class="row" *ngIf="!isEditing">
+              <!-- Loading state -->
+              <div *ngIf="isLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your profile information...</p>
+              </div>
+              
+      
+             <div *ngIf="errorMessage" class="alert alert-warning alert-dismissible fade show">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ errorMessage }}
+                <button type="button" class="btn-close" (click)="errorMessage = null" aria-label="Close"></button>
+                <div class="mt-2 text-end">
+                  <button class="btn btn-sm btn-outline-primary" (click)="loadUserProfileFromBackend()">
+                    <i class="fas fa-sync-alt me-1"></i> Try Again
+                  </button>
+                </div>
+              </div>
+              
+              <!-- View mode -->
+              <div class="row" *ngIf="!isEditing && !isLoading && user">
                 <div class="col-md-6 mb-3">
                   <div class="form-group">
-                    <label>Name</label>
-                    <div class="form-control-static">{{ user?.name || 'Not set' }}</div>
+                    <label>Username</label>
+                    <div class="form-control-static">{{ user.username || 'Not set' }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Full Name</label>
+                    <div class="form-control-static">
+                      <span *ngIf="user.firstName || user.lastName">{{ user.firstName || '' }} {{ user.lastName || '' }}</span>
+                      <span *ngIf="!user.firstName && !user.lastName">{{ user.name || 'Not set' }}</span>
+                    </div>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="form-group">
                     <label>Email</label>
-                    <div class="form-control-static">{{ user?.email || 'Not set' }}</div>
+                    <div class="form-control-static">{{ user.email || 'Not set' }}</div>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
                   <div class="form-group">
                     <label>Phone</label>
-                    <div class="form-control-static">{{ user?.phone || 'Not set' }}</div>
+                    <div class="form-control-static">{{ user.phone || 'Not set' }}</div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Account Status</label>
+                    <div class="form-control-static badge" 
+                         [class.bg-success]="user.status === userStatusEnum.ACTIVE"
+                         [class.bg-warning]="user.status === userStatusEnum.PENDING_APPROVAL"
+                         [class.bg-danger]="user.status === userStatusEnum.REJECTED">
+                      {{ user.status || 'Unknown' }}
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <div class="form-group">
+                    <label>Member Since</label>
+                    <div class="form-control-static">
+                      <ng-container *ngIf="user?.createAt">{{ user.createAt | date:'mediumDate' }}</ng-container>
+                      <ng-container *ngIf="!user?.createAt">Unknown</ng-container>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-12 mb-3">
+                  <div class="form-group">
+                    <label>Roles</label>
+                    <div class="form-control-static">
+                      <span *ngFor="let role of user.roles || []; let last = last" class="badge bg-primary me-1">
+                        {{ role }}
+                      </span>
+                      <span *ngIf="!user.roles || user.roles.length === 0">No roles assigned</span>
+                    </div>
                   </div>
                 </div>
                 <div class="col-12 mb-3">
                   <div class="form-group">
                     <label>Bio</label>
-                    <div class="form-control-static">{{ user?.bio || 'No bio information provided.' }}</div>
+                    <div class="form-control-static">{{ user.bio || 'No bio information provided.' }}</div>
                   </div>
                 </div>
               </div>
               
-              <div class="row" *ngIf="isEditing">
+              <!-- Edit mode -->
+              <div class="row" *ngIf="isEditing && !isLoading">
                 <div class="col-md-6 mb-3">
                   <div class="form-group">
                     <label for="name">Name</label>
@@ -102,7 +178,9 @@
                 <div class="col-md-6 mb-3">
                   <div class="form-group">
                     <label for="email">Email</label>
-                    <input type="email" class="form-control" id="email" [(ngModel)]="profileForm.email">
+                    <input type="email" class="form-control" id="email" [(ngModel)]="profileForm.email" disabled
+                           title="Email cannot be changed directly">
+                    <small class="text-muted">Email cannot be changed directly. Contact support for assistance.</small>
                   </div>
                 </div>
                 <div class="col-md-6 mb-3">
@@ -129,29 +207,60 @@
               <h5 class="mb-0">Favorite Properties</h5>
             </div>
             <div class="card-body">
+              <!-- Loading state -->
+              <div *ngIf="favoritesLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your favorite properties...</p>
+              </div>
+              
+              <!-- Error message -->
+              <div *ngIf="favoritesError" class="alert alert-danger">
+                {{ favoritesError }}
+                <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadFavoriteProperties()">Try Again</button>
+              </div>
+              
               <div class="favorites-list">
-                <div class="alert alert-info" *ngIf="favoriteProperties.length === 0">
-                  You haven't saved any properties as favorites yet.
+                <!-- Empty state with CTA -->
+                <div *ngIf="!favoritesLoading && favoriteProperties.length === 0" class="text-center py-4">
+                  <div class="empty-state mb-4">
+                    <i class="fas fa-heart text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3">No Favorite Properties Yet</h5>
+                    <p class="text-muted">You haven't saved any properties as favorites yet.</p>
+                  </div>
+                  <a routerLink="/properties" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>Discover Properties
+                  </a>
+                  <p class="text-muted mt-3 small">Browse properties and click the heart icon to add to your favorites.</p>
                 </div>
                 
-                <div class="property-item" *ngFor="let property of favoriteProperties">
+                <div class="property-item mb-4" *ngFor="let property of favoriteProperties">
                   <div class="row">
                     <div class="col-md-4">
-                      <img [src]="property.image" alt="Property Image" class="img-fluid property-img">
+                      <img [src]="property.image || '/assets/images/property-placeholder.jpg'" alt="Property Image" class="img-fluid property-img rounded">
                     </div>
                     <div class="col-md-8">
                       <div class="property-info">
                         <h5>{{ property.title }}</h5>
-                        <h6 class="price">{{ property.price }}</h6>
-                        <p class="location">{{ property.location }}</p>
-                        <div class="features">
-                          <span><i class="fas fa-bed"></i> {{ property.beds }} beds</span>
-                          <span><i class="fas fa-bath"></i> {{ property.baths }} baths</span>
-                          <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
+                        <h6 class="price">{{ formatPrice(property.price) }}</h6>
+                        <p class="location">{{ property.address }}, {{ property.city }}</p>
+                        <div class="features d-flex gap-3 my-2">
+                          <span><i class="fas fa-bed"></i> {{ property.bedrooms }} beds</span>
+                          <span><i class="fas fa-bath"></i> {{ property.bathrooms }} baths</span>
+                          <span><i class="fas fa-ruler-combined"></i> {{ formatArea(property.area) }}</span>
+                        </div>
+                        <div class="mb-2">
+                          <span class="badge" [ngClass]="property.type === 'RENT' ? 'bg-info' : 'bg-success'">
+                            {{ property.type === 'RENT' ? 'For Rent' : 'For Sale' }}
+                          </span>
+                          <span class="ms-2 text-muted">
+                            <i class="fas fa-eye"></i> {{ property.view || 0 }} views
+                          </span>
                         </div>
                         <div class="actions mt-3">
-                          <a href="#" class="btn btn-sm btn-outline-primary me-2">View Details</a>
-                          <button class="btn btn-sm btn-outline-danger">
+                          <a [routerLink]="['/property', property.id]" class="btn btn-sm btn-outline-primary me-2">View Details</a>
+                          <button class="btn btn-sm btn-outline-danger" (click)="removeFavorite(property.id)">
                             <i class="fas fa-heart"></i> Remove
                           </button>
                         </div>
@@ -171,21 +280,60 @@
               <h5 class="mb-0">Saved Searches</h5>
             </div>
             <div class="card-body">
+              <!-- Loading state -->
+              <div *ngIf="savedSearchesLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your saved searches...</p>
+              </div>
+              
+              <!-- Error message -->
+              <div *ngIf="savedSearchesError" class="alert alert-danger">
+                {{ savedSearchesError }}
+                <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadSavedSearches()">Try Again</button>
+              </div>
+              
               <div class="saved-searches-list">
-                <div class="alert alert-info" *ngIf="savedSearches.length === 0">
-                  You don't have any saved searches yet.
+                <!-- Empty state with CTA -->
+                <div *ngIf="!savedSearchesLoading && savedSearches.length === 0" class="text-center py-4">
+                  <div class="empty-state mb-4">
+                    <i class="fas fa-search text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3">No Saved Searches Yet</h5>
+                    <p class="text-muted">You don't have any saved searches to view.</p>
+                  </div>
+                  <a routerLink="/properties" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>Start Searching
+                  </a>
+                  <p class="text-muted mt-3 small">Use the search filters on the properties page and save your favorite search criteria.</p>
                 </div>
                 
-                <div class="search-item" *ngFor="let search of savedSearches">
-                  <div class="d-flex justify-content-between align-items-center">
+                <div class="search-item border-bottom p-3 mb-3" *ngFor="let search of savedSearches">
+                  <div class="d-flex justify-content-between align-items-start">
                     <div>
-                      <h6>{{ search.name }}</h6>
-                      <p class="mb-0">{{ search.criteria }}</p>
-                      <small class="text-muted">Saved on {{ search.date }}</small>
+                      <h6 class="mb-2 d-flex align-items-center">
+                        <span class="badge me-2" [ngClass]="search.type === 'RENT' ? 'bg-info' : 'bg-success'">
+                          {{ search.type === 'RENT' ? 'Rent' : 'Sale' }}
+                        </span>
+                        {{ search.keyword || 'All Properties' }}
+                      </h6>
+                      
+                      <div class="search-criteria mb-2">
+                        <span class="badge bg-light text-dark me-2" *ngIf="search.minPrice">
+                          Price: {{ formatPrice(search.minPrice) }}
+                          <ng-container *ngIf="search.maxPrice"> - {{ formatPrice(search.maxPrice) }}</ng-container>
+                        </span>
+                      </div>
+                      
+                      <small class="text-muted">
+                        Saved {{ formatDate(search.createdAt) }}
+                      </small>
                     </div>
                     <div class="search-actions">
-                      <button class="btn btn-sm btn-outline-primary me-2">Run Search</button>
-                      <button class="btn btn-sm btn-outline-danger">
+                      <button class="btn btn-sm btn-outline-primary me-2" (click)="runSavedSearch(search)">
+                        <i class="fas fa-search"></i> Run Search
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" (click)="deleteSavedSearch(search.id)">
                         <i class="fas fa-trash"></i>
                       </button>
                     </div>
@@ -231,6 +379,81 @@
                         </div>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Reviews Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'reviews'">
+          <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">My Reviews</h5>
+            </div>
+            <div class="card-body">
+              <!-- Loading state -->
+              <div *ngIf="reviewsLoading" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading your reviews...</p>
+              </div>
+              
+              <!-- Error message -->
+              <div *ngIf="reviewsError" class="alert alert-danger">
+                {{ reviewsError }}
+                <button class="btn btn-sm btn-outline-danger ms-2" (click)="loadUserReviews()">Try Again</button>
+              </div>
+              
+              <div class="reviews-list">
+                <!-- Empty state with CTA -->
+                <div *ngIf="!reviewsLoading && userReviews?.length === 0" class="text-center py-4">
+                  <div class="empty-state mb-4">
+                    <i class="fas fa-star text-muted" style="font-size: 4rem;"></i>
+                    <h5 class="mt-3">You Haven't Written Any Reviews Yet</h5>
+                    <p class="text-muted">Share your experience about properties you've visited.</p>
+                  </div>
+                  <a routerLink="/properties" class="btn btn-primary">
+                    <i class="fas fa-building me-2"></i>Browse Properties
+                  </a>
+                </div>
+                
+                <!-- Reviews list -->
+                <div class="review-item mb-4 p-3 border-bottom" *ngFor="let review of userReviews">
+                  <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                      <h6 class="mb-1">
+                        <a [routerLink]="['/property', review.listingId]" class="text-decoration-none">
+                          {{ review.title || 'Property Review' }}
+                        </a>
+                      </h6>
+                      <div class="d-flex align-items-center">
+                        <div class="rating me-2">
+                          <span *ngFor="let star of [1,2,3,4,5]" class="me-1">
+                            <i class="fas fa-star" [class.text-warning]="star <= review.rate" [class.text-muted]="star > review.rate"></i>
+                          </span>
+                        </div>
+                        <small class="text-muted">Posted on {{ review.createdAt | date:'mediumDate' }}</small>
+                        <span class="ms-3 text-muted">
+                          <i class="fas fa-thumbs-up me-1"></i> {{ review.countLike }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="review-actions">
+                      <button class="btn btn-sm btn-outline-primary me-2" (click)="editReview(review)">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-danger" (click)="deleteReview(review.id)">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <p class="review-content mb-2">{{ review.contentReview }}</p>
+                  <div *ngIf="review.agentResponse" class="agent-response mt-3 p-3 bg-light rounded">
+                    <small class="text-muted d-block mb-1">Agent Response:</small>
+                    <p class="mb-0">{{ review.agentResponse }}</p>
                   </div>
                 </div>
               </div>

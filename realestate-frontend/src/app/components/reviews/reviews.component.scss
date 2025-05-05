@@ -19,20 +19,32 @@
 
 .reviews-header {
   margin-bottom: 30px;
-  
-  h1 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 10px;
-  }
-  
-  p {
-    font-size: 1rem;
-    color: #666;
-  }
+  padding: 30px 20px;
+  background: linear-gradient(135deg, #ffe5e5, #fff5f5); /* nền đỏ nhạt */
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(255, 0, 0, 0.1);
+  text-align: center;
+  transition: all 0.3s ease-in-out;
 }
 
-// Danh sách đánh giá
+.reviews-header:hover {
+  box-shadow: 0 10px 25px rgba(255, 0, 0, 0.2);
+}
+
+.reviews-header h1 {
+  font-size: 2.2rem;
+  color: #c62828; /* đỏ đậm */
+  margin-bottom: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.reviews-header p {
+  font-size: 1.1rem;
+  color: #d84315; /* đỏ cam ấm */
+  margin: 0;
+}
+
 .reviews-list {
   .no-reviews {
     text-align: center;

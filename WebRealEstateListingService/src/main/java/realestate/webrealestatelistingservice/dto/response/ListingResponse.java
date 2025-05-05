@@ -14,7 +14,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class ListingResponse {
-
     private String id;
     private String title;
     private String description;
@@ -23,6 +22,7 @@ public class ListingResponse {
     private String image;
     private BigDecimal price;
     private BigDecimal area;
+    private Integer view;
     private Integer bedrooms;
     private Integer bathrooms;
     private ListingType type;
@@ -31,6 +31,5 @@ public class ListingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private ListingPropertyType propertyType;
-
 }
 

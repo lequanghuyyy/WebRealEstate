@@ -1,12 +1,22 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { delay, map } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
+import { environment } from '../../environments/environment';
+import { 
+  AppointmentRequest, 
+  AppointmentResponse, 
+  AppointmentStatus,
+  BaseResponse 
+} from '../models/user-experience.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AppointmentService {
+  private apiUrl = `${environment.userExperienceServiceUrl}/appointments`;
+  
   // Mock data for appointments
   private appointments: Appointment[] = [
     {
@@ -82,59 +92,133 @@ export class AppointmentService {
     }
   ];
 
-  constructor() { }
+  constructor(private http: HttpClient) { }
 
   // Get all appointments for a user
-  getAppointmentsByUserId(userId: string | number): Observable<Appointment[]> {
-    const userAppointments = this.appointments.filter(
-      appointment => appointment.buyerId === userId
+  getAppointmentsByUserId(userId: string): Observable<Appointment[]> {
+    // Use API endpoint when backend is ready
+    return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/br/${userId}`).pipe(
+      map(response => this.mapAppointmentResponsesToAppointments(response.data))
     );
-    // Simulate API call delay
-    return of(userAppointments).pipe(delay(800));
   }
 
   // Get all appointments for an agent
-  getAppointmentsByAgentId(agentId: string | number): Observable<Appointment[]> {
-    const agentAppointments = this.appointments.filter(
-      appointment => appointment.agentId === agentId
+  getAppointmentsByAgentId(agentId: string): Observable<Appointment[]> {
+    // Use API endpoint when backend is ready
+    return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/agent/${agentId}`).pipe(
+      map(response => this.mapAppointmentResponsesToAppointments(response.data))
     );
-    return of(agentAppointments).pipe(delay(800));
+  }
+
+  // Get appointments by status
+  getAppointmentsByAgentIdAndStatus(
+    agentId: string, 
+    status: AppointmentStatus
+  ): Observable<Appointment[]> {
+    return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/agent/${agentId}/status/${status}`).pipe(
+      map(response => this.mapAppointmentResponsesToAppointments(response.data))
+    );
+  }
+
+  getAppointmentsByBrIdAndStatus(
+    brId: string, 
+    status: AppointmentStatus
+  ): Observable<Appointment[]> {
+    return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/br/${brId}/status/${status}`).pipe(
+      map(response => this.mapAppointmentResponsesToAppointments(response.data))
+    );
   }
 
   // Get details of a specific appointment
-  getAppointmentById(id: string | number): Observable<Appointment | undefined> {
-    const appointment = this.appointments.find(app => app.id === id);
-    return of(appointment).pipe(delay(500));
+  getAppointmentById(id: string): Observable<Appointment> {
+    // Use API endpoint when backend is ready
+    return this.http.get<BaseResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`).pipe(
+      map(response => this.mapAppointmentResponseToAppointment(response.data))
+    );
   }
 
   // Create a new appointment
-  createAppointment(appointmentData: Omit<Appointment, 'id' | 'createdAt'>): Observable<Appointment> {
-    const newAppointment: Appointment = {
-      ...appointmentData,
-      id: `app-${this.appointments.length + 1}`,
-      createdAt: new Date().toISOString(),
-      status: 'pending'
+  createAppointment(appointmentData: any): Observable<Appointment> {
+    // Map to API format
+    const request: AppointmentRequest = {
+      brId: appointmentData.buyerId,
+      agentId: appointmentData.agentId,
+      listingId: appointmentData.propertyId,
+      day: new Date(appointmentData.appointmentDate),
+      time: appointmentData.appointmentTime,
+      brNote: appointmentData.notes,
+      status: AppointmentStatus.PENDING
     };
-    this.appointments.push(newAppointment);
-    return of(newAppointment).pipe(delay(800));
+    
+    // Use API endpoint when backend is ready
+    return this.http.post<BaseResponse<AppointmentResponse>>(this.apiUrl, request).pipe(
+      map(response => this.mapAppointmentResponseToAppointment(response.data))
+    );
+  }
+
+  // Update an appointment
+  updateAppointment(id: string, appointmentData: any): Observable<Appointment> {
+    // Map to API format
+    const request: AppointmentRequest = {
+      id: id,
+      brId: appointmentData.buyerId,
+      agentId: appointmentData.agentId,
+      listingId: appointmentData.propertyId,
+      day: new Date(appointmentData.appointmentDate),
+      time: appointmentData.appointmentTime,
+      brNote: appointmentData.notes,
+      status: appointmentData.status as AppointmentStatus
+    };
+    
+    return this.http.put<BaseResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, request).pipe(
+      map(response => this.mapAppointmentResponseToAppointment(response.data))
+    );
   }
 
   // Update appointment status
   updateAppointmentStatus(
-    id: string | number, 
-    status: 'pending' | 'confirmed' | 'cancelled' | 'completed',
-    reason?: string
-  ): Observable<Appointment | undefined> {
-    const index = this.appointments.findIndex(app => app.id === id);
-    if (index !== -1) {
-      this.appointments[index] = {
-        ...this.appointments[index],
-        status,
-        reason: reason || this.appointments[index].reason,
-        updatedAt: new Date().toISOString()
-      };
-      return of(this.appointments[index]).pipe(delay(800));
-    }
-    return of(undefined).pipe(delay(500));
+    id: string, 
+    status: string
+  ): Observable<Appointment> {
+    // Map string status to enum
+    const appointmentStatus = status as unknown as AppointmentStatus;
+    
+    // Use API endpoint when backend is ready
+    return this.http.patch<BaseResponse<AppointmentResponse>>(`${this.apiUrl}/${id}/status/${appointmentStatus}`, {}).pipe(
+      map(response => this.mapAppointmentResponseToAppointment(response.data))
+    );
+  }
+
+  // Delete an appointment
+  deleteAppointment(id: string): Observable<void> {
+    return this.http.delete<BaseResponse<void>>(`${this.apiUrl}/${id}`).pipe(
+      map(() => undefined as void)
+    );
+  }
+
+  // Helper method to map AppointmentResponse to Appointment
+  private mapAppointmentResponseToAppointment(response: AppointmentResponse): Appointment {
+    return {
+      id: response.id,
+      propertyId: response.listingId,
+      propertyTitle: response.propertyTitle || 'Property',
+      propertyImage: response.propertyImage || 'assets/images/properties/default.jpg',
+      buyerId: response.brId,
+      buyerName: response.buyerName || 'Client',
+      agentId: response.agentId,
+      agentName: response.agentName || 'Agent',
+      appointmentDate: response.day,
+      appointmentTime: response.time,
+      status: response.status.toLowerCase() as any,
+      notes: response.brNote || '',
+      createdAt: response.createdAt,
+      updatedAt: response.updatedAt,
+      meetingType: 'in-person'
+    };
+  }
+
+  // Helper method to map AppointmentResponse[] to Appointment[]
+  private mapAppointmentResponsesToAppointments(responses: AppointmentResponse[]): Appointment[] {
+    return responses.map(response => this.mapAppointmentResponseToAppointment(response));
   }
 } 

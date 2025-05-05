@@ -12,13 +12,13 @@ import spring.userexperienceservice.service.SavedSearchService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/saved-searches")
+@RequestMapping("api/v1/ux/saved-searches")
 @RequiredArgsConstructor
 public class SavedSearchController {
 
     private final SavedSearchService savedSearchService;
 
-    @PostMapping
+    @PostMapping("")
     public ResponseEntity<BaseResponse<SavedSearchResponse>> saveSearch(@RequestBody SavedSearchRequest request) {
         return ResponseFactory.ok(savedSearchService.saveSearch(request));
     }

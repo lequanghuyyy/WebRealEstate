@@ -16,7 +16,7 @@ import realestate.webrealestatesaleservice.service.SalesService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/sale")
+@RequestMapping("api/v1/sales")
 @RequiredArgsConstructor
 public class SalesController {
 

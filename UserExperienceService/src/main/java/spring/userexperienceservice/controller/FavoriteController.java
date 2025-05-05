@@ -12,7 +12,7 @@ import spring.userexperienceservice.service.FavoriteService;
 import java.util.List;
 
 @RestController
-@RequestMapping("api/v1/favorites")
+@RequestMapping("api/v1/ux/favorites")
 @RequiredArgsConstructor
 public class FavoriteController {
 

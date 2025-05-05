@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("api/v1/listing")
+@RequestMapping("api/v1/listings")
 public class ListingImageController {
     private final ListingImageService listingImageService;
 

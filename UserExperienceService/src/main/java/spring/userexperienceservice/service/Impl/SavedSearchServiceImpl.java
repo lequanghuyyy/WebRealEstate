@@ -9,6 +9,7 @@ import spring.userexperienceservice.mapper.SavedSearchMapper;
 import spring.userexperienceservice.repository.SavedSearchRepository;
 import spring.userexperienceservice.service.SavedSearchService;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,12 +24,11 @@ public class SavedSearchServiceImpl implements SavedSearchService {
         SavedSearchEntity entity = SavedSearchEntity.builder()
                 .userId(request.getUserId())
                 .keyword(request.getKeyword())
-                .city(request.getCity())
                 .minPrice(request.getMinPrice())
                 .maxPrice(request.getMaxPrice())
-                .minArea(request.getMinArea())
-                .maxArea(request.getMaxArea())
+                .bedrooms(request.getBedrooms())
                 .type(request.getType())
+                .createdAt(LocalDateTime.now())
                 .build();
         return mapper.toResponse(repository.save(entity));
     }
