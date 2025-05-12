@@ -13,6 +13,17 @@
       <p>Manage the reviews you've written for properties</p>
     </div>
 
+    <!-- Error & Success Messages -->
+    <div class="alert alert-danger" *ngIf="errorMessage" role="alert">
+      {{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = ''"></button>
+    </div>
+
+    <div class="alert alert-success" *ngIf="successMessage" role="alert">
+      {{ successMessage }}
+      <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+    </div>
+
     <!-- Edit Review -->
     <div class="edit-review-container" *ngIf="editMode">
       <div class="card">
@@ -33,7 +44,7 @@
                     <i class="fas fa-star"></i>
                   </span>
                 </div>
-                <div class="rating-value">{{ reviewForm.get('rating')?.value }}/5</div>
+                <div class="rating-value">{{ reviewForm.get('rating')?.value || 5 }}/5</div>
               </div>
             </div>
             
@@ -80,7 +91,7 @@
 
     <!-- Reviews List -->
     <div class="reviews-list" *ngIf="!editMode">
-      <div *ngIf="reviews.length === 0" class="no-reviews">
+      <div *ngIf="reviews && reviews.length === 0" class="no-reviews">
         <i class="fas fa-comment-slash fa-3x"></i>
         <h3>No Reviews Yet</h3>
         <p>You haven't written any reviews for properties</p>
@@ -90,35 +101,35 @@
         <div class="review-header">
           <div class="review-property">
             <!-- Link to property details page -->
-            <a [routerLink]="['/property', review.propertyId]">
+            <a [routerLink]="['/property', review.listingId]">
               <i class="fas fa-home"></i>
               <span>View Property</span>
             </a>
           </div>
           <div class="review-date">
             <i class="far fa-calendar-alt"></i>
-            <span>{{ formatDate(review.date) }}</span>
+            <span>{{ formatDate(review.createdAt) }}</span>
           </div>
         </div>
         
         <div class="review-content">
           <div class="review-title">
-            <h3>{{ review.title }}</h3>
+            <h3>{{ review.title || 'Untitled Review' }}</h3>
             <div class="review-rating">
-              <span *ngFor="let star of getStarArray(review.rating)" class="star">
+              <span *ngFor="let star of getStarArray(review.rate || 5)" class="star">
                 <i class="fas" [ngClass]="star === 1 ? 'fa-star' : 'fa-star-o'"></i>
               </span>
-              <span class="rating-value">{{ review.rating }}/5</span>
+              <span class="rating-value">{{ review.rate || 0 }}/5</span>
             </div>
           </div>
           
           <div class="review-comment">
-            <p>{{ review.comment }}</p>
+            <p>{{ review.contentReview || 'No content' }}</p>
           </div>
           
           <div class="review-helpful">
             <i class="fas fa-thumbs-up"></i>
-            <span>{{ review.helpful }} people found this helpful</span>
+            <span>{{ review.countLike || 0 }} people found this helpful</span>
           </div>
         </div>
         
@@ -130,6 +141,34 @@
             <i class="fas fa-trash"></i> Delete
           </button>
         </div>
+      </div>
+
+      <!-- Pagination -->
+      <nav *ngIf="reviewsPage && reviewsPage.totalPages > 1" aria-label="Reviews pagination">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="reviewsPage.first">
+            <a class="page-link" href="javascript:void(0)" (click)="previousPage()">
+              <i class="fas fa-chevron-left"></i> Previous
+            </a>
+          </li>
+          
+          <li class="page-item" *ngFor="let page of getPaginationRange()" 
+              [class.active]="page === currentPage">
+            <a class="page-link" href="javascript:void(0)" (click)="goToPage(page)">
+              {{ page + 1 }}
+            </a>
+          </li>
+          
+          <li class="page-item" [class.disabled]="reviewsPage.last">
+            <a class="page-link" href="javascript:void(0)" (click)="nextPage()">
+              Next <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="pagination-info text-center mt-2" *ngIf="reviewsPage && reviewsPage.totalElements > 0">
+        Showing {{ reviewsPage.numberOfElements }} of {{ reviewsPage.totalElements }} reviews
       </div>
     </div>
 

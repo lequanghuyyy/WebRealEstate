@@ -28,8 +28,8 @@ public class RecommendationServiceImpl implements RecommendationService {
         savedSearchRecommendation.ifPresent(recommendations::add);
         Optional<RecommendationResponse> recentlyViewedRecommendation = getRecommendationsFromRecentlyViewed(userId);
         recentlyViewedRecommendation.ifPresent(recommendations::add);
-        Optional<RecommendationResponse> favoritesRecommendation = getRecommendationsFromFavorites(userId);
-        favoritesRecommendation.ifPresent(recommendations::add);
+//        Optional<RecommendationResponse> favoritesRecommendation = getRecommendationsFromFavorites(userId);
+//        favoritesRecommendation.ifPresent(recommendations::add);
         return recommendations.stream().limit(limit).collect(Collectors.toList());
     }
 
@@ -76,17 +76,17 @@ public class RecommendationServiceImpl implements RecommendationService {
                 .build());
     }
 
-    private Optional<RecommendationResponse> getRecommendationsFromFavorites(String userId) {
-        List<FavoriteListingEntity> favorites = favoriteListingRepository.findByUserId(userId);
-        if (favorites.isEmpty()) {
-            return Optional.empty();
-        }
-        Set<String> favoriteListingIds = favorites.stream()
-                .map(FavoriteListingEntity::getListingId)
-                .collect(Collectors.toSet());
-
-        return Optional.of(RecommendationResponse.builder()
-                .listingIds(favoriteListingIds)
-                .build());
-    }
+//    private Optional<RecommendationResponse> getRecommendationsFromFavorites(String userId) {
+//        List<FavoriteListingEntity> favorites = favoriteListingRepository.findByUserId(userId,3);
+//        if (favorites.isEmpty()) {
+//            return Optional.empty();
+//        }
+//        Set<String> favoriteListingIds = favorites.stream()
+//                .map(FavoriteListingEntity::getListingId)
+//                .collect(Collectors.toSet());
+//
+//        return Optional.of(RecommendationResponse.builder()
+//                .listingIds(favoriteListingIds)
+//                .build());
+//    }
 }

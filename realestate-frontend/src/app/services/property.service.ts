@@ -68,6 +68,7 @@ export class PropertyService {
       area: property.features.area,
       bedrooms: property.features.bedrooms,
       bathrooms: property.features.bathrooms,
+      yearBuilt: property.features.yearBuilt || new Date().getFullYear(),
       type: property.type === 'buy' ? ListingType.SALE : ListingType.RENT,
       propertyType: this.mapToPropertyType(property.type),
       ownerId: property.agent.id
@@ -91,6 +92,7 @@ export class PropertyService {
       area: property.features.area,
       bedrooms: property.features.bedrooms,
       bathrooms: property.features.bathrooms,
+      yearBuilt: property.features.yearBuilt || new Date().getFullYear(),
       type: property.type === 'buy' ? ListingType.SALE : ListingType.RENT,
       propertyType: this.mapToPropertyType(property.type),
       ownerId: property.agent.id
@@ -135,7 +137,7 @@ export class PropertyService {
         bedrooms: listing.bedrooms,
         bathrooms: listing.bathrooms,
         area: listing.area,
-        yearBuilt: new Date().getFullYear() - 5 // Placeholder
+        yearBuilt: listing.yearBuilt || new Date().getFullYear() - 3 // Use actual yearBuilt or fallback
       },
       amenities: [],
       images: [listing.image || 'assets/images/property-placeholder.jpg'],

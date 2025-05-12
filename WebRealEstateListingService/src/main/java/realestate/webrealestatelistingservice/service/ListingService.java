@@ -1,6 +1,7 @@
 package realestate.webrealestatelistingservice.service;
 
 import org.springframework.stereotype.Service;
+import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
@@ -24,4 +25,6 @@ public interface ListingService {
     PageDto<ListingResponse> getListingsBySaleTypePaged(int page, int size);
     PageDto<ListingResponse> getListingsByRentTypePaged(int page, int size);
     List<ListingResponse> getTop5MostViewedListings();
+    int getTotalListingsCount();
+    int getTotalListingsCountByType(ListingType type);
 }

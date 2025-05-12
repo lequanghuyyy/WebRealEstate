@@ -38,7 +38,7 @@ public class RentalTransactionEntity {
     // Giá thuê hàng tháng
     @Column(nullable = false, precision = 12, scale = 2)
     @DecimalMin(value = "0.0", inclusive = false, message = "Monthly rent must be positive")
-    private BigDecimal monthlyRent;
+        private BigDecimal monthlyRent;
 
     // Tiền đặt cọc
     @Column(precision = 12, scale = 2)

@@ -105,18 +105,18 @@
                     </td>
                     <td>
                       <span [ngClass]="getPaymentTypeBadgeClass(payment.paymentType)">
-                        {{ payment.paymentType }}
+                        {{ payment.paymentType || 'Unknown' }}
                       </span>
                     </td>
                     <td>
                       <span [ngClass]="getMethodBadgeClass(payment.method)">
-                        {{ payment.method }}
+                        {{ payment.method || 'Unknown' }}
                       </span>
                     </td>
                     <td>{{ formatDate(payment.date) }}</td>
                     <td>
                       <span [ngClass]="getStatusBadgeClass(payment.status)">
-                        {{ payment.status }}
+                        {{ payment.status || 'Unknown' }}
                       </span>
                     </td>
                     <td>
@@ -164,19 +164,19 @@
                 <li class="list-group-item d-flex justify-content-between px-0">
                   <span>Status:</span>
                   <span [ngClass]="getStatusBadgeClass(selectedPayment.status)">
-                    {{ selectedPayment.status }}
+                    {{ selectedPayment.status || 'Unknown' }}
                   </span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between px-0">
                   <span>Type:</span>
                   <span [ngClass]="getPaymentTypeBadgeClass(selectedPayment.paymentType)">
-                    {{ selectedPayment.paymentType }}
+                    {{ selectedPayment.paymentType || 'Unknown' }}
                   </span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between px-0">
                   <span>Method:</span>
                   <span [ngClass]="getMethodBadgeClass(selectedPayment.method)">
-                    {{ selectedPayment.method }}
+                    {{ selectedPayment.method || 'Unknown' }}
                   </span>
                 </li>
                 <li class="list-group-item d-flex justify-content-between px-0">

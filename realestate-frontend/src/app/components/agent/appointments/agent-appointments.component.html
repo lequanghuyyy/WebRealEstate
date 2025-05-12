@@ -1,0 +1,200 @@
+<div class="agent-appointments-container">
+  <div class="header-section">
+    <h3 class="section-title">Manage Appointments</h3>
+    <p class="section-description">View and manage appointment requests from potential buyers and renters</p>
+  </div>
+
+  <!-- Error message -->
+  <div *ngIf="error" class="alert alert-danger mt-3">
+    <i class="fas fa-exclamation-circle me-2"></i> {{ error }}
+  </div>
+
+  <!-- Loading spinner -->
+  <div *ngIf="isLoading" class="loading-container mt-4">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2">Loading appointment data...</p>
+  </div>
+
+  <!-- Filter tabs -->
+  <div *ngIf="!isLoading && !error" class="filter-container">
+    <div class="filter-tabs">
+      <button 
+        class="btn filter-btn" 
+        [class.active]="filterStatus === 'ALL'"
+        (click)="changeFilter('ALL')"
+      >
+        <i class="fas fa-list me-1"></i> All
+      </button>
+      <button 
+        class="btn filter-btn" 
+        [class.active]="filterStatus === 'PENDING'"
+        (click)="changeFilter('PENDING')"
+      >
+        <i class="fas fa-clock me-1"></i> Pending
+      </button>
+      <button 
+        class="btn filter-btn" 
+        [class.active]="filterStatus === 'CONFIRMED'"
+        (click)="changeFilter('CONFIRMED')"
+      >
+        <i class="fas fa-check me-1"></i> Confirmed
+      </button>
+      <button 
+        class="btn filter-btn" 
+        [class.active]="filterStatus === 'COMPLETED'"
+        (click)="changeFilter('COMPLETED')"
+      >
+        <i class="fas fa-check-double me-1"></i> Completed
+      </button>
+      <button 
+        class="btn filter-btn" 
+        [class.active]="filterStatus === 'CANCELLED'"
+        (click)="changeFilter('CANCELLED')"
+      >
+        <i class="fas fa-times me-1"></i> Cancelled
+      </button>
+    </div>
+    <div class="appointment-count">
+      <span class="count-badge">{{ filteredAppointments.length }}</span> appointments found
+    </div>
+  </div>
+
+  <!-- No appointments message -->
+  <div *ngIf="!isLoading && !error && filteredAppointments.length === 0" class="no-appointments mt-4">
+    <div class="card">
+      <div class="card-body text-center py-5">
+        <i class="fas fa-calendar-times text-muted mb-3" style="font-size: 3rem;"></i>
+        <h5>No Appointments Found</h5>
+        <p class="text-muted">You don't have any appointments with clients yet</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointments list -->
+  <div *ngIf="!isLoading && !error && filteredAppointments.length > 0" class="appointments-list mt-4">
+    <div class="card appointment-card mb-3" *ngFor="let appointment of filteredAppointments">
+      <div class="card-header" [ngClass]="'status-' + appointment.status">
+        <span class="badge" [ngClass]="getStatusBadgeClass(appointment.status)">
+          {{ getStatusText(appointment.status) }}
+        </span>
+        <span class="date-info">
+          <i class="far fa-calendar-alt me-1"></i>
+          {{ formatDate(appointment.appointmentDate) }} at {{ formatTime(appointment.appointmentTime) }}
+        </span>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <!-- Property image and info -->
+          <div class="col-md-3">
+            <div class="property-img-container">
+              <img [src]="appointment.propertyImage || 'assets/images/property-placeholder.jpg'" alt="Property image" class="property-img">
+              <div class="property-overlay">
+                <a [routerLink]="['/property', appointment.propertyId]" class="view-property-btn">
+                  <i class="fas fa-eye"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Appointment details -->
+          <div class="col-md-7">
+            <div class="property-info-container">
+              <h5 class="property-title">
+                <a [routerLink]="['/property', appointment.propertyId]">{{ appointment.propertyTitle }}</a>
+              </h5>
+              
+              <div class="appointment-details">
+                <div class="detail-row">
+                  <div class="detail-item client-info">
+                    <i class="far fa-user"></i>
+                    <div class="detail-content">
+                      <span class="detail-label">Client:</span>
+                      <span class="detail-value">{{ appointment.buyerName }}</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="detail-row" *ngIf="appointment.meetingLocation || appointment.meetingLink">
+                  <div class="detail-item location-info" *ngIf="appointment.meetingLocation">
+                    <i class="fas fa-location-arrow"></i>
+                    <div class="detail-content">
+                      <span class="detail-label">Location:</span>
+                      <span class="detail-value">{{ appointment.meetingLocation }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="detail-item link-info" *ngIf="appointment.meetingLink">
+                    <i class="fas fa-video"></i>
+                    <div class="detail-content">
+                      <span class="detail-label">Link:</span>
+                      <a [href]="appointment.meetingLink" target="_blank" class="link-primary">Join Meeting</a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="detail-item notes-info" *ngIf="appointment.notes">
+                  <i class="far fa-sticky-note"></i>
+                  <div class="detail-content">
+                    <span class="detail-label">Client Notes:</span>
+                    <p class="notes-text">{{ appointment.notes }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Actions -->
+          <div class="col-md-2 action-column">
+            <div class="action-buttons">
+              <!-- Display the current status -->
+              <div class="current-status mb-2">
+                Status: <strong>{{ getStatusText(appointment.status) }}</strong>
+              </div>
+              
+              <!-- Actions for pending appointments -->
+              <ng-container *ngIf="appointment.status === 'PENDING'">
+                <button 
+                  class="btn btn-sm btn-success action-btn"
+                  (click)="updateAppointmentStatus(appointment.id, 'CONFIRMED')"
+                >
+                  <i class="fas fa-check me-1"></i> Confirm
+                </button>
+                
+                <button 
+                  class="btn btn-sm btn-danger action-btn"
+                  (click)="updateAppointmentStatus(appointment.id, 'CANCELLED')"
+                >
+                  <i class="fas fa-times me-1"></i> Decline
+                </button>
+              </ng-container>
+              
+              <!-- Actions for confirmed appointments -->
+              <ng-container *ngIf="appointment.status === 'CONFIRMED'">
+                <button 
+                  class="btn btn-sm btn-info action-btn"
+                  (click)="updateAppointmentStatus(appointment.id, 'COMPLETED')"
+                >
+                  <i class="fas fa-check-double me-1"></i> Complete
+                </button>
+                
+                <button 
+                  class="btn btn-sm btn-danger action-btn"
+                  (click)="updateAppointmentStatus(appointment.id, 'CANCELLED')"
+                >
+                  <i class="fas fa-times me-1"></i> Cancel
+                </button>
+              </ng-container>
+              
+              <!-- Link to property details (for all status types) -->
+              <a [routerLink]="['/property', appointment.propertyId]" class="btn btn-sm btn-outline-primary action-btn">
+                <i class="fas fa-eye me-1"></i> View
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

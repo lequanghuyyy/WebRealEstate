@@ -157,7 +157,7 @@
         </div>
 
         <div class="form-row">
-          <div class="form-group col-md-4">
+          <div class="form-group col-md-3">
             <label for="bedrooms">Bedrooms</label>
             <input 
               type="number" 
@@ -171,7 +171,7 @@
             </div>
           </div>
           
-          <div class="form-group col-md-4">
+          <div class="form-group col-md-3">
             <label for="bathrooms">Bathrooms</label>
             <input 
               type="number" 
@@ -185,7 +185,24 @@
             </div>
           </div>
           
-          <div class="form-group col-md-4">
+          <div class="form-group col-md-3">
+            <label for="yearBuilt">Year Built</label>
+            <input 
+              type="number" 
+              id="yearBuilt" 
+              formControlName="yearBuilt" 
+              class="form-control" 
+              placeholder="Year of construction"
+              [class.is-invalid]="listingForm.get('yearBuilt')?.invalid && listingForm.get('yearBuilt')?.touched">
+            <div class="invalid-feedback" *ngIf="listingForm.get('yearBuilt')?.hasError('min') && listingForm.get('yearBuilt')?.touched">
+              Year must be after 1900
+            </div>
+            <div class="invalid-feedback" *ngIf="listingForm.get('yearBuilt')?.hasError('max') && listingForm.get('yearBuilt')?.touched">
+              Year cannot be in the future
+            </div>
+          </div>
+          
+          <div class="form-group col-md-3">
             <label for="style">Property Style <span class="required">*</span></label>
             <select 
               id="style" 
@@ -200,7 +217,9 @@
 
       <div class="form-section">
         <h2 class="section-title">Images</h2>
-        <p class="section-description">Upload up to {{ maxImages }} images of the property. First image will be used as the main photo.</p>
+        <p class="section-description">
+          {{ editMode ? 'Current images are displayed below. Upload new images only if you want to replace them.' : 'Upload up to ' + maxImages + ' images of the property. First image will be used as the main photo.' }}
+        </p>
         
         <div class="image-upload-container">
           <div class="image-upload-area">
@@ -213,7 +232,7 @@
               [disabled]="imagePreviewUrls.length >= maxImages">
             <label for="imageUpload" class="upload-label" [class.disabled]="imagePreviewUrls.length >= maxImages">
               <i class="fas fa-cloud-upload-alt"></i>
-              <span>Click to select images</span>
+              <span>{{ editMode ? 'Click to select new images' : 'Click to select images' }}</span>
               <span class="small">or drag and drop here</span>
             </label>
           </div>
@@ -227,6 +246,10 @@
               <div class="image-number" *ngIf="i === 0">Main Photo</div>
             </div>
           </div>
+          
+          <div *ngIf="editMode && imagePreviewUrls.length === 0" class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No images currently available. You can add new images or leave empty to keep using the current ones on the server.
+          </div>
         </div>
       </div>
 
@@ -235,7 +258,7 @@
         <button 
           type="submit" 
           class="btn btn-primary" 
-          [disabled]="isSubmitting || listingForm.invalid || imagePreviewUrls.length === 0">
+          [disabled]="isSubmitting || listingForm.invalid">
           <i class="fas fa-spinner fa-spin" *ngIf="isSubmitting"></i>
           {{ editMode ? 'Update Listing' : 'Create Listing' }}
         </button>

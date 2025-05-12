@@ -75,6 +75,11 @@ export class ProfileComponent implements OnInit {
   reviewsLoading: boolean = false;
   reviewsError: string | null = null;
   
+  // Thêm biến để quản lý phân trang
+  favoriteCurrentPage: number = 0;
+  favoriteTotalPages: number = 0;
+  favoriteTotalElements: number = 0;
+  
   constructor(
     private userService: UserService,
     private router: Router,
@@ -219,8 +224,8 @@ export class ProfileComponent implements OnInit {
     }
   }
   
-  // Tải danh sách các bất động sản yêu thích từ API
-  loadFavoriteProperties(): void {
+  // Cập nhật phương thức loadFavoriteProperties để sử dụng phân trang
+  loadFavoriteProperties(page: number = 0): void {
     if (!this.user) {
       this.user = {} as UserResponse;
     }
@@ -233,7 +238,8 @@ export class ProfileComponent implements OnInit {
 
     // Sử dụng AuthService để lấy userId từ token
     const userId = this.authService.getUserIdFromToken(token);
-    console.log(this.user);
+    console.log('Loading favorites for user:', userId);
+    
     if (!userId) {
       this.favoritesError = 'Unable to identify user';
       return;
@@ -242,14 +248,31 @@ export class ProfileComponent implements OnInit {
     this.user.id = userId;
     this.favoritesLoading = true;
     this.favoritesError = null;
+    this.favoriteCurrentPage = page;
     
-    this.favoriteService.getFavoritesByUser(this.user.id).subscribe({
+    // Sử dụng phương thức mới có phân trang
+    this.favoriteService.getFavoritesByUserPaginated(this.user.id, page).subscribe({
       next: (response) => {
-        const favorites = response.data || [];
-        console.log("favorites", favorites);
-        this.fetchFavoritePropertyDetails(favorites);
+        console.log('Favorites response with pagination:', response);
+        
+        if (response.data && response.data.content) {
+          const favorites = response.data.content || [];
+          // Lưu thông tin phân trang
+          this.favoriteTotalPages = response.data.totalPages;
+          this.favoriteTotalElements = response.data.totalElements;
+          this.favoriteCurrentPage = response.data.number;
+          
+          console.log(`Loaded page ${this.favoriteCurrentPage + 1} of ${this.favoriteTotalPages} (${this.favoriteTotalElements} items total)`);
+          this.fetchFavoritePropertyDetails(favorites);
+        } else {
+          // Xử lý trường hợp API trả về dữ liệu không đúng định dạng
+          console.warn('Unexpected response format:', response);
+          this.favoriteProperties = [];
+          this.favoritesLoading = false;
+        }
       },
       error: (error) => {
+        console.error('Error loading favorites:', error);
         this.favoritesLoading = false;
         this.favoritesError = 'Failed to load favorites: ' + (error.message || 'Unknown error');
       }
@@ -272,7 +295,7 @@ export class ProfileComponent implements OnInit {
     const fetchedProperties: any[] = [];
     let completedRequests = 0;
     
-    listingIds.forEach(id => {
+    listingIds.forEach((id, index) => {
       console.log('Fetching property details for ID:', id);
       
       this.propertyService.getPropertyById(id).subscribe({
@@ -282,7 +305,10 @@ export class ProfileComponent implements OnInit {
           if (response && response.data) {
             console.log('Property data extracted:', response.data);
             const property = response.data;
-            // Add the favorite id for reference when removing
+            // Lưu listingId để xử lý khi xóa favorite
+            property.listingId = id;
+            
+            // Add the favorite id for reference
             const matchingFavorite = favorites.find(fav => fav.listingId === id);
             if (matchingFavorite) {
               property.favoriteId = matchingFavorite.id;
@@ -292,7 +318,10 @@ export class ProfileComponent implements OnInit {
             // Direct response (not wrapped in data property)
             console.log('Direct property data:', response);
             const property = response;
-            // Add the favorite id for reference when removing
+            // Lưu listingId để xử lý khi xóa favorite
+            property.listingId = id;
+            
+            // Add the favorite id for reference
             const matchingFavorite = favorites.find(fav => fav.listingId === id);
             if (matchingFavorite) {
               property.favoriteId = matchingFavorite.id;
@@ -389,12 +418,33 @@ export class ProfileComponent implements OnInit {
       return;
     }
     
-    this.favoriteService.removeFavorite(this.user.id, propertyId).subscribe({
+    // Tìm property trong danh sách favorites
+    const property = this.favoriteProperties.find(p => p.id === propertyId);
+    if (!property) {
+      this.toastr.error('Property not found');
+      return;
+    }
+    
+    // Lấy listingId từ thuộc tính favoriteId đã được lưu khi gọi fetchFavoritePropertyDetails
+    const listingId = property.listingId || propertyId;
+    
+    console.log('Removing favorite - Property ID:', propertyId);
+    console.log('User ID:', this.user.id);
+    console.log('Listing ID:', listingId);
+    
+    this.favoriteService.removeFavorite(this.user.id, listingId).subscribe({
       next: () => {
+        // Xóa property khỏi danh sách hiển thị
         this.favoriteProperties = this.favoriteProperties.filter(p => p.id !== propertyId);
         this.toastr.success('Removed from favorites');
+        
+        // Reload favorites để đồng bộ với server
+        setTimeout(() => {
+          this.loadFavoriteProperties(this.favoriteCurrentPage);
+        }, 1000);
       },
       error: (error) => {
+        console.error('Error removing favorite:', error);
         this.toastr.error('Failed to remove from favorites');
       }
     });
@@ -559,7 +609,7 @@ export class ProfileComponent implements OnInit {
           this.reviewsLoading = false;
           this.reviewsError = 'Failed to load your reviews. Please try again later.';
           // Fallback to mock data for development
-          this.userReviews = this.getMockReviews();
+          
         }
       });
   }
@@ -601,34 +651,12 @@ export class ProfileComponent implements OnInit {
   }
   
   // Mock reviews for development/testing
-  private getMockReviews(): any[] {
-    return [
-      {
-        id: '1',
-        propertyId: '101',
-        propertyTitle: 'Modern Apartment in Downtown',
-        rating: 4,
-        comment: 'Great location and amenities. Very clean and modern.',
-        createdAt: new Date().toISOString(),
-        response: 'Thank you for your positive feedback! We hope to see you again soon.'
-      },
-      {
-        id: '2',
-        propertyId: '102',
-        propertyTitle: 'Seaside Villa with Pool',
-        rating: 5,
-        comment: 'Amazing property with breathtaking views. Perfect for a family vacation.',
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      },
-      {
-        id: '3',
-        propertyId: '103',
-        propertyTitle: 'Cozy Studio near University',
-        rating: 3,
-        comment: 'Decent place for the price. Could use some maintenance on the bathroom fixtures.',
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        response: 'We appreciate your feedback and will address the maintenance issues you mentioned.'
-      }
-    ];
+  
+  
+  // Thêm phương thức để điều hướng phân trang
+  navigateFavoritePage(page: number): void {
+    if (page >= 0 && page < this.favoriteTotalPages) {
+      this.loadFavoriteProperties(page);
+    }
   }
 } 

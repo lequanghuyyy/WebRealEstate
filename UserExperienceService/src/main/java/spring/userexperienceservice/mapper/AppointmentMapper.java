@@ -15,11 +15,7 @@ public class AppointmentMapper {
     private final ModelMapper modelMapper;
 
     public AppointmentEntity toEntity(AppointmentRequest request) {
-        AppointmentEntity entity = modelMapper.map(request, AppointmentEntity.class);
-        if (entity.getId() == null) {
-            entity.setId(UUID.randomUUID().toString());
-        }
-        return entity;
+        return modelMapper.map(request, AppointmentEntity.class);
     }
 
     public AppointmentResponse toResponse(AppointmentEntity entity) {

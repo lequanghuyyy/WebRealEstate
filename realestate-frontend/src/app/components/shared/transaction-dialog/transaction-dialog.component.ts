@@ -5,7 +5,19 @@ import { PropertyService } from '../../../services/property.service';
 import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { Property } from '../../../models/property.model';
-import { ExtendedTransaction } from '../../../components/agent/transactions/agent-transactions.component';
+import { Transaction } from '../../../models/transaction.model';
+
+// Extended Transaction interface to include rent-specific fields
+export interface ExtendedTransaction extends Transaction {
+  startDate?: string;
+  endDate?: string;
+  paymentMethod?: string;
+  notes?: string;
+  isProcessing?: boolean;
+  commissionFee?: number;
+  deposit?: number;
+  monthlyRent?: number;
+}
 
 interface PropertyItem {
   id: string | number;
@@ -40,7 +52,7 @@ export class TransactionDialogComponent implements OnInit {
       clientEmail: ['', [Validators.required, Validators.email]],
       type: ['sale', Validators.required],
       amount: [0, [Validators.required, Validators.min(0)]],
-      commission: [0, [Validators.required, Validators.min(0)]],
+      commissionFee: [0, [Validators.required, Validators.min(0)]],
       status: ['pending', Validators.required],
       paymentStatus: ['pending', Validators.required],
       date: [this.getCurrentDate(), Validators.required],
@@ -84,7 +96,7 @@ export class TransactionDialogComponent implements OnInit {
         clientEmail: this.transaction.client.email,
         type: this.transaction.type,
         amount: this.transaction.amount,
-        commission: this.transaction.commission,
+        commissionFee: this.transaction.commissionFee || 0,
         status: this.transaction.status,
         paymentStatus: this.transaction.paymentStatus,
         date: this.transaction.date,
@@ -126,7 +138,7 @@ export class TransactionDialogComponent implements OnInit {
     this.transactionForm.reset({
       type: 'sale',
       amount: 0,
-      commission: 0,
+      commissionFee: 0,
       status: 'pending',
       paymentStatus: 'pending',
       date: this.getCurrentDate(),
@@ -166,7 +178,7 @@ export class TransactionDialogComponent implements OnInit {
       },
       type: formValue.type,
       amount: formValue.amount,
-      commission: formValue.commission,
+      commissionFee: formValue.commissionFee,
       status: formValue.status,
       paymentStatus: formValue.paymentStatus,
       date: formValue.date,

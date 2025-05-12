@@ -8,6 +8,7 @@ import realestate.securityservice.dto.respone.BaseResponse;
 import realestate.securityservice.dto.respone.ResponseFactory;
 import realestate.securityservice.dto.respone.UserResponse;
 import realestate.securityservice.service.AgentApprovalService;
+import realestate.securityservice.service.UserService;
 
 import java.util.List;
 
@@ -18,6 +19,7 @@ import java.util.List;
 public class AdminController {
 
     private final AgentApprovalService agentApprovalService;
+    private final UserService userService;
 
     @GetMapping("/pending-agents")
     public ResponseEntity<BaseResponse<List<UserResponse>>> getPendingAgents() {
@@ -32,5 +34,9 @@ public class AdminController {
     @PutMapping("/{userId}/reject")
     public ResponseEntity<BaseResponse<UserResponse>> rejectAgent(@PathVariable String userId) {
         return ResponseFactory.ok(agentApprovalService.rejectAgent(userId));
+    }
+    @GetMapping("/count")
+    public ResponseEntity<BaseResponse<Integer>> getPendingAgentCount() {
+        return ResponseFactory.ok(userService.countUsers());
     }
 }

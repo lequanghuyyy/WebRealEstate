@@ -8,7 +8,7 @@ export interface Appointment {
   agentId: string | number;
   agentName: string;
   appointmentDate: string | Date;
-  status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  status: 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
   appointmentTime: string;
   notes?: string;
   createdAt: string | Date;

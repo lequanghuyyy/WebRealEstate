@@ -29,6 +29,7 @@ export interface ListingModel {
   view: number;
   bedrooms: number;
   bathrooms: number;
+  yearBuilt: number;
   type: ListingType;
   status: ListingStatus;
   ownerId: string;
@@ -70,8 +71,6 @@ export interface BaseResponse<T> {
 export interface ListingResponse extends ListingModel {
 }
 
-
-
 export interface ListingRequest {
   title: string;
   description: string;
@@ -82,6 +81,8 @@ export interface ListingRequest {
   area: number;
   bedrooms: number;
   bathrooms: number;
+  yearBuilt: number;
+  view?: number;
   type: ListingType;
   propertyType: ListingPropertyType;
   ownerId: string;

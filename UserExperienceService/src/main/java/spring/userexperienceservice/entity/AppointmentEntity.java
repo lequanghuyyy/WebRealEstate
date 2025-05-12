@@ -1,11 +1,8 @@
 package spring.userexperienceservice.entity;
-
 import jakarta.persistence.*;
 import lombok.Data;
 import spring.userexperienceservice.constant.AppointmentStatus;
-
-import javax.lang.model.element.Name;
-import java.sql.Time;
+import java.time.LocalTime;
 import java.util.Date;
 
 @Entity
@@ -31,8 +28,8 @@ public class AppointmentEntity {
     @Column(name = "day", nullable = false)
     private Date day;
 
-    @Column(name = "time", nullable = false)
-    private Time time;
+    @Column(name = "time")
+    private LocalTime time;
 
     @Column(name = "br_note")
     private String brNote;

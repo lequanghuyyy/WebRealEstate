@@ -77,10 +77,10 @@
                 </tr>
                 <tr *ngFor="let transaction of filteredTransactions">
                   <td>{{ transaction.id }}</td>
-                  <td>{{ transaction.propertyTitle }}</td>
+                  <td>{{ transaction.propertyTitle || (transaction.property && transaction.property.title || 'N/A') }}</td>
                   <td>
-                    <span class="badge" [ngClass]="getTypeBadgeClass(transaction.transactionType)">
-                      {{ transaction.transactionType === 'sale' ? 'Sale' : 'Rent' }}
+                    <span class="badge" [ngClass]="getTypeBadgeClass(transaction.transactionType || transaction.type)">
+                      {{ (transaction.transactionType || transaction.type) === 'sale' ? 'Sale' : 'Rent' }}
                     </span>
                   </td>
                   <td>{{ formatCurrency(transaction.amount) }}</td>
@@ -89,7 +89,7 @@
                       {{ transaction.status }}
                     </span>
                   </td>
-                  <td>{{ transaction.buyerName }}</td>
+                  <td>{{ transaction.buyerName || (transaction.client && transaction.client.name || 'N/A') }}</td>
                   <td>{{ formatDate(transaction.date) }}</td>
                   <td>
                     <div class="actions">
@@ -140,8 +140,8 @@
                   <div class="detail-item">
                     <div class="detail-label">Type:</div>
                     <div class="detail-value">
-                      <span class="badge" [ngClass]="getTypeBadgeClass(selectedTransaction.transactionType)">
-                        {{ selectedTransaction.transactionType === 'sale' ? 'Sale' : 'Rent' }}
+                      <span class="badge" [ngClass]="getTypeBadgeClass(selectedTransaction.transactionType || selectedTransaction.type)">
+                        {{ (selectedTransaction.transactionType || selectedTransaction.type) === 'sale' ? 'Sale' : 'Rent' }}
                       </span>
                     </div>
                   </div>
@@ -168,6 +168,10 @@
                   <div class="detail-item">
                     <div class="detail-label">Payment Method:</div>
                     <div class="detail-value">{{ selectedTransaction.paymentMethod }}</div>
+                  </div>
+                  <div class="detail-item" *ngIf="selectedTransaction.commissionFee">
+                    <div class="detail-label">Commission Fee:</div>
+                    <div class="detail-value">{{ formatCurrency(selectedTransaction.commissionFee) }}</div>
                   </div>
                 </div>
               </div>
@@ -231,9 +235,9 @@
                     <div class="detail-label">Agent Name:</div>
                     <div class="detail-value">{{ selectedTransaction.agentName }}</div>
                   </div>
-                  <div class="detail-item" *ngIf="selectedTransaction.commission">
-                    <div class="detail-label">Commission:</div>
-                    <div class="detail-value">{{ formatCurrency(selectedTransaction.commission) }}</div>
+                  <div class="detail-item" *ngIf="selectedTransaction.commissionFee">
+                    <div class="detail-label">Commission Fee:</div>
+                    <div class="detail-value">{{ formatCurrency(selectedTransaction.commissionFee) }}</div>
                   </div>
                 </div>
               </div>

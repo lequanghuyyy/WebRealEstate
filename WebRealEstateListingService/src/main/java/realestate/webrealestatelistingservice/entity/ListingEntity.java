@@ -46,7 +46,9 @@ public class ListingEntity {
     private Integer bathrooms;
 
     private Integer yearBuilt;
-    private Integer view;
+
+    @Column(nullable = false)
+    private Integer view = 0;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)

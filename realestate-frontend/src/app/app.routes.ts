@@ -16,11 +16,11 @@ import { TermsComponent } from './components/terms/terms.component';
 import { AboutComponent } from './components/about/about.component';
 import { PrivacyComponent } from './components/privacy/privacy.component';
 import { SitemapComponent } from './components/sitemap/sitemap.component';
-import { AgentDashboardComponent } from './components/agent/dashboard/agent-dashboard.component';
 import { AgentTransactionsComponent } from './components/agent/transactions/agent-transactions.component';
 import { CreateListingComponent } from './components/agent/create-listing/create-listing.component';
 import { ReviewsComponent } from './components/reviews/reviews.component';
 import { ApiTestComponent } from './components/debug/api-test.component';
+import { PaymentComponent } from './components/payments/payment.component';
 
 // Admin components
 import { AdminLayoutComponent } from './components/admin/layout/admin-layout.component';
@@ -39,6 +39,19 @@ const agentGuard = () => {
   
   if (!authService.isAgent()) {
     router.navigate(['/']);
+    return false;
+  }
+  
+  return true;
+};
+
+// Auth Guard - only allows logged in users to access certain routes
+const authGuard = () => {
+  const authService = inject(AuthService);
+  const router = inject(Router);
+  
+  if (!authService.isLoggedIn()) {
+    router.navigate(['/login']);
     return false;
   }
   
@@ -76,6 +89,7 @@ export const routes: Routes = [
   { path: 'rent', component: RentComponent },
   { path: 'reviews', component: ReviewsComponent },
   { path: 'api-test', component: ApiTestComponent },
+  { path: 'payments', component: PaymentComponent, canActivate: [authGuard] },
   { 
     path: 'profile', 
     component: ProfileComponent,
@@ -92,12 +106,13 @@ export const routes: Routes = [
     path: 'agent',
     canActivate: [agentGuard],
     children: [
-      { path: 'dashboard', component: AgentDashboardComponent },
-      { path: 'dashboard/viewings', component: AgentDashboardComponent },
       { path: 'transactions', component: AgentTransactionsComponent },
       { path: 'create-listing', component: CreateListingComponent },
       { path: 'edit-listing/:id', component: CreateListingComponent },
-      { path: '', redirectTo: 'dashboard', pathMatch: 'full' }
+      { path: 'buy', loadComponent: () => import('./components/agent/agent-buy/agent-buy.component').then(m => m.AgentBuyComponent) },
+      { path: 'rent', loadComponent: () => import('./components/agent/agent-rent/agent-rent.component').then(m => m.AgentRentComponent) },
+      { path: 'appointments', loadComponent: () => import('./components/agent/appointments/agent-appointments.component').then(m => m.AgentAppointmentsComponent) },
+      { path: '', redirectTo: 'transactions', pathMatch: 'full' }
     ]
   },
   // Admin direct route for testing
@@ -134,14 +149,6 @@ export const routes: Routes = [
       { 
         path: 'payments', 
         loadComponent: () => import('./components/admin/payments/admin-payments.component').then(m => m.AdminPaymentsComponent) 
-      },
-      { 
-        path: 'reviews', 
-        loadComponent: () => import('./components/admin/reviews/admin-reviews.component').then(m => m.AdminReviewsComponent) 
-      },
-      { 
-        path: 'contacts', 
-        loadComponent: () => import('./components/admin/contacts/admin-contacts.component').then(m => m.AdminContactsComponent) 
       },
       { 
         path: 'agent-applications', 

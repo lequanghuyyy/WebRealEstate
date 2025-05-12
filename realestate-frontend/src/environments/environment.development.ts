@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  apiUrl: '/api/v1',
-  securityServiceUrl: '/api/v1/auth',
-  userExperienceServiceUrl: '/api/v1/ux',
-  recommendationsUrl: '/api/v1/recommendations'
+  apiUrl: 'http://localhost:4200',
+  userExperienceServiceUrl: '/api/ux',
+  listingServiceUrl: '/api/listings',
+  mockAPI: false
 }; 

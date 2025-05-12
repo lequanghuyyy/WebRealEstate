@@ -27,6 +27,9 @@ public class PaymentEntity {
     @Column(name = "transaction_id", nullable = false)
     private String transactionId;
 
+    @Column(name = "agent_id")
+    private String agentId;
+
     @Column(nullable = false, precision = 12, scale = 2)
     @DecimalMin(value = "0.0", inclusive = false, message = "Amount must be greater than zero")
     private BigDecimal amount;

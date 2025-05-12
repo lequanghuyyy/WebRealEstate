@@ -191,7 +191,7 @@ export class AdminPaymentsComponent implements OnInit {
   }
 
   // Helper methods for UI
-  getStatusBadgeClass(status: string): string {
+  getStatusBadgeClass(status: string | undefined): string {
     switch (status) {
       case 'completed': return 'badge bg-success';
       case 'pending': return 'badge bg-warning text-dark';
@@ -201,7 +201,7 @@ export class AdminPaymentsComponent implements OnInit {
     }
   }
 
-  getMethodBadgeClass(method: string): string {
+  getMethodBadgeClass(method: string | undefined): string {
     switch (method) {
       case 'credit_card': return 'badge bg-primary';
       case 'bank_transfer': return 'badge bg-secondary';
@@ -211,7 +211,7 @@ export class AdminPaymentsComponent implements OnInit {
     }
   }
 
-  getPaymentTypeBadgeClass(type: string): string {
+  getPaymentTypeBadgeClass(type: string | undefined): string {
     switch (type) {
       case 'full': return 'badge bg-success';
       case 'installment': return 'badge bg-primary';
@@ -228,7 +228,9 @@ export class AdminPaymentsComponent implements OnInit {
     }).format(amount);
   }
 
-  formatDate(date: string): string {
+  formatDate(date: string | undefined): string {
+    if (!date) return 'N/A';
+    
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',

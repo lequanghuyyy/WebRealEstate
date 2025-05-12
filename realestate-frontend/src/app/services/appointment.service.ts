@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay, map } from 'rxjs/operators';
+import { delay, map, tap } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
 import { environment } from '../../environments/environment';
 import { 
@@ -15,89 +15,17 @@ import {
   providedIn: 'root'
 })
 export class AppointmentService {
-  private apiUrl = `${environment.userExperienceServiceUrl}/appointments`;
+  private apiUrl = '/api/ux/appointments';
+  // private apiUrl = `${environment.userExperienceServiceUrl}/appointments`;
   
   // Mock data for appointments
-  private appointments: Appointment[] = [
-    {
-      id: 'app-001',
-      propertyId: 'prop-001',
-      propertyTitle: 'Modern Apartment in City Center',
-      propertyImage: 'assets/images/properties/property-1.jpg',
-      buyerId: 'user-002',
-      buyerName: 'Jane Doe',
-      agentId: 'agent-001',
-      agentName: 'John Agent',
-      appointmentDate: '2023-12-01',
-      appointmentTime: '10:00',
-      status: 'confirmed',
-      notes: 'Meeting to discuss purchase options',
-      createdAt: '2023-11-25',
-      meetingType: 'in-person',
-      meetingLocation: 'At the property'
-    },
-    {
-      id: 'app-002',
-      propertyId: 'prop-002',
-      propertyTitle: 'Suburban Family Home',
-      propertyImage: 'assets/images/properties/property-2.jpg',
-      buyerId: 'user-002',
-      buyerName: 'Jane Doe',
-      agentId: 'agent-002',
-      agentName: 'Sarah Agent',
-      appointmentDate: '2023-12-03',
-      appointmentTime: '14:30',
-      status: 'pending',
-      notes: 'Need to confirm available time slots',
-      createdAt: '2023-11-27',
-      meetingType: 'online',
-      meetingLink: 'https://meet.google.com/abc-defg-hij'
-    },
-    {
-      id: 'app-003',
-      propertyId: 'prop-003',
-      propertyTitle: 'Luxury Villa with Pool',
-      propertyImage: 'assets/images/properties/property-3.jpg',
-      buyerId: 'user-002',
-      buyerName: 'Jane Doe',
-      agentId: 'agent-003',
-      agentName: 'Michael Agent',
-      appointmentDate: '2023-11-28',
-      appointmentTime: '11:00',
-      status: 'completed',
-      notes: 'Viewing completed successfully',
-      createdAt: '2023-11-20',
-      updatedAt: '2023-11-28',
-      meetingType: 'in-person',
-      meetingLocation: 'At the property'
-    },
-    {
-      id: 'app-004',
-      propertyId: 'prop-004',
-      propertyTitle: 'Downtown Loft',
-      propertyImage: 'assets/images/properties/property-4.jpg',
-      buyerId: 'user-002',
-      buyerName: 'Jane Doe',
-      agentId: 'agent-001',
-      agentName: 'John Agent',
-      appointmentDate: '2023-12-05',
-      appointmentTime: '16:00',
-      status: 'cancelled',
-      notes: 'Scheduling conflict',
-      reason: 'Agent unavailable at requested time',
-      createdAt: '2023-11-26',
-      updatedAt: '2023-11-27',
-      meetingType: 'in-person',
-      meetingLocation: 'At the property'
-    }
-  ];
-
   constructor(private http: HttpClient) { }
 
   // Get all appointments for a user
   getAppointmentsByUserId(userId: string): Observable<Appointment[]> {
     // Use API endpoint when backend is ready
     return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/br/${userId}`).pipe(
+      tap(response => console.log('API Response (User Appointments):', response)),
       map(response => this.mapAppointmentResponsesToAppointments(response.data))
     );
   }
@@ -105,7 +33,9 @@ export class AppointmentService {
   // Get all appointments for an agent
   getAppointmentsByAgentId(agentId: string): Observable<Appointment[]> {
     // Use API endpoint when backend is ready
+    console.log('Fetching appointments for agent ID:', agentId);
     return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/agent/${agentId}`).pipe(
+      tap(response => console.log('API Response (Agent Appointments):', response)),
       map(response => this.mapAppointmentResponsesToAppointments(response.data))
     );
   }
@@ -139,6 +69,8 @@ export class AppointmentService {
 
   // Create a new appointment
   createAppointment(appointmentData: any): Observable<Appointment> {
+    console.log('Creating appointment with data:', appointmentData);
+    
     // Map to API format
     const request: AppointmentRequest = {
       brId: appointmentData.buyerId,
@@ -146,13 +78,18 @@ export class AppointmentService {
       listingId: appointmentData.propertyId,
       day: new Date(appointmentData.appointmentDate),
       time: appointmentData.appointmentTime,
-      brNote: appointmentData.notes,
+      brNote: appointmentData.notes || '',
       status: AppointmentStatus.PENDING
     };
     
-    // Use API endpoint when backend is ready
+    console.log('API request:', request);
+    console.log('Endpoint:', this.apiUrl);
+    
     return this.http.post<BaseResponse<AppointmentResponse>>(this.apiUrl, request).pipe(
-      map(response => this.mapAppointmentResponseToAppointment(response.data))
+      map(response => {
+        console.log('API response:', response);
+        return this.mapAppointmentResponseToAppointment(response.data);
+      })
     );
   }
 
@@ -175,16 +112,24 @@ export class AppointmentService {
     );
   }
 
-  // Update appointment status
   updateAppointmentStatus(
     id: string, 
     status: string
   ): Observable<Appointment> {
-    // Map string status to enum
-    const appointmentStatus = status as unknown as AppointmentStatus;
+    // Ensure status is properly formatted
+    let appointmentStatus = status as unknown as AppointmentStatus;
     
+    // Correct any typos in status
+    if (status === 'COMFIRMED') {
+      appointmentStatus = AppointmentStatus.CONFIRMED;
+      console.log('Corrected status from COMFIRMED to CONFIRMED');
+    }
+    
+    console.log(`Updating appointment ${id} to status ${appointmentStatus}`);
+  
     // Use API endpoint when backend is ready
     return this.http.patch<BaseResponse<AppointmentResponse>>(`${this.apiUrl}/${id}/status/${appointmentStatus}`, {}).pipe(
+      tap(response => console.log('Status update response:', response)),
       map(response => this.mapAppointmentResponseToAppointment(response.data))
     );
   }
@@ -198,7 +143,19 @@ export class AppointmentService {
 
   // Helper method to map AppointmentResponse to Appointment
   private mapAppointmentResponseToAppointment(response: AppointmentResponse): Appointment {
-    return {
+    console.log('Mapping appointment response:', response);
+    
+    // Ensure the status is correctly handled
+    let status = response.status || AppointmentStatus.PENDING;
+    console.log('Original status:', status);
+    
+    // Fix any typos in status
+    if (status.toString() === 'COMFIRMED') {
+      status = AppointmentStatus.CONFIRMED;
+      console.log('Corrected misspelled status from COMFIRMED to CONFIRMED');
+    }
+    
+    const appointment: Appointment = {
       id: response.id,
       propertyId: response.listingId,
       propertyTitle: response.propertyTitle || 'Property',
@@ -209,16 +166,20 @@ export class AppointmentService {
       agentName: response.agentName || 'Agent',
       appointmentDate: response.day,
       appointmentTime: response.time,
-      status: response.status.toLowerCase() as any,
+      status: status, // Use the corrected status
       notes: response.brNote || '',
       createdAt: response.createdAt,
       updatedAt: response.updatedAt,
       meetingType: 'in-person'
     };
+    
+    console.log('Mapped appointment:', appointment);
+    return appointment;
   }
 
   // Helper method to map AppointmentResponse[] to Appointment[]
   private mapAppointmentResponsesToAppointments(responses: AppointmentResponse[]): Appointment[] {
+    console.log('Mapping multiple appointment responses:', responses);
     return responses.map(response => this.mapAppointmentResponseToAppointment(response));
   }
 } 

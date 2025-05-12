@@ -6,6 +6,7 @@ import { PropertyApiService } from '../../../services/property-api.service';
 import { AuthService } from '../../../services/auth.service';
 import { Property } from '../../../models/property.model';
 import { UserAdapters } from '../../../utils/user-adapters';
+import { ListingRequest, ListingType, ListingPropertyType } from '../../../models/listing.model';
 
 @Component({
   selector: 'app-create-listing',
@@ -23,23 +24,16 @@ export class CreateListingComponent implements OnInit {
   errorMessage: string | null = null;
   successMessage: string | null = null;
   
-  // For image upload
   selectedImages: File[] = [];
   imagePreviewUrls: string[] = [];
   maxImages: number = 10;
   
-  // Property type options
   propertyTypes = [
     { value: 'house', label: 'House' },
     { value: 'apartment', label: 'Apartment' },
-    { value: 'villa', label: 'Villa' },
-    { value: 'townhouse', label: 'Townhouse' },
-    { value: 'land', label: 'Land' },
-    { value: 'commercial', label: 'Commercial' },
-    { value: 'office', label: 'Office' }
+    { value: 'villa', label: 'Villa' }
   ];
   
-  // Listing status options
   statusOptions = [
     { value: 'available', label: 'Available' },
     { value: 'pending', label: 'Pending' },
@@ -63,6 +57,7 @@ export class CreateListingComponent implements OnInit {
       area: [null, [Validators.required, Validators.min(1)]],
       bedrooms: [null, [Validators.min(0)]],
       bathrooms: [null, [Validators.min(0)]],
+      yearBuilt: [null, [Validators.min(1900), Validators.max(new Date().getFullYear())]],
       type: ['sale', Validators.required],
       status: ['available', Validators.required],
       style: ['house', Validators.required],
@@ -71,13 +66,11 @@ export class CreateListingComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // Check if user is logged in and is an agent
     if (!this.authService.isLoggedIn() || !this.authService.isAgent()) {
       this.router.navigate(['/auth/login']);
       return;
     }
     
-    // Check if we're in edit mode (URL has an ID parameter)
     this.route.paramMap.subscribe(params => {
       this.listingId = params.get('id');
       
@@ -92,48 +85,50 @@ export class CreateListingComponent implements OnInit {
     this.isLoading = true;
     
     this.propertyApiService.getListingById(id).subscribe({
-      // next: (property: Property) => {
-      //   // Populate the form with property data
-      //   this.listingForm.patchValue({
-      //     title: property.title,
-      //     description: property.description,
-      //     address: property.location.address,
-      //     city: property.location.city,
-      //     price: property.price,
-      //     area: property.features.area,
-      //     bedrooms: property.features.bedrooms,
-      //     bathrooms: property.features.bathrooms,
-      //     type: property.type,
-      //     status: property.status,
-      //     style: property.type.toLowerCase(),
-      //     tags: property.tags || []
-      //   });
+      next: (listing) => {
+        this.listingForm.patchValue({
+          title: listing.title,
+          description: listing.description,
+          address: listing.address,
+          city: listing.city,
+          price: listing.price,
+          area: listing.area,
+          bedrooms: listing.bedrooms,
+          bathrooms: listing.bathrooms,
+          yearBuilt: listing.yearBuilt,
+          type: listing.type === 'SALE' ? 'sale' : 'rent',
+          status: listing.status.toLowerCase(),
+          style: listing.propertyType.toLowerCase(),
+          tags: []
+        });
         
-      //   // Load images if any
-      //   if (property.images && property.images.length > 0) {
-      //     this.imagePreviewUrls = property.images;
-      //   }
+        // If listing has an image, show it in the preview
+        if (listing.image && listing.image.trim() !== '') {
+          this.imagePreviewUrls = [listing.image];
+        } else {
+          // Clear any existing previews if the listing has no image
+          this.imagePreviewUrls = [];
+          this.selectedImages = [];
+        }
         
-      //   this.isLoading = false;
-      // },
-      // error: (error) => {
-      //   console.error('Error loading property:', error);
-      //   this.errorMessage = 'Failed to load property details. Please try again.';
-      //   this.isLoading = false;
-      // }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading property:', error);
+        this.errorMessage = 'Failed to load property details. Please try again.';
+        this.isLoading = false;
+      }
     });
   }
 
   onSubmit(): void {
     if (this.listingForm.invalid) {
-      // Mark all fields as touched to trigger validation messages
       Object.keys(this.listingForm.controls).forEach(key => {
         this.listingForm.get(key)?.markAsTouched();
       });
       return;
     }
     
-    // Check if user is logged in and is an agent
     const currentUser = this.authService.getCurrentUser();
     if (!currentUser || !this.authService.isAgent()) {
       this.errorMessage = 'You must be logged in as an agent to create a listing.';
@@ -143,81 +138,75 @@ export class CreateListingComponent implements OnInit {
     
     this.isSubmitting = true;
     
-    // Prepare property data from form
     const formValue = this.listingForm.value;
     
-    // Create agent object from user data
-    const agent = UserAdapters.toPropertyAgent(currentUser);
-    if (!agent) {
-      this.errorMessage = 'Unable to create property with current user information.';
-      this.isSubmitting = false;
-      return;
-    }
+    // For image: 
+    // - For new listings: If no image, send empty string
+    // - For editing: If no new image selected, send empty string and let backend handle keeping the existing image
+    const imageToUse = this.imagePreviewUrls.length > 0 ? this.imagePreviewUrls[0] : '';
     
-    const propertyData = {
+    const listingRequest: ListingRequest = {
       title: formValue.title,
       description: formValue.description,
-      location: {
-        address: formValue.address,
-        city: formValue.city,
-        state: 'TX', // Default state
-        zipCode: '', // Default empty
-        country: 'USA' // Default country
-      },
+      address: formValue.address,
+      city: formValue.city,
+      image: imageToUse,
       price: formValue.price,
-      type: formValue.style, // Using style as the property type
-      status: formValue.status,
-      features: {
-        area: formValue.area,
-        bedrooms: formValue.bedrooms,
-        bathrooms: formValue.bathrooms,
-        yearBuilt: 2020 // Default year
-      },
-      images: this.imagePreviewUrls,
-      amenities: [], // Required field, empty array
-      agent: agent, // Now we're sure this is not undefined
-      tags: [], // Empty array
-      createdAt: new Date(),
-      updatedAt: new Date()
+      area: formValue.area,
+      bedrooms: formValue.bedrooms || 0,
+      bathrooms: formValue.bathrooms || 0,
+      yearBuilt: formValue.yearBuilt || new Date().getFullYear(),
+      type: formValue.type === 'sale' ? ListingType.SALE : ListingType.RENT,
+      propertyType: this.mapPropertyType(formValue.style),
+      ownerId: currentUser.id
     };
     
-    // if (this.editMode && this.listingId) {
-    //   // Update existing property
-    //   this.propertyService.updateProperty(this.listingId, propertyData).subscribe({
-    //     next: (updatedProperty) => {
-    //       this.isSubmitting = false;
-    //       this.successMessage = 'Property listing updated successfully!';
+    if (this.editMode && this.listingId) {
+      this.propertyApiService.updateListing(this.listingId, listingRequest).subscribe({
+        next: (updatedListing) => {
+          this.isSubmitting = false;
+          this.successMessage = 'Property listing updated successfully!';
           
-    //       // Redirect to property details page after a short delay
-    //       setTimeout(() => {
-    //         this.router.navigate(['/property', updatedProperty.id]);
-    //       }, 1500);
-    //     },
-    //     error: (error) => {
-    //       console.error('Error updating property:', error);
-    //       this.errorMessage = 'Failed to update property. Please try again.';
-    //       this.isSubmitting = false;
-    //     }
-    //   });
-    // } else {
-    //   // Create new property
-    //   this.propertyService.createProperty(propertyData).subscribe({
-    //     next: (newProperty) => {
-    //       this.isSubmitting = false;
-    //       this.successMessage = 'Property listing created successfully!';
+          setTimeout(() => {
+            this.router.navigate(['/property', updatedListing.id]);
+          }, 1500);
+        },
+        error: (error) => {
+          console.error('Error updating property:', error);
+          this.errorMessage = 'Failed to update property. Please try again.';
+          this.isSubmitting = false;
+        }
+      });
+    } else {
+      this.propertyApiService.createListing(listingRequest).subscribe({
+        next: (newListing) => {
+          this.isSubmitting = false;
+          this.successMessage = 'Property listing created successfully!';
           
-    //       // Redirect to property details page after a short delay
-    //       setTimeout(() => {
-    //         this.router.navigate(['/property', newProperty.id]);
-    //       }, 1500);
-    //     },
-    //     error: (error) => {
-    //       console.error('Error creating property:', error);
-    //       this.errorMessage = 'Failed to create property. Please try again.';
-    //       this.isSubmitting = false;
-    //     }
-    //   });
-    // }
+          setTimeout(() => {
+            this.router.navigate(['/property', newListing.id]);
+          }, 1500);
+        },
+        error: (error) => {
+          console.error('Error creating property:', error);
+          this.errorMessage = 'Failed to create property. Please try again.';
+          this.isSubmitting = false;
+        }
+      });
+    }
+  }
+
+    private mapPropertyType(style: string): ListingPropertyType {
+    switch (style.toLowerCase()) {
+      case 'house':
+        return ListingPropertyType.House;
+      case 'apartment':
+        return ListingPropertyType.Apartment;
+      case 'villa':
+        return ListingPropertyType.Villa;
+      default:
+        return ListingPropertyType.House;
+    }
   }
   
   // Handle image selection

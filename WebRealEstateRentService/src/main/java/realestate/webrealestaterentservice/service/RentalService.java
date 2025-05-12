@@ -19,6 +19,6 @@ public interface RentalService {
     List<RentalTransactionResponse> getRentalTransactionsByListing(String listingId);
     RentalTransactionResponse updateRentalTransactionStatus(String id, RentalStatus request);
     void cancelRentalTransaction(String id);
-
+    Integer count();
     PageDto<RentalTransactionResponse> getPagedRentalTransactions(PageRentalTransactionRequest request);
 }

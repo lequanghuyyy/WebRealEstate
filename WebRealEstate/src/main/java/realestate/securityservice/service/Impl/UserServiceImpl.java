@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import realestate.securityservice.constant.Role;
 import realestate.securityservice.constant.UserStatus;
 import realestate.securityservice.dto.request.UserCreationRequest;
 import realestate.securityservice.dto.request.UserUpdateRequest;
@@ -122,6 +123,15 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public int countUsers() {
+        return userRepository.findAll().size() - 1;
+    }
+
+    @Override
+    public int countUsersByRole(Set<Role> roles) {
+        return userRepository.countUserEntityByRoles(roles);
+    }
 
 
     public String getIdUserCurrent(){

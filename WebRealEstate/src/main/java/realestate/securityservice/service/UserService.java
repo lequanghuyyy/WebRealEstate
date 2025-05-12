@@ -2,12 +2,15 @@ package realestate.securityservice.service;
 
 
 import org.springframework.stereotype.Service;
+import realestate.securityservice.constant.Role;
 import realestate.securityservice.dto.JwtDto;
 import realestate.securityservice.dto.request.UserCreationRequest;
 import realestate.securityservice.dto.request.UserUpdateRequest;
 import realestate.securityservice.dto.respone.UserResponse;
+import realestate.securityservice.entity.RoleEntity;
 
 import java.util.List;
+import java.util.Set;
 
 @Service
 public interface UserService {
@@ -17,5 +20,6 @@ public interface UserService {
     UserResponse updateUserForAdmin(String userid, UserUpdateRequest userUpdateRequest);
     void deleteUser(String id);
     List<UserResponse> getAllUsers();
-
+    int countUsers();
+    int countUsersByRole(Set<Role> roles);
 }

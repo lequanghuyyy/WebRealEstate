@@ -17,6 +17,9 @@ public class ListingMapper {
         this.modelMapper = modelMapper;
     }
     public ListingEntity convertToListingEntity(ListingRequest listingRequest) {
+        if (listingRequest.getView() == null) {
+            listingRequest.setView(0);
+        }
         return modelMapper.map(listingRequest, ListingEntity.class);
     }
     public ListingResponse convertToListingResponse(ListingEntity listingEntity) {
@@ -56,6 +59,12 @@ public class ListingMapper {
         }
         if (request.getPropertyType() != null) {
             existingEntity.setPropertyType(request.getPropertyType());
+        }
+        if (request.getView() != null) {
+            existingEntity.setView(request.getView());
+        }
+        if (request.getYearBuilt() != null) {
+            existingEntity.setYearBuilt(request.getYearBuilt());
         }
         return existingEntity;
     }

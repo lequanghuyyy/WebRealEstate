@@ -1,6 +1,10 @@
 package spring.userexperienceservice.service.Impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import spring.userexperienceservice.dto.request.ReviewRequest;
 import spring.userexperienceservice.dto.response.ReviewResponse;
@@ -18,10 +22,9 @@ import java.util.stream.Collectors;
 public class ReviewServiceImpl implements ReviewService {
 
     private final ReviewRepository reviewRepository;
-
+    private static final int PAGE_SIZE = 5;
     @Override
     public ReviewResponse createReview(ReviewRequest request) {
-        // Check if user has already reviewed this listing
         List<ReviewEntity> existingReviews = reviewRepository.findByBrIdAndListingId(
                 request.getBrId(), request.getListingId());
 
@@ -32,6 +35,7 @@ public class ReviewServiceImpl implements ReviewService {
         ReviewEntity review = ReviewEntity.builder()
                 .listingId(request.getListingId())
                 .brId(request.getBrId())
+                .title(request.getTitle())
                 .contentReview(request.getContentReview())
                 .rate(request.getRate())
                 .countLike(0)
@@ -76,10 +80,10 @@ public class ReviewServiceImpl implements ReviewService {
     }
 
     @Override
-    public List<ReviewResponse> getReviewsByBrId(String brId) {
-        return reviewRepository.findByBrId(brId).stream()
-                .map(this::mapToResponse)
-                .collect(Collectors.toList());
+    public Page<ReviewResponse> getReviewsByBrId(String brId,int page) {
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+        Page<ReviewEntity> reviewEntities = reviewRepository.findByBrId(brId,pageable);
+        return reviewEntities.map(this::mapToResponse);
     }
 
     @Override

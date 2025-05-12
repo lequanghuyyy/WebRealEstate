@@ -1,173 +1,169 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, throwError } from 'rxjs';
-import { delay } from 'rxjs/operators';
-import { Payment } from '../models/payment.model';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
+import { 
+  Payment, 
+  PaymentRequest, 
+  PaymentResponse,
+  PaymentMethod,
+  PaymentStatus,
+  TransactionStyle 
+} from '../models/payment.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
-  private payments: Payment[] = [
-    {
-      id: 'pay-001',
-      amount: 150000,
-      status: 'completed',
-      paymentType: 'full',
-      method: 'bank_transfer',
-      date: '2023-10-15',
-      transactionId: 'trans-001',
-      propertyId: 'prop-001',
-      propertyTitle: 'Modern Apartment in City Center',
-      payerId: 'user-002',
-      payerName: 'Jane Doe',
-      recipientId: 'agent-001',
-      recipientName: 'Real Estate Agency',
-      reference: 'Property Purchase',
-      notes: 'Full payment for property'
-    },
-    {
-      id: 'pay-002',
-      amount: 45000,
-      status: 'pending',
-      paymentType: 'installment',
-      method: 'credit_card',
-      date: '2023-10-18',
-      transactionId: 'trans-002',
-      propertyId: 'prop-003',
-      propertyTitle: 'Suburban Family Home',
-      payerId: 'user-003',
-      payerName: 'Michael Smith',
-      recipientId: 'agent-002',
-      recipientName: 'Home Sellers Inc',
-      reference: 'First Installment',
-      notes: 'First installment of property payment'
-    },
-    {
-      id: 'pay-003',
-      amount: 8500,
-      status: 'completed',
-      paymentType: 'commission',
-      method: 'paypal',
-      date: '2023-10-20',
-      transactionId: 'trans-003',
-      propertyId: 'prop-002',
-      propertyTitle: 'Downtown Loft with View',
-      payerId: 'agency-001',
-      payerName: 'City Homes',
-      recipientId: 'agent-003',
-      recipientName: 'John Agent',
-      reference: 'Agent Commission',
-      notes: 'Commission payment for successful sale'
-    },
-    {
-      id: 'pay-004',
-      amount: 12000,
-      status: 'failed',
-      paymentType: 'installment',
-      method: 'credit_card',
-      date: '2023-10-22',
-      transactionId: 'trans-004',
-      propertyId: 'prop-004',
-      propertyTitle: 'Beachfront Cottage',
-      payerId: 'user-005',
-      payerName: 'Robert Johnson',
-      recipientId: 'agent-001',
-      recipientName: 'Real Estate Agency',
-      reference: 'Second Installment',
-      notes: 'Payment failed due to insufficient funds'
-    },
-    {
-      id: 'pay-005',
-      amount: 3500,
-      status: 'refunded',
-      paymentType: 'fee',
-      method: 'bank_transfer',
-      date: '2023-10-25',
-      transactionId: 'trans-005',
-      propertyId: 'prop-005',
-      propertyTitle: 'Mountain View Cabin',
-      payerId: 'user-006',
-      payerName: 'Sarah Wilson',
-      recipientId: 'agent-004',
-      recipientName: 'Alpine Properties',
-      reference: 'Application Fee',
-      notes: 'Refunded due to canceled application'
-    },
-    {
-      id: 'pay-006',
-      amount: 225000,
-      status: 'completed',
-      paymentType: 'full',
-      method: 'bank_transfer',
-      date: '2023-11-01',
-      transactionId: 'trans-006',
-      propertyId: 'prop-006',
-      propertyTitle: 'Luxury Penthouse',
-      payerId: 'user-007',
-      payerName: 'David Miller',
-      recipientId: 'agent-005',
-      recipientName: 'Luxury Homes',
-      reference: 'Property Purchase',
-      notes: 'Full payment for luxury property'
-    },
-    {
-      id: 'pay-007',
-      amount: 5000,
-      status: 'pending',
-      paymentType: 'fee',
-      method: 'cash',
-      date: '2023-11-05',
-      transactionId: 'trans-007',
-      propertyId: 'prop-007',
-      propertyTitle: 'Urban Studio Apartment',
-      payerId: 'user-008',
-      payerName: 'Emily Brown',
-      recipientId: 'agent-006',
-      recipientName: 'Urban Living',
-      reference: 'Processing Fee',
-      notes: 'Processing fee for rental application'
+  private apiUrl = `${environment.apiUrl}/payments`;
+
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
+
+  // Process payment
+  processPayment(request: PaymentRequest): Observable<PaymentResponse> {
+    // Make sure agentId is included
+    if (!request.agentId) {
+      const currentUser = this.authService.getCurrentUser();
+      request.agentId = currentUser?.id || '';
     }
-  ];
 
-  constructor() { }
-
-  getAllPayments(): Observable<Payment[]> {
-    // Simulate API delay
-    return of([...this.payments]).pipe(delay(800));
+    return this.http.post<any>(`${this.apiUrl}/process`, request).pipe(
+      map(response => response.data),
+      tap(payment => console.log('Created payment:', payment)),
+      catchError(error => {
+        console.error('Error processing payment:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
-  getPaymentById(id: string): Observable<Payment> {
-    const payment = this.payments.find(p => p.id === id);
-    if (payment) {
-      return of(payment).pipe(delay(300));
+  // Get payment by transaction ID
+  getPaymentByTransactionId(transactionId: string): Observable<PaymentResponse> {
+    return this.http.get<any>(`${this.apiUrl}/find/${transactionId}`).pipe(
+      map(response => response.data),
+      tap(payment => console.log('Found payment:', payment)),
+      catchError(error => {
+        console.error('Error getting payment:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+  
+  // Get all payments for a specific agent with pagination
+  getAllPayments(agentId?: string, page: number = 0): Observable<any> {
+    // If no agentId is provided (admin use case), get current user's ID
+    if (!agentId) {
+      const currentUser = this.authService.getCurrentUser();
+      agentId = currentUser?.id || '';
     }
-    return throwError(() => new Error('Payment not found'));
+
+    return this.http.get<any>(`${this.apiUrl}/find/${agentId}/${page}`).pipe(
+      map(response => response.data),
+      tap(paymentsPage => console.log('Found payments:', paymentsPage)),
+      catchError(error => {
+        console.error('Error getting payments:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+  
+  // Helper method to convert PaymentResponse to Payment interface
+  private mapResponseToPayment(response: PaymentResponse): Payment {
+    return {
+      id: response.id,
+      transactionId: response.transactionId,
+      amount: response.amount,
+      paymentMethod: response.paymentMethod as PaymentMethod,
+      paymentStatus: response.paymentStatus as PaymentStatus,
+      paymentDate: response.paymentDate,
+      commissionFee: response.commissionFee,
+      notes: response.notes,
+      createdAt: response.createdAt,
+      transactionStyle: response.transactionStyle,
+      
+      // Map to legacy fields for compatibility
+      status: response.paymentStatus.toLowerCase(),
+      paymentType: response.transactionStyle === TransactionStyle.SALE ? 'full' : 'installment',
+      method: response.paymentMethod.toLowerCase().replace('_', ' '),
+      date: response.paymentDate
+    };
+  }
+
+  // Legacy methods to maintain compatibility with existing components
+  getPaymentById(id: string): Observable<Payment> {
+    return this.http.get<any>(`${this.apiUrl}/${id}`).pipe(
+      map(response => this.mapResponseToPayment(response.data)),
+      catchError(error => {
+        console.error('Error getting payment by ID:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   createPayment(payment: Omit<Payment, 'id'>): Observable<Payment> {
-    const newPayment: Payment = {
-      ...payment,
-      id: 'pay-' + (Math.floor(Math.random() * 1000)).toString().padStart(3, '0')
+    // Convert to the new request format
+    const currentUser = this.authService.getCurrentUser();
+    const request: PaymentRequest = {
+      transactionId: payment.transactionId || '',
+      amount: payment.amount,
+      paymentMethod: payment.paymentMethod.toString(),
+      commissionFee: payment.commissionFee,
+      notes: payment.notes || '',
+      transactionStyle: payment.transactionStyle,
+      agentId: currentUser?.id || ''
     };
-    this.payments.push(newPayment);
-    return of(newPayment).pipe(delay(500));
+    
+    return this.processPayment(request).pipe(
+      map(response => this.mapResponseToPayment(response))
+    );
   }
 
   updatePayment(payment: Partial<Payment> & { id: string }): Observable<Payment> {
-    const index = this.payments.findIndex(p => p.id === payment.id);
-    if (index !== -1) {
-      this.payments[index] = { ...this.payments[index], ...payment };
-      return of(this.payments[index]).pipe(delay(500));
-    }
-    return throwError(() => new Error('Payment not found'));
+    return this.http.put<any>(`${this.apiUrl}/${payment.id}`, payment).pipe(
+      map(response => this.mapResponseToPayment(response.data)),
+      catchError(error => {
+        console.error('Error updating payment:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   deletePayment(id: string): Observable<void> {
-    const index = this.payments.findIndex(p => p.id === id);
-    if (index !== -1) {
-      this.payments.splice(index, 1);
-      return of(void 0).pipe(delay(500));
-    }
-    return throwError(() => new Error('Payment not found'));
+    return this.http.delete<any>(`${this.apiUrl}/${id}`).pipe(
+      map(() => undefined),
+      catchError(error => {
+        console.error('Error deleting payment:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Get all payments for a user (agent)
+  getUserPayments(userId: string): Observable<PaymentResponse[]> {
+    return this.getAllPayments(userId).pipe(
+      map(pageData => pageData.content),
+      tap(payments => console.log(`Found ${payments.length} payments for user`)),
+      catchError(error => {
+        console.error('Error getting user payments:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Update payment status
+  updatePaymentStatus(paymentId: string, status: string): Observable<PaymentResponse> {
+    return this.http.put<any>(`${this.apiUrl}/${paymentId}/status`, { status }).pipe(
+      map(response => response.data),
+      tap(payment => console.log('Updated payment status:', payment)),
+      catchError(error => {
+        console.error('Error updating payment status:', error);
+        return throwError(() => error);
+      })
+    );
   }
 } 

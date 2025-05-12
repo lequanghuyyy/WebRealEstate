@@ -70,4 +70,8 @@ public class RentsController {
         RentalTransactionResponse response = rentalService.updateRentalTransactionStatus(transactionId, rentalStatus);
         return ResponseFactory.ok(response);
     }
+    @GetMapping("/count")
+    public ResponseEntity<BaseResponse<Integer>> countRentalTransactions() {
+        return ResponseFactory.ok(rentalService.count());
+    }
 }

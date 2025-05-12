@@ -1,0 +1,229 @@
+<div class="payment-dashboard">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your payments...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="alert alert-danger" *ngIf="errorMessage">
+    <i class="fas fa-exclamation-circle me-2"></i> {{ errorMessage }}
+  </div>
+
+  <!-- Content when loaded -->
+  <div *ngIf="!isLoading && !errorMessage">
+    <!-- Dashboard Header -->
+    <div class="dashboard-header">
+      <div class="user-info">
+        <h1>My Payments</h1>
+        <p class="text-muted">Manage and track all your transaction payments</p>
+      </div>
+    </div>
+
+    <!-- Payment Statistics Cards -->
+    <div class="statistics-row">
+      <div class="statistics-card">
+        <div class="card-icon">
+          <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div class="card-content">
+          <h3>{{ getFormattedCurrency(totalAmount) }}</h3>
+          <p>Total Payments</p>
+        </div>
+      </div>
+
+      <div class="statistics-card">
+        <div class="card-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="card-content">
+          <h3>{{ getFormattedCurrency(pendingAmount) }}</h3>
+          <p>Pending Payments</p>
+        </div>
+      </div>
+
+      <div class="statistics-card">
+        <div class="card-icon">
+          <i class="fas fa-list"></i>
+        </div>
+        <div class="card-content">
+          <h3>{{ payments.length }}</h3>
+          <p>Total Transactions</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-container">
+      <!-- Tab Navigation -->
+      <div class="tab-navigation">
+        <button 
+          [class.active]="activeTab === 'all'" 
+          (click)="changeTab('all')">
+          All Payments
+        </button>
+        <button 
+          [class.active]="activeTab === 'pending'" 
+          (click)="changeTab('pending')">
+          Pending
+        </button>
+        <button 
+          [class.active]="activeTab === 'completed'" 
+          (click)="changeTab('completed')">
+          Completed
+        </button>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="filter-controls">
+        <div class="search-box">
+          <input 
+            type="text" 
+            class="form-control search-input" 
+            placeholder="Search payments..." 
+            [(ngModel)]="searchQuery"
+            (input)="applyFilters()">
+          <button *ngIf="searchQuery" class="search-clear" (click)="searchQuery = ''; applyFilters()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <div class="filter-dropdown">
+          <select class="form-select" [(ngModel)]="filterPaymentMethod" (change)="applyFilters()">
+            <option value="ALL">All Payment Methods</option>
+            <option value="CREDIT_CARD">Credit Card</option>
+            <option value="BANK_TRANSFER">Bank Transfer</option>
+            <option value="CASH">Cash</option>
+          </select>
+        </div>
+
+        <button class="btn btn-outline-secondary reset-btn" (click)="resetFilters()" *ngIf="searchQuery || filterPaymentMethod !== 'ALL'">
+          <i class="fas fa-undo-alt me-1"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredPayments.length === 0">
+      <div class="empty-icon">
+        <i class="fas fa-file-invoice-dollar"></i>
+      </div>
+      <h3>No payments found</h3>
+      <p>There are no payments matching your current filters.</p>
+      <button class="btn btn-primary" (click)="resetFilters()">Clear Filters</button>
+    </div>
+
+    <!-- Payment Table -->
+    <div class="table-responsive" *ngIf="filteredPayments.length > 0">
+      <table class="table table-hover payment-table">
+        <thead>
+          <tr>
+            <th (click)="updateSort('date')" class="sortable">
+              Date
+              <i class="fas" [ngClass]="{
+                'fa-sort': sortField !== 'date',
+                'fa-sort-up': sortField === 'date' && sortDirection === 'asc',
+                'fa-sort-down': sortField === 'date' && sortDirection === 'desc'
+              }"></i>
+            </th>
+            <th>Transaction ID</th>
+            <th (click)="updateSort('amount')" class="sortable">
+              Amount
+              <i class="fas" [ngClass]="{
+                'fa-sort': sortField !== 'amount',
+                'fa-sort-up': sortField === 'amount' && sortDirection === 'asc',
+                'fa-sort-down': sortField === 'amount' && sortDirection === 'desc'
+              }"></i>
+            </th>
+            <th (click)="updateSort('method')" class="sortable">
+              Method
+              <i class="fas" [ngClass]="{
+                'fa-sort': sortField !== 'method',
+                'fa-sort-up': sortField === 'method' && sortDirection === 'asc',
+                'fa-sort-down': sortField === 'method' && sortDirection === 'desc'
+              }"></i>
+            </th>
+            <th (click)="updateSort('status')" class="sortable">
+              Status
+              <i class="fas" [ngClass]="{
+                'fa-sort': sortField !== 'status',
+                'fa-sort-up': sortField === 'status' && sortDirection === 'asc',
+                'fa-sort-down': sortField === 'status' && sortDirection === 'desc'
+              }"></i>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let payment of getPaginatedPayments()">
+            <td>{{ getDateFormatted(payment.createdAt) }}</td>
+            <td class="transaction-id">
+              <span>{{ payment.transactionId }}</span>
+            </td>
+            <td class="amount">{{ getFormattedCurrency(payment.amount) }}</td>
+            <td>
+              <span class="payment-method">
+                <i class="fas" [ngClass]="getPaymentMethodIcon(payment.paymentMethod)"></i>
+                {{ payment.paymentMethod.replace('_', ' ') }}
+              </span>
+            </td>
+            <td>
+              <span class="payment-status" [ngClass]="getPaymentStatusClass(payment.paymentStatus)">
+                {{ payment.paymentStatus }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn btn-sm btn-outline-primary view-btn" title="View Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button *ngIf="payment.paymentStatus === 'PENDING'"
+                class="btn btn-sm btn-outline-success complete-btn" 
+                title="Mark as Complete"
+                (click)="completePayment(payment)">
+                <i class="fas fa-check"></i>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination-container" *ngIf="totalPages > 1">
+        <div class="pagination-info">
+          Showing {{ getCurrentPageStart() }}-{{ getCurrentPageEnd() }} of {{ totalItems }} payments
+        </div>
+        <nav aria-label="Payment pagination">
+          <ul class="pagination">
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <button class="page-link" (click)="changePage(0)" aria-label="First page">
+                <i class="fas fa-angle-double-left"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === 0">
+              <button class="page-link" (click)="changePage(currentPage - 1)" aria-label="Previous page">
+                <i class="fas fa-angle-left"></i>
+              </button>
+            </li>
+            
+            <li class="page-item" *ngFor="let pageNum of getPageNumbers()" [class.active]="pageNum === currentPage">
+              <button class="page-link" (click)="changePage(pageNum)">{{ pageNum + 1 }}</button>
+            </li>
+            
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <button class="page-link" (click)="changePage(currentPage + 1)" aria-label="Next page">
+                <i class="fas fa-angle-right"></i>
+              </button>
+            </li>
+            <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+              <button class="page-link" (click)="changePage(totalPages - 1)" aria-label="Last page">
+                <i class="fas fa-angle-double-right"></i>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    </div>
+  </div>
+</div> 

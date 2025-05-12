@@ -20,7 +20,7 @@ export class UserAppointmentsComponent implements OnInit {
   currentUser: any;
   
   // Filter status
-  filterStatus: 'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed' = 'all';
+  filterStatus: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' = 'ALL';
 
   constructor(
     private appointmentService: AppointmentService,
@@ -56,16 +56,16 @@ export class UserAppointmentsComponent implements OnInit {
   }
 
   applyFilter(): void {
-    if (this.filterStatus === 'all') {
+    if (this.filterStatus === 'ALL') {
       this.filteredAppointments = [...this.appointments];
     } else {
       this.filteredAppointments = this.appointments.filter(
         appointment => appointment.status === this.filterStatus
       );
-    }
+    } 
   }
 
-  changeFilter(status: 'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed'): void {
+  changeFilter(status: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED'): void {
     this.filterStatus = status;
     this.applyFilter();
   }
@@ -84,13 +84,13 @@ export class UserAppointmentsComponent implements OnInit {
 
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return 'bg-warning';
-      case 'confirmed':
+      case 'CONFIRMED':
         return 'bg-success';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'bg-danger';
-      case 'completed':
+      case 'COMPLETED':
         return 'bg-info';
       default:
         return 'bg-secondary';
@@ -99,13 +99,13 @@ export class UserAppointmentsComponent implements OnInit {
 
   getStatusText(status: string): string {
     switch (status) {
-      case 'pending':
+      case 'PENDING':
         return 'Pending';
-      case 'confirmed':
+      case 'CONFIRMED':
         return 'Confirmed';
-      case 'cancelled':
+      case 'CANCELLED':
         return 'Cancelled';
-      case 'completed':
+      case 'COMPLETED':
         return 'Completed';
       default:
         return status;
@@ -114,7 +114,7 @@ export class UserAppointmentsComponent implements OnInit {
 
   cancelAppointment(id: string | number): void {
     if (confirm('Are you sure you want to cancel this appointment?')) {
-      this.appointmentService.updateAppointmentStatus(id.toString(), 'cancelled').subscribe({
+      this.appointmentService.updateAppointmentStatus(id.toString(), 'CANCELLED').subscribe({
         next: (updated) => {
           if (updated) {
             // Update the list

@@ -23,6 +23,7 @@ public class ListingResponse {
     private BigDecimal price;
     private BigDecimal area;
     private Integer view;
+    private Integer yearBuilt;
     private Integer bedrooms;
     private Integer bathrooms;
     private ListingType type;

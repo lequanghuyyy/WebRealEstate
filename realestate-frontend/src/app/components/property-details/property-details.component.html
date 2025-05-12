@@ -180,40 +180,56 @@
             <form [formGroup]="scheduleForm" (ngSubmit)="submitScheduleForm()">
               <div class="form-floating mb-3">
                 <input type="date" id="date" formControlName="date" class="form-control"
-                       [ngClass]="{'is-invalid': isFieldInvalid(scheduleForm, 'date')}">
+                       [min]="today" [ngClass]="{'is-invalid': isFieldInvalid(scheduleForm, 'date')}">
                 <label for="date"><i class="fas fa-calendar"></i> Viewing Date</label>
                 <div *ngIf="scheduleSubmitted && scheduleForm.get('date')?.invalid" class="invalid-feedback">
-                  Please select a date
+                  Please select a valid date
                 </div>
               </div>
               
               <div class="form-floating mb-3">
                 <input type="time" id="time" formControlName="time" class="form-control"
                        [ngClass]="{'is-invalid': isFieldInvalid(scheduleForm, 'time')}">
-                <label for="time"><i class="fas fa-clock"></i> Time</label>
+                <label for="time"><i class="fas fa-clock"></i> Preferred Time</label>
                 <div *ngIf="scheduleSubmitted && scheduleForm.get('time')?.invalid" class="invalid-feedback">
                   Please select a time
                 </div>
               </div>
 
               <div class="form-floating mb-3">
-                <textarea id="notes" formControlName="notes" class="form-control" placeholder="Notes"></textarea>
+                <textarea id="notes" formControlName="notes" class="form-control" 
+                         placeholder="Any specific requirements or questions?" rows="3"></textarea>
                 <label for="notes"><i class="fas fa-sticky-note"></i> Additional Notes (optional)</label>
               </div>
               
-              <div class="available-times">
-                <p>Available time slots today:</p>
-                <div class="time-slots">
-                  <button type="button" class="time-slot" (click)="selectTimeSlot('09:00')">9:00</button>
-                  <button type="button" class="time-slot" (click)="selectTimeSlot('10:30')">10:30</button>
-                  <button type="button" class="time-slot" (click)="selectTimeSlot('13:00')">13:00</button>
-                  <button type="button" class="time-slot" (click)="selectTimeSlot('15:30')">15:30</button>
-                  <button type="button" class="time-slot" (click)="selectTimeSlot('17:00')">17:00</button>
+              <!-- Agent's available time slots -->
+              <ng-container *ngIf="property?.agent">
+                <div class="available-times" *ngIf="property.agent.availableTimeSlots?.length">
+                  <p>Agent's available time slots:</p>
+                  <div class="time-slots">
+                    <button type="button" class="time-slot" *ngFor="let slot of property.agent.availableTimeSlots"
+                            (click)="selectTimeSlot(slot)">
+                      {{slot}}
+                    </button>
+                  </div>
                 </div>
-              </div>
+                
+                <!-- Default time slots if agent has none -->
+                <div class="available-times" *ngIf="!property.agent.availableTimeSlots?.length">
+                  <p>Available time slots:</p>
+                  <div class="time-slots">
+                    <button type="button" class="time-slot" (click)="selectTimeSlot('09:00')">9:00</button>
+                    <button type="button" class="time-slot" (click)="selectTimeSlot('10:30')">10:30</button>
+                    <button type="button" class="time-slot" (click)="selectTimeSlot('13:00')">13:00</button>
+                    <button type="button" class="time-slot" (click)="selectTimeSlot('15:30')">15:30</button>
+                    <button type="button" class="time-slot" (click)="selectTimeSlot('17:00')">17:00</button>
+                  </div>
+                </div>
+              </ng-container>
               
-              <button type="submit" class="secondary-button">
-                <i class="fas fa-calendar-check"></i> Schedule Viewing
+              <button type="submit" class="btn btn-primary w-100" [disabled]="scheduleSubmitted">
+                <i class="fas fa-calendar-check"></i> 
+                {{ scheduleSubmitted ? 'Scheduling...' : 'Schedule Viewing' }}
               </button>
             </form>
           </div>

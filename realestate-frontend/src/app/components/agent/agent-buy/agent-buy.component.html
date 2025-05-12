@@ -1,0 +1,245 @@
+<div class="agent-buy-container">
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="isLoading">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p>Loading your listings...</p>
+  </div>
+
+  <!-- Error State with Retry Option -->
+  <div class="error-container" *ngIf="error && !isLoading">
+    <div class="alert alert-danger">
+      <i class="fas fa-exclamation-circle me-2"></i>
+      {{ error }}
+      <button class="btn btn-sm btn-outline-danger ms-3" (click)="loadSaleListings()">
+        <i class="fas fa-sync-alt me-1"></i> Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="agent-buy-content" *ngIf="!isLoading && !error">
+    <!-- Header -->
+    <div class="dashboard-header">
+      <div class="header-content">
+        <h2 class="section-title">Your Sale Listings</h2>
+        <p class="text-muted">Manage all your listings for sale</p>
+      </div>
+      <div>
+        <button class="btn btn-primary" (click)="createNewListing()">
+          <i class="fas fa-plus me-2"></i> Create New Listing
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+      <div class="stat-card active-card">
+        <div class="stat-value">{{ activeListings }}</div>
+        <div class="stat-label">Active Listings</div>
+        <div class="stat-icon"><i class="fas fa-home"></i></div>
+      </div>
+      
+      <div class="stat-card pending-card">
+        <div class="stat-value">{{ pendingListings }}</div>
+        <div class="stat-label">Pending Listings</div>
+        <div class="stat-icon"><i class="fas fa-hourglass-half"></i></div>
+      </div>
+      
+      <div class="stat-card sold-card">
+        <div class="stat-value">{{ soldListings }}</div>
+        <div class="stat-label">Sold Listings</div>
+        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+      </div>
+      
+      <div class="stat-card total-card">
+        <div class="stat-value">{{ listings.length }}</div>
+        <div class="stat-label">Total Listings</div>
+        <div class="stat-icon"><i class="fas fa-list"></i></div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <div class="search-bar">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input 
+            type="text"
+            class="form-control"
+            placeholder="Search listings..."
+            [(ngModel)]="searchQuery"
+            (input)="applyFilters()">
+          <button 
+            class="btn btn-outline-secondary" 
+            type="button"
+            *ngIf="searchQuery"
+            (click)="clearSearch()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="filter-options">
+        <div class="filter-group">
+          <label for="statusFilter" class="form-label">Status</label>
+          <select id="statusFilter" class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+            <option value="all">All Statuses</option>
+            <option value="AVAILABLE">Available</option>
+            <option value="PENDING">Pending</option>
+            <option value="SOLD">Sold</option>
+            <option value="DELISTED">Delisted</option>
+          </select>
+        </div>
+        
+        <div class="filter-group">
+          <label for="sortBy" class="form-label">Sort By</label>
+          <select id="sortBy" class="form-select" [(ngModel)]="sortBy" (change)="applyFilters()">
+            <option value="newest">Newest First</option>
+            <option value="oldest">Oldest First</option>
+            <option value="price-high">Price (High to Low)</option>
+            <option value="price-low">Price (Low to High)</option>
+            <option value="views">Most Viewed</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Listings Table -->
+    <div class="listings-table-container">
+      <table class="table table-hover listings-table">
+        <thead>
+          <tr>
+            <th scope="col">Image</th>
+            <th scope="col">Listing Details</th>
+            <th scope="col">Price</th>
+            <th scope="col">Status</th>
+            <th scope="col">Views</th>
+            <th scope="col">Date Added</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngIf="isLoading">
+            <td colspan="7" class="text-center py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <p class="mt-2">Loading listings...</p>
+            </td>
+          </tr>
+          
+          <tr *ngIf="!isLoading && filteredListings.length === 0">
+            <td colspan="7" class="text-center py-4">
+              <p class="mb-2">No listings found</p>
+              <button class="btn btn-outline-primary btn-sm" (click)="createNewListing()">
+                <i class="fas fa-plus me-1"></i> Create a listing
+              </button>
+            </td>
+          </tr>
+          
+          <tr *ngFor="let listing of filteredListings">
+            <td class="listing-image">
+              <img [src]="listing.image || 'assets/images/placeholder-property.jpg'" [alt]="listing.title" class="img-thumbnail">
+            </td>
+            <td class="listing-details">
+              <h5 class="listing-title">{{ listing.title }}</h5>
+              <p class="listing-address">
+                <i class="fas fa-map-marker-alt"></i>
+                {{ listing.address }}, {{ listing.city }}
+              </p>
+              <div class="listing-features">
+                <span class="feature"><i class="fas fa-bed"></i> {{ listing.bedrooms }} beds</span>
+                <span class="feature"><i class="fas fa-bath"></i> {{ listing.bathrooms }} baths</span>
+                <span class="feature"><i class="fas fa-ruler-combined"></i> {{ listing.area }} m²</span>
+              </div>
+            </td>
+            <td class="listing-price">{{ formatPrice(listing.price) }}</td>
+            <td class="listing-status">
+              <span class="status-badge" [ngClass]="getStatusClass(listing.status)">
+                {{ listing.status }}
+              </span>
+            </td>
+            <td class="listing-views">
+              <span class="views-count">
+                <i class="fas fa-eye"></i> {{ listing.view || 0 }}
+              </span>
+            </td>
+            <td class="listing-date">{{ formatDate(listing.createdAt) }}</td>
+            <td class="listing-actions">
+              <div class="btn-group" role="group">
+                <button
+                  class="btn btn-sm btn-outline-primary"
+                  title="Edit listing"
+                  (click)="editListing(listing.id)">
+                  <i class="fas fa-edit"></i>
+                </button>
+                
+                <button
+                  *ngIf="listing.status === 'AVAILABLE'"
+                  class="btn btn-sm btn-outline-success"
+                  title="Mark as sold"
+                  (click)="markAsSold(listing.id)">
+                  <i class="fas fa-check"></i>
+                </button>
+                
+                <button
+                  *ngIf="listing.status !== 'AVAILABLE'"
+                  class="btn btn-sm btn-outline-info"
+                  title="Mark as available"
+                  (click)="markAsAvailable(listing.id)">
+                  <i class="fas fa-redo"></i>
+                </button>
+                
+                <button
+                  class="btn btn-sm btn-outline-danger"
+                  title="Delete listing"
+                  (click)="deleteListing(listing.id)">
+                  <i class="fas fa-trash"></i>
+                </button>
+                
+                <a
+                  [routerLink]="['/property', listing.id]"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="View listing"
+                  target="_blank">
+                  <i class="fas fa-eye"></i>
+                </a>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-container" *ngIf="totalPages > 1">
+      <nav aria-label="Listings pagination">
+        <ul class="pagination justify-content-center">
+          <li class="page-item" [class.disabled]="currentPage === 1">
+            <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage - 1)">
+              <i class="fas fa-chevron-left"></i>
+            </a>
+          </li>
+          
+          <ng-container *ngFor="let page of [].constructor(totalPages); let i = index">
+            <li class="page-item" [class.active]="currentPage === i + 1">
+              <a class="page-link" href="javascript:void(0)" (click)="changePage(i + 1)">{{ i + 1 }}</a>
+            </li>
+          </ng-container>
+          
+          <li class="page-item" [class.disabled]="currentPage === totalPages">
+            <a class="page-link" href="javascript:void(0)" (click)="changePage(currentPage + 1)">
+              <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        </ul>
+      </nav>
+      
+      <div class="pagination-info text-center mt-2">
+        Showing {{ filteredListings.length }} of {{ totalItems }} listings
+      </div>
+    </div>
+  </div>
+</div> 

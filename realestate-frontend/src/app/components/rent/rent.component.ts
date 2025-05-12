@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { TransactionService, Transaction } from '../../services/transaction.service';
+import { TransactionService } from '../../services/transaction.service';
+import { Transaction } from '../../models/transaction.model';
 import { RentalStatus } from '../../models/transaction.model';
 
 @Component({

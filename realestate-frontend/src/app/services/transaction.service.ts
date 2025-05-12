@@ -1,333 +1,479 @@
 import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { map, catchError, switchMap, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { TransactionStatus, RentalStatus } from '../models/transaction.model';
-
-// Reuse the Transaction interface from the component
-export interface Transaction {
-  id?: string | number;
-  type: string;
-  amount: number;
-  commission: number;
-  status: string;
-  paymentStatus: string;
-  date: string;
-  property: {
-    id: string | number;
-    title: string;
-    image: string;
-  };
-  client: {
-    name: string;
-    email: string;
-  };
-}
+import { 
+  TransactionStatus, 
+  RentalStatus, 
+  Transaction,
+  SalesTransactionRequest,
+  SalesTransactionResponse,
+  RentalTransactionRequest,
+  RentalTransactionResponse,
+  StatusUpdateRequest,
+  PageSalesTransactionRequest,
+  PageRentalTransactionRequest,
+  PageDto
+} from '../models/transaction.model';
+import { PaymentService } from './payment.service';
+import { PaymentRequest, TransactionStyle } from '../models/payment.model';
+import { AuthService } from './auth.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TransactionService {
-  private apiUrl = `${environment.apiUrl}/transactions`;
-  
-  // Mock transactions data (this would come from API in a real app)
-  private mockTransactions: Transaction[] = [
-    {
-      id: 'TX001',
-      property: {
-        id: 'P001',
-        title: 'Vinhomes Ocean Park Apartment',
-        image: 'assets/images/properties/property1.jpg'
-      },
-      client: {
-        name: 'John Smith',
-        email: 'johnsmith@gmail.com'
-      },
-      type: 'sale',
-      amount: 2500000000,
-      commission: 75000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-06-15'
-    },
-    {
-      id: 'TX002',
-      property: {
-        id: 'P002',
-        title: 'Phu My Hung Townhouse',
-        image: 'assets/images/properties/property2.jpg'
-      },
-      client: {
-        name: 'Mary Johnson',
-        email: 'mary@gmail.com'
-      },
-      type: 'rent',
-      amount: 15000000,
-      commission: 7500000,
-      status: RentalStatus.PENDING,
-      paymentStatus: 'pending',
-      date: '2023-07-02'
-    },
-    {
-      id: 'TX003',
-      property: {
-        id: 'P003',
-        title: 'Da Lat Villa',
-        image: 'assets/images/properties/property3.jpg'
-      },
-      client: {
-        name: 'David Williams',
-        email: 'david@gmail.com'
-      },
-      type: 'sale',
-      amount: 5800000000,
-      commission: 174000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-05-20'
-    },
-    {
-      id: 'TX004',
-      property: {
-        id: 'P004',
-        title: 'The Marq Apartment',
-        image: 'assets/images/properties/property4.jpg'
-      },
-      client: {
-        name: 'Patricia Brown',
-        email: 'patricia@gmail.com'
-      },
-      type: 'rent',
-      amount: 25000000,
-      commission: 12500000,
-      status: RentalStatus.CANCELLED,
-      paymentStatus: 'refunded',
-      date: '2023-07-10'
-    },
-    {
-      id: 'TX005',
-      property: {
-        id: 'P005',
-        title: 'Hang Bong Shophouse',
-        image: 'assets/images/properties/property5.jpg'
-      },
-      client: {
-        name: 'Henry Wilson',
-        email: 'henry@gmail.com'
-      },
-      type: 'sale',
-      amount: 12000000000,
-      commission: 360000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-04-25'
-    },
-    {
-      id: 'TX006',
-      property: {
-        id: 'P006',
-        title: 'Masteri An Phu Apartment',
-        image: 'assets/images/properties/property6.jpg'
-      },
-      client: {
-        name: 'Victoria Jones',
-        email: 'victoria@gmail.com'
-      },
-      type: 'rent',
-      amount: 18000000,
-      commission: 9000000,
-      status: RentalStatus.PENDING,
-      paymentStatus: 'pending',
-      date: '2023-07-15'
-    },
-    {
-      id: 'TX007',
-      property: {
-        id: 'P007',
-        title: 'Ecopark Villa',
-        image: 'assets/images/properties/property7.jpg'
-      },
-      client: {
-        name: 'Michael Davis',
-        email: 'michael@gmail.com'
-      },
-      type: 'sale',
-      amount: 8500000000,
-      commission: 255000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-03-12'
-    },
-    {
-      id: 'TX008',
-      property: {
-        id: 'P008',
-        title: 'Estella Heights Apartment',
-        image: 'assets/images/properties/property8.jpg'
-      },
-      client: {
-        name: 'Elizabeth Taylor',
-        email: 'elizabeth@gmail.com'
-      },
-      type: 'rent',
-      amount: 30000000,
-      commission: 15000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-06-01'
-    },
-    {
-      id: 'TX009',
-      property: {
-        id: 'P009',
-        title: 'Lakeview City Townhouse',
-        image: 'assets/images/properties/property9.jpg'
-      },
-      client: {
-        name: 'Robert Martin',
-        email: 'robert@gmail.com'
-      },
-      type: 'sale',
-      amount: 9500000000,
-      commission: 285000000,
-      status: RentalStatus.PENDING,
-      paymentStatus: 'pending',
-      date: '2023-07-18'
-    },
-    {
-      id: 'TX010',
-      property: {
-        id: 'P010',
-        title: 'FLC Sam Son Villa',
-        image: 'assets/images/properties/property10.jpg'
-      },
-      client: {
-        name: 'Karen Thompson',
-        email: 'karen@gmail.com'
-      },
-      type: 'rent',
-      amount: 45000000,
-      commission: 22500000,
-      status: RentalStatus.CANCELLED,
-      paymentStatus: 'refunded',
-      date: '2023-05-05'
-    },
-    {
-      id: 'TX011',
-      property: {
-        id: 'P011',
-        title: 'D\'Capitale Apartment',
-        image: 'assets/images/properties/property11.jpg'
-      },
-      client: {
-        name: 'Daniel Clark',
-        email: 'daniel@gmail.com'
-      },
-      type: 'sale',
-      amount: 3200000000,
-      commission: 96000000,
-      status: TransactionStatus.COMPLETED,
-      paymentStatus: 'paid',
-      date: '2023-02-28'
-    },
-    {
-      id: 'TX012',
-      property: {
-        id: 'P012',
-        title: 'Vinhomes Smart City Shophouse',
-        image: 'assets/images/properties/property12.jpg'
-      },
-      client: {
-        name: 'Helen Garcia',
-        email: 'helen@gmail.com'
-      },
-      type: 'rent',
-      amount: 35000000,
-      commission: 17500000,
-      status: RentalStatus.PENDING,
-      paymentStatus: 'pending',
-      date: '2023-07-20'
-    }
-  ];
+  private apiUrl = `${environment.apiUrl}`;
+  private salesApiUrl = `${this.apiUrl}/sales`;
+  private rentalApiUrl = `${this.apiUrl}/rentals`;
 
-  constructor() {}
+  constructor(
+    private http: HttpClient,
+    private paymentService: PaymentService,
+    private authService: AuthService
+  ) {}
 
-  // Get all transactions (simulating API call with delay)
+  // SALES TRANSACTION API METHODS
+
+  // Create a new sales transaction with payment processing
+  createSalesTransaction(request: SalesTransactionRequest): Observable<SalesTransactionResponse> {
+    const currentUser = this.authService.getCurrentUser();
+    const agentId = currentUser?.id || '';
+    
+    return this.http.post<any>(`${this.salesApiUrl}/create`, request).pipe(
+      map(response => response.data),
+      tap(transaction => console.log('Created sales transaction:', transaction)),
+      switchMap(transaction => {
+        // Create a payment record for this transaction
+        const paymentRequest: PaymentRequest = {
+          transactionId: transaction.id,
+          amount: transaction.amount,
+          paymentMethod: 'BANK_TRANSFER', // Default payment method
+          commissionFee: this.calculateCommission(transaction.amount, TransactionStyle.SALE),
+          notes: `Payment for sales transaction ${transaction.id}`,
+          transactionStyle: TransactionStyle.SALE,
+          agentId: agentId
+        };
+        
+        return this.paymentService.processPayment(paymentRequest).pipe(
+          map(() => transaction) // Return the original transaction
+        );
+      }),
+      catchError(error => {
+        console.error('Error creating sales transaction with payment:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Get a sales transaction by ID
+  getSalesTransactionById(transactionId: string): Observable<SalesTransactionResponse> {
+    return this.http.get<any>(`${this.salesApiUrl}/find/${transactionId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting sales transaction:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Get all sales transactions with pagination
+  getAllSalesTransactions(request: PageSalesTransactionRequest): Observable<PageDto<SalesTransactionResponse>> {
+    return this.http.get<any>(`${this.salesApiUrl}/find`, { params: { ...request } }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting all sales transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Get sales transactions by buyer
+  getSalesTransactionsByBuyer(buyerId: string): Observable<SalesTransactionResponse[]> {
+    return this.http.get<any>(`${this.salesApiUrl}/buyer/${buyerId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting buyer sales transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  getSalesTransactionsByAgent(agentId: string): Observable<SalesTransactionResponse[]> {
+    return this.http.get<any>(`${this.salesApiUrl}/agent/${agentId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting agent sales transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  getSalesTransactionsByListing(listingId: string): Observable<SalesTransactionResponse[]> {
+    return this.http.get<any>(`${this.salesApiUrl}/listing/${listingId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting listing sales transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  updateSalesTransactionStatus(transactionId: string, status: string): Observable<SalesTransactionResponse> {
+    const statusRequest: StatusUpdateRequest = { status };
+    return this.http.put<any>(`${this.salesApiUrl}/updateStatus/${transactionId}`, statusRequest).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error updating sales transaction status:', error);
+        throw error;
+      })
+    );
+  }
+  createRentalTransaction(request: RentalTransactionRequest): Observable<RentalTransactionResponse> {
+    const currentUser = this.authService.getCurrentUser();
+    const agentId = currentUser?.id || '';
+    
+    return this.http.post<any>(`${this.rentalApiUrl}/create`, request).pipe(
+      map(response => response.data),
+      tap(transaction => console.log('Created rental transaction:', transaction)),
+      switchMap(transaction => {
+        const paymentRequest: PaymentRequest = {
+          transactionId: transaction.id,
+          amount: transaction.monthlyRent,
+          paymentMethod: 'BANK_TRANSFER', // Default payment method
+          commissionFee: this.calculateCommission(transaction.monthlyRent, TransactionStyle.RENT),
+          notes: `Payment for rental transaction ${transaction.id}`,
+          transactionStyle: TransactionStyle.RENT,
+          agentId: agentId
+        };
+        
+        return this.paymentService.processPayment(paymentRequest).pipe(
+          map(() => transaction) 
+        );
+      }),
+      catchError(error => {
+        console.error('Error creating rental transaction with payment:', error);
+        throw error;
+      })
+    );
+  }
+
+  getRentalTransactionById(transactionId: string): Observable<RentalTransactionResponse> {
+    return this.http.get<any>(`${this.rentalApiUrl}/find/${transactionId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting rental transaction:', error);
+        throw error;
+      })
+    );
+  }
+
+  getAllRentalTransactions(request: PageRentalTransactionRequest): Observable<PageDto<RentalTransactionResponse>> {
+    return this.http.post<any>(`${this.rentalApiUrl}/find`, request).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting all rental transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  getRentalTransactionsByRenter(renterId: string): Observable<RentalTransactionResponse[]> {
+    return this.http.get<any>(`${this.rentalApiUrl}/renter/${renterId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting renter rental transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Get rental transactions by agent
+  getRentalTransactionsByAgent(agentId: string): Observable<RentalTransactionResponse[]> {
+    return this.http.get<any>(`${this.rentalApiUrl}/agent/${agentId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting agent rental transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Get rental transactions by listing
+  getRentalTransactionsByListing(listingId: string): Observable<RentalTransactionResponse[]> {
+    return this.http.get<any>(`${this.rentalApiUrl}/listing/${listingId}`).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error getting listing rental transactions:', error);
+        throw error;
+      })
+    );
+  }
+
+  // Update rental transaction status
+  updateRentalTransactionStatus(transactionId: string, status: string): Observable<RentalTransactionResponse> {
+    const statusRequest: StatusUpdateRequest = { status };
+    return this.http.put<any>(`${this.rentalApiUrl}/updateStatus/${transactionId}`, statusRequest).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error updating rental transaction status:', error);
+        throw error;
+      })
+    );
+  }
+
+  // COMPATIBILITY METHODS (Using API instead of mock data)
+
+  // Get all transactions (using combined API calls)
   getTransactions(): Observable<Transaction[]> {
-    return of(this.mockTransactions).pipe(
-      delay(800) // Simulate network delay
+    const pageRequest: PageSalesTransactionRequest = {
+      page: 0,
+      size: 50
+    };
+
+    return this.getAllSalesTransactions(pageRequest).pipe(
+      map(salesPage => {
+        const salesTransactions = salesPage.items.map(sale => this.mapSalesToTransaction(sale))
+        return salesTransactions;
+      }),
+      catchError(error => {
+        console.error('Error getting combined transactions:', error);
+        return of([]);
+      })
     );
   }
 
   // Get a transaction by ID
   getTransactionById(id: string): Observable<Transaction | undefined> {
-    const transaction = this.mockTransactions.find(t => t.id === id);
-    return of(transaction).pipe(
-      delay(300)
+    return this.getSalesTransactionById(id).pipe(
+      map(sale => this.mapSalesToTransaction(sale)),
+      catchError(error => {
+        return this.getRentalTransactionById(id).pipe(
+          map(rental => this.mapRentalToTransaction(rental)),
+          catchError(error => {
+            console.error('Transaction not found in either sales or rentals:', error);
+            return of(undefined);
+          })
+        );
+      })
     );
   }
-
-  // Add a new transaction
   addTransaction(transaction: Omit<Transaction, 'id'>): Observable<Transaction> {
-    // Generate a new ID
-    const newId = 'TX' + (this.mockTransactions.length + 1).toString().padStart(3, '0');
-    
-    const newTransaction: Transaction = {
-      ...transaction,
-      id: newId
-    };
-    
-    // Add to mock data
-    this.mockTransactions.push(newTransaction);
-    
-    return of(newTransaction).pipe(
-      delay(500)
-    );
+    const currentUser = this.authService.getCurrentUser();
+    const agentId = currentUser?.id || '';
+    if (transaction.type === 'sale') {
+      const saleRequest: SalesTransactionRequest = {
+        listingId: transaction.property.id.toString(),
+        buyerId: 'buyer-placeholder', 
+        agentId: agentId, 
+        amount: transaction.amount,
+        transactionStatus: transaction.status
+      };
+
+      return this.createSalesTransaction(saleRequest).pipe(
+        map(response => this.mapSalesToTransaction(response))
+      );
+    } else {
+      // Rental transaction
+      const rentalRequest: RentalTransactionRequest = {
+        listingId: transaction.property.id.toString(),
+        renterId: 'renter-placeholder', 
+        agentId: agentId, 
+        status: transaction.status,
+        monthlyRent: transaction.amount,
+        deposit: transaction.amount * 2, // Example: 2 months deposit
+        startDate: new Date().toISOString().split('T')[0], // Today
+        endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0] // 1 year from now
+      };
+
+      return this.createRentalTransaction(rentalRequest).pipe(
+        map(response => this.mapRentalToTransaction(response))
+      );
+    }
   }
 
   // Update an existing transaction
   updateTransaction(transaction: Transaction): Observable<Transaction> {
-    const index = this.mockTransactions.findIndex(t => t.id === transaction.id);
-    
-    if (index !== -1) {
-      this.mockTransactions[index] = transaction;
-      return of(transaction).pipe(
-        delay(500)
+    // Determine if it's a sale or rental transaction
+    if (transaction.type === 'sale') {
+      return this.updateSalesTransactionStatus(transaction.id!.toString(), transaction.status).pipe(
+        map(response => this.mapSalesToTransaction(response))
+      );
+    } else {
+      // Rental transaction
+      return this.updateRentalTransactionStatus(transaction.id!.toString(), transaction.status).pipe(
+        map(response => this.mapRentalToTransaction(response))
       );
     }
-    
-    return of(transaction).pipe(
-      delay(500)
-    );
   }
 
-  // Delete a transaction
+  // Delete a transaction - Not supported by API, returning mock response
   deleteTransaction(id: string): Observable<boolean> {
-    const index = this.mockTransactions.findIndex(t => t.id === id);
-    
-    if (index !== -1) {
-      this.mockTransactions.splice(index, 1);
-      return of(true).pipe(
-        delay(500)
-      );
-    }
-    
-    return of(false).pipe(
-      delay(500)
-    );
+    console.warn('Delete transaction is not supported by the API');
+    return of(false);
   }
 
   // Get buy transactions with new status
   getBuyTransactions(): Observable<Transaction[]> {
-    return of(this.mockTransactions.filter(t => t.type === 'sale')).pipe(
-      delay(300)
+    const pageRequest: PageSalesTransactionRequest = {
+      page: 0,
+      size: 50
+    };
+
+    return this.getAllSalesTransactions(pageRequest).pipe(
+      map(salesPage => {
+        // Transform sales transactions to the legacy format
+        return salesPage.items.map(sale => this.mapSalesToTransaction(sale));
+      }),
+      catchError(error => {
+        console.error('Error getting buy transactions:', error);
+        return of([]);
+      })
     );
   }
 
   // Get rent transactions with new status
   getRentTransactions(): Observable<Transaction[]> {
-    return of(this.mockTransactions.filter(t => t.type === 'rent')).pipe(
-      delay(300)
+    const pageRequest: PageRentalTransactionRequest = {
+      page: 0,
+      size: 50
+    };
+
+    return this.getAllRentalTransactions(pageRequest).pipe(
+      map(rentalPage => {
+        // Transform rental transactions to the legacy format
+        return rentalPage.items.map(rental => this.mapRentalToTransaction(rental));
+      }),
+      catchError(error => {
+        console.error('Error getting rent transactions:', error);
+        return of([]);
+      })
     );
+  }
+
+  // Complete a transaction
+  completeTransaction(id: string, isRental: boolean = false): Observable<any> {
+    if (isRental) {
+      return this.updateRentalTransactionStatus(id, RentalStatus.COMPLETED);
+    } else {
+      return this.updateSalesTransactionStatus(id, TransactionStatus.COMPLETED);
+    }
+  }
+
+  // Cancel a transaction
+  cancelTransaction(id: string, isRental: boolean = false): Observable<any> {
+    if (isRental) {
+      return this.updateRentalTransactionStatus(id, RentalStatus.CANCELLED);
+    } else {
+      return this.updateSalesTransactionStatus(id, TransactionStatus.CANCELLED);
+    }
+  }
+
+  // Get completed transactions in current month using API
+  getCompletedTransactionsInCurrentMonth(): Observable<Transaction[]> {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    // Create request for completed sales transactions in current month
+    const salesRequest: PageSalesTransactionRequest = {
+      page: 0,
+      size: 50,
+      status: TransactionStatus.COMPLETED
+    };
+
+    return this.getAllSalesTransactions(salesRequest).pipe(
+      map(salesPage => {
+        // Filter for current month and transform to legacy format
+        return salesPage.items
+          .filter(sale => {
+            const completedDate = sale.completedAt ? new Date(sale.completedAt) : null;
+            return completedDate && 
+                   completedDate >= startOfMonth && 
+                   completedDate <= endOfMonth;
+          })
+          .map(sale => this.mapSalesToTransaction(sale));
+      }),
+      catchError(error => {
+        console.error('Error getting completed transactions:', error);
+        return of([]);
+      })
+    );
+  }
+  
+  // Get completed transactions count in current month
+  getCompletedTransactionsCountInCurrentMonth(): Observable<number> {
+    return this.getCompletedTransactionsInCurrentMonth().pipe(
+      map(transactions => transactions.length)
+    );
+  }
+  
+  // Calculate commission based on transaction amount and type
+  private calculateCommission(amount: number, style: TransactionStyle): number {
+    // Default commission rates
+    const saleCommissionRate = 0.05; // 5% for sales
+    const rentCommissionRate = 0.10; // 10% for rentals
+    
+    if (style === TransactionStyle.SALE) {
+      return amount * saleCommissionRate;
+    } else {
+      return amount * rentCommissionRate;
+    }
+  }
+
+  // Helper method to map sales transaction to legacy format
+  private mapSalesToTransaction(sale: SalesTransactionResponse): Transaction {
+    return {
+      id: sale.id,
+      type: 'sale',
+      amount: sale.amount,
+      status: sale.transactionStatus,
+      paymentStatus: 'pending', // Default until we check payment status
+      date: new Date(sale.createdAt).toISOString(),
+      property: {
+        id: sale.listingId,
+        title: 'Property', // We would need to fetch this from listings
+        image: '' // We would need to fetch this from listings
+      },
+      client: {
+        name: 'Client', // We would need to fetch this from users
+        email: '' // We would need to fetch this from users
+      },
+      // Additional properties
+      propertyId: sale.listingId,
+      transactionType: 'sale',
+      buyerId: sale.buyerId,
+      agentId: sale.agentId,
+      completionDate: sale.completedAt ? new Date(sale.completedAt) : undefined
+    };
+  }
+
+  // Helper method to map rental transaction to legacy format
+  private mapRentalToTransaction(rental: RentalTransactionResponse): Transaction {
+    return {
+      id: rental.id,
+      type: 'rent',
+      amount: rental.monthlyRent,
+      status: rental.status,
+      paymentStatus: 'pending', // Default until we check payment status
+      date: new Date(rental.createdAt).toISOString(),
+      property: {
+        id: rental.listingId,
+        title: 'Property', // We would need to fetch this from listings
+        image: '' // We would need to fetch this from listings
+      },
+      client: {
+        name: 'Client', // We would need to fetch this from users
+        email: '' // We would need to fetch this from users
+      },
+      // Additional properties
+      propertyId: rental.listingId,
+      transactionType: 'rent',
+      buyerId: rental.renterId,
+      agentId: rental.agentId,
+      startDate: rental.startDate,
+      endDate: rental.endDate
+    };
   }
 } 

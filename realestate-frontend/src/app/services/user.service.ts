@@ -49,6 +49,15 @@ export class UserService {
     return throwError(() => new Error(errorMsg));
   }
   
+  getUserById(userId: string): Observable<UserResponse> {
+    const options = { headers: this.getAuthHeaders() };
+    return this.http.get<BaseResponse<UserResponse>>(`${this.apiUrl}/users/${userId}`, options)
+      .pipe(
+        map(response => response.data),
+        catchError(error => this.handleError(error, 'getUserById'))
+      );
+  }
+  
   getAllUsers(): Observable<UserResponse[]> {
     const options = { headers: this.getAuthHeaders() };
     return this.http.get<BaseResponse<UserResponse[]>>(`${this.apiUrl}/users`, options)

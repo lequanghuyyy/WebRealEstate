@@ -153,7 +153,7 @@ export class AgentService {
   // Get top-rated agents
   getTopRatedAgents(limit: number = 3): Observable<Agent[]> {
     // In a real app: return this.http.get<Agent[]>(`${this.apiUrl}/top-rated?limit=${limit}`);
-    const sortedAgents = [...this.mockAgents].sort((a, b) => b.averageRating - a.averageRating);
+    const sortedAgents = [...this.mockAgents].sort((a, b) => (b.averageRating || 0) - (a.averageRating || 0));
     return of(sortedAgents.slice(0, limit));
   }
 

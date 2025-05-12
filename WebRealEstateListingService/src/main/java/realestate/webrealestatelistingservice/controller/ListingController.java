@@ -3,6 +3,7 @@ package realestate.webrealestatelistingservice.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
@@ -98,4 +99,13 @@ public class ListingController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseFactory.ok(listingService.getListingsByRentTypePaged(page, size));
     }
+    @GetMapping("/count")
+    public ResponseEntity<BaseResponse<Integer>> getTotalListingsCount() {
+        return ResponseFactory.ok(listingService.getTotalListingsCount());
+    }
+    @GetMapping("/countByType/{type}")
+    public ResponseEntity<BaseResponse<Integer>> getTotalListingsCountByType(@PathVariable ListingType type) {
+        return ResponseFactory.ok(listingService.getTotalListingsCountByType(type));
+    }
+
 }

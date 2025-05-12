@@ -70,17 +70,17 @@ export class AdminTransactionsComponent implements OnInit {
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
     if (searchTerm) {
       filtered = filtered.filter(transaction => 
-        transaction.propertyTitle.toLowerCase().includes(searchTerm) || 
-        transaction.buyerName.toLowerCase().includes(searchTerm) ||
-        transaction.sellerName.toLowerCase().includes(searchTerm) ||
-        String(transaction.id).toLowerCase().includes(searchTerm)
+        (transaction.propertyTitle?.toLowerCase().includes(searchTerm) || false) || 
+        (transaction.buyerName?.toLowerCase().includes(searchTerm) || false) ||
+        (transaction.sellerName?.toLowerCase().includes(searchTerm) || false) ||
+        (String(transaction.id).toLowerCase().includes(searchTerm))
       );
     }
     
     // Apply type filter
     const typeValue = this.typeFilter.value;
     if (typeValue && typeValue !== 'all') {
-      filtered = filtered.filter(transaction => transaction.transactionType === typeValue);
+      filtered = filtered.filter(transaction => transaction.transactionType === typeValue || transaction.type === typeValue);
     }
     
     // Apply status filter
@@ -103,6 +103,11 @@ export class AdminTransactionsComponent implements OnInit {
   }
   
   updateTransactionStatus(transaction: Transaction, status: 'pending' | 'completed' | 'cancelled' | 'refunded'): void {
+    if (!transaction.id) {
+      this.error = "Cannot update transaction without an ID";
+      return;
+    }
+    
     this.isLoading = true;
     this.adminService.updateTransactionStatus(transaction.id, status)
       .pipe(
@@ -125,6 +130,7 @@ export class AdminTransactionsComponent implements OnInit {
   }
   
   formatCurrency(amount: number): string {
+    if (amount === undefined || amount === null) return 'N/A';
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -132,7 +138,7 @@ export class AdminTransactionsComponent implements OnInit {
     }).format(amount);
   }
   
-  formatDate(date: Date): string {
+  formatDate(date: string | Date | undefined): string {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -141,13 +147,18 @@ export class AdminTransactionsComponent implements OnInit {
     });
   }
   
-  getStatusBadgeClass(status: string): string {
+  getStatusBadgeClass(status: string | undefined): string {
+    if (!status) return 'bg-secondary';
+    
     switch (status) {
       case 'completed':
+      case 'COMPLETED':
         return 'bg-success';
       case 'pending':
+      case 'PENDING':
         return 'bg-warning';
       case 'cancelled':
+      case 'CANCELLED':
         return 'bg-danger';
       case 'refunded':
         return 'bg-info';
@@ -156,7 +167,8 @@ export class AdminTransactionsComponent implements OnInit {
     }
   }
   
-  getTypeBadgeClass(type: string): string {
-    return type === 'sale' ? 'bg-primary' : 'bg-info';
+  getTypeBadgeClass(type: string | undefined): string {
+    if (!type) return 'bg-secondary';
+    return (type.toLowerCase() === 'sale') ? 'bg-primary' : 'bg-info';
   }
 } 

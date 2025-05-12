@@ -1,13 +1,40 @@
-export interface Review {
-  id: string;
-  propertyId: string;
-  userId: string;
-  rating: number; // 1-5 stars
+export interface ReviewRequest {
+  listingId: string;
+  brId: string;
   title: string;
-  comment: string;
-  date: Date;
-  userName: string;
-  userAvatar?: string;
-  helpful: number; // số người thấy hữu ích
-  helpfulCount?: number; // alias for helpful to maintain compatibility
+  contentReview: string;
+  rate: number;
+}
+
+export interface ReviewResponse {
+  id: string;
+  listingId: string;
+  brId: string;
+  contentReview: string;
+  title: string;
+  rate: number;
+  countLike: number;
+  createdAt: string;
+}
+
+export interface Page<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  first: boolean;
+  size: number;
+  number: number;
+  numberOfElements: number;
+  empty: boolean;
+}
+
+export interface BaseResponse<T> {
+  status: string;
+  message: string;
+  data: T;
 } 

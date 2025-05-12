@@ -125,7 +125,7 @@
     "pathRewrite": {
       "^/api/ux/saved-searches": "/api/v1/ux/saved-searches"
     }
-  },
+  }, 
   "/api/ux/favorites": {
     "target": "http://localhost:8080",
     "secure": false,
@@ -134,6 +134,17 @@
     "pathRewrite": {
       "^/api/ux/favorites": "/api/v1/ux/favorites"
     }
+    
+  },
+  "/api/ux/appointments": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/ux/appointments": "/api/v1/ux/appointments"
+    }
+    
   },
   "/api/auth/find": {
     "target": "http://localhost:8080",
@@ -158,6 +169,24 @@
     },
     "headers": {
       "Connection": "keep-alive"
+    }
+  },
+  "/api/ux/recommendations": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/ux/recommendations": "/api/v1/ux/recommendations"
+    }
+  },
+  "/api/payments": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/payments": "/api/v1/payments"
     }
   }
 } 

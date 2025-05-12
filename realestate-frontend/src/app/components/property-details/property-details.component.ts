@@ -42,6 +42,7 @@ export class PropertyDetailsComponent implements OnInit {
   scheduleSubmitted: boolean = false;
   similarProperties: Property[] = [];
   searchType: 'buy' | 'rent' | 'sell' = 'buy';
+  today: string = new Date().toISOString().split('T')[0];
   
   // Form visibility states
   showContactForm: boolean = false;
@@ -66,12 +67,7 @@ export class PropertyDetailsComponent implements OnInit {
     this.scheduleForm = this.fb.group({
       date: ['', [Validators.required]],
       time: ['', [Validators.required]],
-      notes: [''],
-      name: ['', [Validators.required]],
-      email: ['', [Validators.required, Validators.email]],
-      phone: ['', [Validators.pattern(/^\+?[0-9\s\-\(\)]{10,15}$/)]],
-      meetingType: ['', [Validators.required]],
-      meetingLocation: ['']
+      notes: ['']
     });
   }
 
@@ -79,6 +75,16 @@ export class PropertyDetailsComponent implements OnInit {
     this.propertyId = this.route.snapshot.paramMap.get('id');
     this.loadProperty();
     this.checkAuthStatus();
+    
+      // Đăng ký lắng nghe thay đổi favorite
+    this.favoriteService.favorites$.subscribe((favoriteIds: string[]) => {
+      if (this.propertyId && favoriteIds.includes(this.propertyId)) {
+        this.isFavorite = true;
+      }
+    });
+    
+    // Set today's date as the minimum date for appointment
+    this.scheduleForm.get('date')?.setValue(this.today);
     
     // Monitor route changes to reload property data
     this.route.params.subscribe(params => {
@@ -140,8 +146,18 @@ export class PropertyDetailsComponent implements OnInit {
 
   private checkFavoriteStatus(): void {
     if (this.userId && this.propertyId) {
-      this.favoriteService.checkIsFavorite(this.userId, this.propertyId).subscribe(isFavorite => {
-        this.isFavorite = isFavorite;
+      console.log('Checking favorite status for property:', this.propertyId);
+      
+      // Sử dụng phương thức cải tiến
+      this.favoriteService.checkIsFavorite(this.userId, this.propertyId).subscribe({
+        next: (isFavorite) => {
+          console.log('Favorite status:', isFavorite);
+          this.isFavorite = isFavorite;
+        },
+        error: (error) => {
+          console.error('Error checking favorite status:', error);
+          this.isFavorite = false;
+        }
       });
     }
   }
@@ -165,6 +181,7 @@ export class PropertyDetailsComponent implements OnInit {
         },
         error: (error) => {
           this.toastr.error('Failed to remove from favorites');
+          console.error('Error removing favorite:', error);
         }
       });
     } else {
@@ -175,6 +192,7 @@ export class PropertyDetailsComponent implements OnInit {
         },
         error: (error) => {
           this.toastr.error('Failed to add to favorites');
+          console.error('Error adding favorite:', error);
         }
       });
     }
@@ -247,57 +265,39 @@ export class PropertyDetailsComponent implements OnInit {
   }
 
   submitScheduleForm(): void {
-    if (this.scheduleForm.invalid) {
-      Object.keys(this.scheduleForm.controls).forEach(key => {
-        this.scheduleForm.get(key)?.markAsTouched();
-      });
-      return;
-    }
-
-    if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
-      return;
-    }
-
-    if (!this.property) {
-      this.toastr.error('Property information is missing');
-      return;
-    }
-
     this.scheduleSubmitted = true;
+    
+    if (this.scheduleForm.valid && this.property && this.userId) {
+      // Map data từ form sang đúng định dạng API yêu cầu
+      const formData = {
+        propertyId: this.property.id,
+        agentId: this.property.agent.id,
+        buyerId: this.userId,
+        appointmentDate: this.scheduleForm.get('date')?.value,
+        appointmentTime: this.scheduleForm.get('time')?.value,
+        notes: this.scheduleForm.get('notes')?.value
+      };
 
-    const user = this.authService.getCurrentUser();
-    if (!user) {
-      this.toastr.error('User information is missing');
-      return;
+      console.log('Sending appointment data:', formData);
+
+      this.appointmentService.createAppointment(formData).subscribe({
+        next: (response) => {
+          console.log('Appointment created successfully:', response);
+          this.toastr.success('Viewing scheduled successfully!');
+          this.showScheduleForm = false;
+          this.scheduleForm.reset();
+          this.scheduleSubmitted = false;
+        },
+        error: (error) => {
+          console.error('Error scheduling viewing:', error);
+          this.toastr.error('Failed to schedule viewing. Please try again.');
+          this.scheduleSubmitted = false;
+        }
+      });
+    } else {
+      this.toastr.warning('Please fill in all required fields');
+      this.scheduleSubmitted = false;
     }
-
-    // Prepare form data in a way that the AppointmentService can understand
-    const formData = {
-      propertyId: this.property.id,
-      buyerId: user.id,
-      agentId: this.property.agent.id,
-      appointmentDate: this.scheduleForm.get('date')?.value,
-      appointmentTime: this.scheduleForm.get('time')?.value,
-      meetingType: this.scheduleForm.get('meetingType')?.value,
-      meetingLocation: this.scheduleForm.get('meetingType')?.value === 'in-person' ? 
-        this.property.location.address : undefined,
-      notes: this.scheduleForm.get('notes')?.value
-    };
-
-    this.appointmentService.createAppointment(formData).subscribe({
-      next: () => {
-        this.toggleScheduleForm();
-        this.scheduleForm.reset();
-        this.scheduleSubmitted = false;
-        this.toastr.success('Viewing request sent! The agent will contact you to confirm.');
-      },
-      error: (error) => {
-        console.error('Error scheduling viewing:', error);
-        this.toastr.error('Unable to schedule a viewing. Please try again later.');
-        this.scheduleSubmitted = false;
-      }
-    });
   }
 
   scrollToTop(): void {

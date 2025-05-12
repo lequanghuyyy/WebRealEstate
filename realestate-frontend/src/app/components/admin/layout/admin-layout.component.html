@@ -56,28 +56,12 @@
                 <i class="fas fa-dollar-sign"></i> Payments
               </a>
             </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/reviews']" routerLinkActive="active">
-                <i class="fas fa-star"></i> Reviews
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/contacts']" routerLinkActive="active">
-                <i class="fas fa-envelope"></i> Contacts
-              </a>
-            </li>
           </ul>
         </nav>
         
         <!-- Header actions -->
         <div class="header-actions">
           <!-- Notification dropdown -->
-          <div class="notification-dropdown">
-            <button class="notification-btn">
-              <i class="fas fa-bell"></i>
-              <span class="badge">3</span>
-            </button>
-          </div>
 
           <!-- User Menu -->
           <div class="user-menu">
@@ -95,9 +79,6 @@
                   <strong>{{ user?.name || (user?.firstName + ' ' + user?.lastName) }}</strong>
                   <p>{{ user?.roles?.includes('ADMIN') ? 'Administrator' : '' }}</p>
                 </div>
-                <a [routerLink]="['/profile']" class="dropdown-item">
-                  <i class="fas fa-user"></i> My Profile
-                </a>
                 <a [routerLink]="['/admin/settings']" class="dropdown-item">
                   <i class="fas fa-cog"></i> Settings
                 </a>
@@ -152,10 +133,6 @@
         <div class="page-breadcrumb">
           <h1 class="page-title">Admin Dashboard</h1>
           <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-              <li class="breadcrumb-item"><a [routerLink]="['/admin']">Admin</a></li>
-              <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
-            </ol>
           </nav>
         </div>
       </div>

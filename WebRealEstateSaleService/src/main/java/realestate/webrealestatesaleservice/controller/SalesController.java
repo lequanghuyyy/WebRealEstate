@@ -66,5 +66,9 @@ public class SalesController {
         SalesTransactionResponse response = salesService.updateTransactionStatus(transactionId, transactionStatus);
         return ResponseFactory.ok(response);
     }
+    @GetMapping("/count")
+    public ResponseEntity<BaseResponse<Integer>> countTransactions() {
+        return ResponseFactory.ok(salesService.count());
+    }
 }
 

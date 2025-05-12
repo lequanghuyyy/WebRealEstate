@@ -1,6 +1,10 @@
 package spring.userexperienceservice.service.Impl;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import spring.userexperienceservice.dto.request.FavoriteRequest;
 import spring.userexperienceservice.dto.response.FavoriteResponse;
@@ -17,6 +21,8 @@ public class FavoriteServiceImpl implements FavoriteService {
 
     private final FavoriteListingRepository repository;
     private final FavoriteMapper mapper;
+    private static final int PAGE_SIZE = 3;
+
 
     @Override
     public FavoriteResponse addFavorite(FavoriteRequest request) {
@@ -38,9 +44,9 @@ public class FavoriteServiceImpl implements FavoriteService {
     }
 
     @Override
-    public List<FavoriteResponse> getFavoritesByUser(String userId) {
-        return repository.findByUserId(userId).stream()
-                .map(mapper::toResponse)
-                .toList();
+    public Page<FavoriteResponse> getFavoritesByUser(String userId, int page) {
+        Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by("createdAt").descending());
+        Page<FavoriteListingEntity> entityPage = repository.findByUserId(userId, pageable);
+        return entityPage.map(mapper::toResponse);
     }
 }

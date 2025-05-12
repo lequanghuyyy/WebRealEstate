@@ -25,14 +25,7 @@ export interface Property {
   };
   amenities: string[];
   images: string[];
-  agent: {
-    id: string | number;
-    name: string;
-    email: string;
-    phone: string;
-    photo: string;
-    title?: string;
-  };
+  agent: Agent;
   tags: string[];
   createdAt: string | Date;
   updatedAt: string | Date;

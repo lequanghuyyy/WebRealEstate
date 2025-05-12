@@ -17,11 +17,10 @@ import {
   providedIn: 'root'
 })
 export class ListingService {
-  private apiUrl = '/api/listing';
+  private apiUrl = '/api/listings';
 
   constructor(private http: HttpClient) { }
 
-  // Get all listings
   getListings(): Observable<ListingResponse[]> {
     return this.http.get<BaseResponse<ListingResponse[]>>(`${this.apiUrl}/find`)
       .pipe(
@@ -33,16 +32,11 @@ export class ListingService {
       );
   }
 
-  // Get featured listings - get top listings with most views
   getFeaturedListings(limit: number = 6): Observable<ListingResponse[]> {
-    console.log('Calling getFeaturedListings, sử dụng API trực tiếp đã kiểm tra thành công');
-    
     const headers = {
       'Accept': 'application/json'
     };
-    
-    // Sử dụng URL trực tiếp đã được xác minh là hoạt động
-    return this.http.get<any>('http://localhost:8080/api/v1/listings/byViews', { headers })
+        return this.http.get<BaseResponse<ListingResponse[]>>(`${this.apiUrl}/byViews`, { headers })
       .pipe(
         map(response => {
           console.log('API response:', response);
@@ -137,7 +131,7 @@ export class ListingService {
       .pipe(
         map(response => response.data),
         catchError(error => {
-          console.error(`Error updating status for listing ${id}:`, error);
+          console.error(`Error updating listing status for ID ${id}:`, error);
           throw error;
         })
       );
@@ -216,39 +210,55 @@ export class ListingService {
       );
   }
 
+  // Private method to handle HTTP errors
+  private handleError<T>(operation = 'operation', result?: T) {
+    return (error: any): Observable<T> => {
+      console.error(`${operation} failed: ${error.message}`);
+      
+      // Let the app keep running by returning a safe result
+      return of(result as T);
+    };
+  }
+
   // Get sale listings with pagination
   getListingsBySaleTypePaged(page: number = 1, size: number = 10): Observable<PageDto<ListingResponse>> {
-    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(`${this.apiUrl}/sale/paged?page=${page}&size=${size}`)
+    const url = `${this.apiUrl}/sale/paged?page=${page}&size=${size}`;
+    
+    
+    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(url)
       .pipe(
-        map(response => response.data),
-        catchError(error => {
-          console.error('Error fetching paged sale listings:', error);
-          return of({
-            items: [],
-            totalElements: 0,
-            totalPages: 0,
-            page: page,
-            size: size
-          } as PageDto<ListingResponse>);
-        })
+        map(response => {
+          console.log('Sale listings response:', response);
+          return response.data;
+        }),
+        catchError(this.handleError<PageDto<ListingResponse>>('getListingsBySaleTypePaged', {
+          items: [],
+          totalElements: 0,
+          totalPages: 0,
+          page: page,
+          size: size
+        }))
       );
   }
 
   // Get rent listings with pagination
   getListingsByRentTypePaged(page: number = 1, size: number = 10): Observable<PageDto<ListingResponse>> {
-    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(`${this.apiUrl}/rent/paged?page=${page}&size=${size}`)
+    const url = `${this.apiUrl}/rent/paged?page=${page}&size=${size}`;
+    console.log(`Fetching rental listings from ${url}`);
+    
+    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(url)
       .pipe(
-        map(response => response.data),
-        catchError(error => {
-          console.error('Error fetching paged rent listings:', error);
-          return of({
-            items: [],
-            totalElements: 0,
-            totalPages: 0,
-            page: page,
-            size: size
-          } as PageDto<ListingResponse>);
-        })
+        map(response => {
+          console.log('Rent listings response:', response);
+          return response.data;
+        }),
+        catchError(this.handleError<PageDto<ListingResponse>>('getListingsByRentTypePaged', {
+          items: [],
+          totalElements: 0,
+          totalPages: 0,
+          page: page,
+          size: size
+        }))
       );
   }
 
@@ -267,5 +277,94 @@ export class ListingService {
       toArray(),
       map(listings => listings.filter(listing => listing !== null) as ListingResponse[])
     );
+  }
+
+  // Get listings by agent ID and type
+  getAgentListings(agentId: string, type?: ListingType): Observable<ListingResponse[]> {
+    return this.getListingsByOwnerId(agentId)
+      .pipe(
+        map(listings => {
+          if (type) {
+            return listings.filter(listing => listing.type === type);
+          }
+          return listings;
+        }),
+        catchError(error => {
+          console.error(`Error fetching listings for agent ${agentId}:`, error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get pending rental requests for an agent
+  getRentalRequests(agentId: string): Observable<any[]> {
+    return this.http.get<BaseResponse<any[]>>(`${this.apiUrl}/agent/${agentId}/rental-requests`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error fetching rental requests for agent ${agentId}:`, error);
+          return of([]);
+        })
+      );
+  }
+
+  // Get active rentals for an agent
+  getActiveRentals(agentId: string): Observable<any[]> {
+    return this.http.get<BaseResponse<any[]>>(`${this.apiUrl}/agent/${agentId}/active-rentals`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error fetching active rentals for agent ${agentId}:`, error);
+          return of([]);
+        })
+      );
+  }
+
+  // Approve a rental request
+  approveRentalRequest(requestId: string): Observable<any> {
+    return this.http.post<BaseResponse<any>>(`${this.apiUrl}/rental-requests/${requestId}/approve`, {})
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error approving rental request ${requestId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Reject a rental request
+  rejectRentalRequest(requestId: string): Observable<any> {
+    return this.http.post<BaseResponse<any>>(`${this.apiUrl}/rental-requests/${requestId}/reject`, {})
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error rejecting rental request ${requestId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Mark a rental as completed
+  completeRental(rentalId: string): Observable<any> {
+    return this.http.post<BaseResponse<any>>(`${this.apiUrl}/rentals/${rentalId}/complete`, {})
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error completing rental ${rentalId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Cancel a rental
+  cancelRental(rentalId: string): Observable<any> {
+    return this.http.post<BaseResponse<any>>(`${this.apiUrl}/rentals/${rentalId}/cancel`, {})
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error cancelling rental ${rentalId}:`, error);
+          throw error;
+        })
+      );
   }
 } 

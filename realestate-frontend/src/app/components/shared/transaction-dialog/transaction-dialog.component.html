@@ -87,12 +87,20 @@
               </div>
               
               <div class="col-md-6 mb-3">
-                <label for="commission" class="form-label">Commission (VND) <span class="text-danger">*</span></label>
+                <label for="commissionFee" class="form-label">Commission Fee (VND) <span class="text-danger">*</span></label>
                 <input 
                   type="number" 
-                  id="commission"
-                  formControlName="commission" 
-                  class="form-control">
+                  id="commissionFee"
+                  formControlName="commissionFee" 
+                  class="form-control"
+                  [class.is-invalid]="transactionForm.get('commissionFee')?.invalid && transactionForm.get('commissionFee')?.touched"
+                >
+                <div class="invalid-feedback" *ngIf="transactionForm.get('commissionFee')?.errors?.['required']">
+                  Commission fee is required
+                </div>
+                <div class="invalid-feedback" *ngIf="transactionForm.get('commissionFee')?.errors?.['min']">
+                  Commission fee must be a positive number
+                </div>
               </div>
             </div>
           </ng-container>
@@ -110,12 +118,20 @@
               </div>
               
               <div class="col-md-6 mb-3">
-                <label for="commission" class="form-label">Commission (VND) <span class="text-danger">*</span></label>
+                <label for="commissionFee" class="form-label">Commission Fee (VND) <span class="text-danger">*</span></label>
                 <input 
                   type="number" 
-                  id="commission"
-                  formControlName="commission" 
-                  class="form-control">
+                  id="commissionFee"
+                  formControlName="commissionFee" 
+                  class="form-control"
+                  [class.is-invalid]="transactionForm.get('commissionFee')?.invalid && transactionForm.get('commissionFee')?.touched"
+                >
+                <div class="invalid-feedback" *ngIf="transactionForm.get('commissionFee')?.errors?.['required']">
+                  Commission fee is required
+                </div>
+                <div class="invalid-feedback" *ngIf="transactionForm.get('commissionFee')?.errors?.['min']">
+                  Commission fee must be a positive number
+                </div>
               </div>
             </div>
             

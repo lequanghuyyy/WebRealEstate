@@ -10,6 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
@@ -38,6 +39,9 @@ public class ListingServiceImpl implements ListingService {
     @Override
     public ListingResponse createListing(ListingRequest listingRequest) {
         ListingEntity listingEntity = listingMapper.convertToListingEntity(listingRequest);
+        if (listingEntity.getStatus() == null) {
+            listingEntity.setStatus(ListingStatus.AVAILABLE);
+        }
         listingEntity = listingRepository.save(listingEntity);
         return listingMapper.convertToListingResponse(listingEntity);
     }
@@ -185,5 +189,15 @@ public class ListingServiceImpl implements ListingService {
                 .stream()
                 .map(listingMapper::convertToListingResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public int getTotalListingsCount() {
+        return listingRepository.findAll().size();
+    }
+
+    @Override
+    public int getTotalListingsCountByType(ListingType type) {
+        return listingRepository.findByType(type).size();
     }
 }

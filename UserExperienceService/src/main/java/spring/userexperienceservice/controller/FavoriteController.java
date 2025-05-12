@@ -1,6 +1,7 @@
 package spring.userexperienceservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring.userexperienceservice.dto.request.FavoriteRequest;
@@ -30,7 +31,11 @@ public class FavoriteController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<BaseResponse<List<FavoriteResponse>>> getFavorites(@PathVariable String userId) {
-        return ResponseFactory.ok(favoriteService.getFavoritesByUser(userId));
+    public ResponseEntity<BaseResponse<Page<FavoriteResponse>>> getFavorites(
+            @PathVariable String userId,
+            @RequestParam(name = "page", defaultValue = "0") int page) {
+
+        Page<FavoriteResponse> favoritesPage = favoriteService.getFavoritesByUser(userId, page);
+        return ResponseFactory.ok(favoritesPage);
     }
 }

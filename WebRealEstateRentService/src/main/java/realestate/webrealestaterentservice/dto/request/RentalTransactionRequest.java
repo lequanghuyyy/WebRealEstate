@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Data
+
 public class RentalTransactionRequest {
     private String listingId;
     private String renterId;

@@ -13,4 +13,5 @@ public class PaymentRequest {
     private BigDecimal commissionFee;
     private String notes;
     private TransactionStyle transactionStyle;
+    private String agentId;
 }

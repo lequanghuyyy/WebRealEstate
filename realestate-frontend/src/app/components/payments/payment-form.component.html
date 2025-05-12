@@ -1,0 +1,102 @@
+<div class="payment-form-container">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Payment Form</h3>
+    </div>
+    <div class="card-body">
+      <!-- Alert for errors -->
+      <div class="alert alert-danger" *ngIf="errorMessage">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        {{ errorMessage }}
+      </div>
+      
+      <!-- Payment summary -->
+      <div class="payment-summary">
+        <div class="row">
+          <div class="col-md-6">
+            <h4 class="section-title">Payment Summary</h4>
+            <div class="info-item">
+              <span class="label">Transaction ID:</span>
+              <span class="value">{{ transactionId }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Amount:</span>
+              <span class="value amount">{{ getFormattedCurrency(amount) }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Commission Fee:</span>
+              <span class="value">{{ getFormattedCurrency(calculateCommission()) }}</span>
+            </div>
+            <div class="info-item total">
+              <span class="label">Total Amount:</span>
+              <span class="value amount">{{ getFormattedCurrency(amount + calculateCommission()) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Payment form -->
+      <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+        <div class="form-section">
+          <h4 class="section-title">Payment Details</h4>
+          
+          <!-- Payment method selection -->
+          <div class="form-group mb-3">
+            <label class="form-label">Payment Method</label>
+            <div class="payment-method-options">
+              <div *ngFor="let method of paymentMethods" class="payment-method-option">
+                <input 
+                  type="radio" 
+                  [id]="method" 
+                  [value]="method" 
+                  formControlName="paymentMethod" 
+                  class="payment-method-input">
+                <label [for]="method" class="payment-method-label">
+                  <div class="method-icon">
+                    <i class="fas" 
+                       [ngClass]="{
+                         'fa-credit-card': method === 'CREDIT_CARD',
+                         'fa-university': method === 'BANK_TRANSFER',
+                         'fa-money-bill-wave': method === 'CASH'
+                       }"></i>
+                  </div>
+                  <div class="method-name">
+                    {{ method.replace('_', ' ') }}
+                  </div>
+                </label>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Notes -->
+          <div class="form-group mb-3">
+            <label for="notes" class="form-label">Notes (Optional)</label>
+            <textarea 
+              id="notes" 
+              formControlName="notes" 
+              class="form-control" 
+              rows="3" 
+              placeholder="Add any additional information about this payment"></textarea>
+            <div *ngIf="paymentForm.get('notes')?.errors?.['maxlength']" class="text-danger">
+              Notes must be less than 500 characters
+            </div>
+          </div>
+        </div>
+        
+        <!-- Form actions -->
+        <div class="form-actions">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="paymentForm.invalid || isSubmitting">
+            <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            Complete Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

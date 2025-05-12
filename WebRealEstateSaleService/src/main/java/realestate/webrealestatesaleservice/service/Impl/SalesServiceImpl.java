@@ -86,4 +86,9 @@ public class SalesServiceImpl implements SalesService {
         SalesTransactionEntity updatedSalesTransactionEntity = salesTransactionRepository.save(salesTransactionEntity);
         return salesTransactionMapper.convertToSalesTransactionResponse(updatedSalesTransactionEntity);
     }
+
+    @Override
+    public Integer count() {
+        return salesTransactionRepository.findAll().size();
+    }
 }

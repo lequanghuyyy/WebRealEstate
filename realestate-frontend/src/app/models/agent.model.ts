@@ -1,23 +1,24 @@
 export interface Agent {
-  id: string;
+  id: string | number;
   name: string;
   email: string;
   phone: string;
   photo: string;
-  title: string;
-  bio: string;
-  licenseNumber: string;
-  agency: string;
-  specializations: string[];
-  areas: string[];
-  languages: string[];
-  averageRating: number;
-  reviewCount: number;
+  title?: string;
+  bio?: string;
+  licenseNumber?: string;
+  agency?: string;
+  specializations?: string[];
+  areas?: string[];
+  languages?: string[];
+  averageRating?: number;
+  reviewCount?: number;
   socialMedia?: {
     facebook?: string;
     twitter?: string;
     instagram?: string;
     linkedin?: string;
   };
-  availableHours: string;
+  availableHours?: string;
+  availableTimeSlots?: string[];
 } 

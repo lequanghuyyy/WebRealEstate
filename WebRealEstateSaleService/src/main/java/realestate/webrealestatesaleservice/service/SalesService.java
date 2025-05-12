@@ -19,4 +19,5 @@ public interface SalesService {
     List<SalesTransactionResponse> getTransactionsByAgent(String agentId);
     List<SalesTransactionResponse> getTransactionsByListing(String listingId);
     SalesTransactionResponse updateTransactionStatus(String id, TransactionStatus status);
+    Integer count();
 }

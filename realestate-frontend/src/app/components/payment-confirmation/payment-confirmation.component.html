@@ -1,0 +1,55 @@
+<div class="payment-confirmation">
+  <div class="card">
+    <div class="card-header">
+      <h4 class="mb-0">Confirm Payment</h4>
+    </div>
+    <div class="card-body">
+      <form [formGroup]="paymentForm" (ngSubmit)="onSubmit()">
+        <div class="transaction-details mb-4">
+          <div class="row mb-2">
+            <div class="col-6 text-muted">Transaction ID:</div>
+            <div class="col-6 text-end">{{transactionId}}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-6 text-muted">Transaction Type:</div>
+            <div class="col-6 text-end">{{transactionStyle}}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-6 text-muted">Amount:</div>
+            <div class="col-6 text-end">{{amount | currency}}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-6 text-muted">Commission Fee:</div>
+            <div class="col-6 text-end">{{commissionFee | currency}}</div>
+          </div>
+          <div class="row mb-2">
+            <div class="col-6 text-muted">Total:</div>
+            <div class="col-6 text-end fw-bold">{{(amount + commissionFee) | currency}}</div>
+          </div>
+        </div>
+
+        <div class="form-group mb-4">
+          <label for="paymentMethod" class="form-label">Payment Method</label>
+          <select id="paymentMethod" formControlName="paymentMethod" class="form-select">
+            <option *ngFor="let method of paymentMethods" [value]="method">
+              {{formatPaymentMethod(method)}}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group mb-4">
+          <label for="notes" class="form-label">Notes (Optional)</label>
+          <textarea id="notes" formControlName="notes" class="form-control" rows="3" placeholder="Add any notes about this payment"></textarea>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+          <button type="button" class="btn btn-outline-secondary" (click)="cancel()" [disabled]="isProcessing">Cancel</button>
+          <button type="submit" class="btn btn-primary" [disabled]="paymentForm.invalid || isProcessing">
+            <span *ngIf="isProcessing" class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span>
+            Confirm Payment
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div> 

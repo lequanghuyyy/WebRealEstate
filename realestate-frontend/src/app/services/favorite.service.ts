@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 export interface FavoriteRequest {
@@ -15,6 +15,21 @@ export interface FavoriteResponse {
   createdAt: string;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+  };
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  first: boolean;
+  size: number;
+  number: number;
+  empty: boolean;
+}
+
 export interface BaseResponse<T> {
   status: string;
   message: string;
@@ -26,6 +41,8 @@ export interface BaseResponse<T> {
 })
 export class FavoriteService {
   private apiUrl = `${environment.apiUrl}/ux/favorites`;
+  private favoriteIds: string[] = [];
+  public favorites$ = new BehaviorSubject<string[]>([]);
 
   constructor(private http: HttpClient) { }
 
@@ -34,15 +51,66 @@ export class FavoriteService {
       userId,
       listingId
     };
-    return this.http.post<BaseResponse<FavoriteResponse>>(this.apiUrl, request);
+    return new Observable(observer => {
+      this.http.post<BaseResponse<FavoriteResponse>>(this.apiUrl, request).subscribe({
+        next: (response) => {
+          // Update favorites list
+          if (!this.favoriteIds.includes(listingId)) {
+            this.favoriteIds.push(listingId);
+            this.favorites$.next([...this.favoriteIds]);
+          }
+          observer.next(response);
+          observer.complete();
+        },
+        error: (error) => {
+          observer.error(error);
+        }
+      });
+    });
   }
 
   removeFavorite(userId: string, listingId: string): Observable<any> {
-    return this.http.delete<any>(`${this.apiUrl}/${userId}/${listingId}`);
+    console.log(`Removing favorite - userId: ${userId}, listingId: ${listingId}`);
+    return new Observable(observer => {
+      this.http.delete<any>(`${this.apiUrl}/${userId}/${listingId}`).subscribe({
+        next: (response) => {
+          // Update favorites list
+          const index = this.favoriteIds.indexOf(listingId);
+          if (index > -1) {
+            this.favoriteIds.splice(index, 1);
+            this.favorites$.next([...this.favoriteIds]);
+          }
+          observer.next(response);
+          observer.complete();
+        },
+        error: (error) => {
+          observer.error(error);
+        }
+      });
+    });
   }
 
   getFavoritesByUser(userId: string): Observable<BaseResponse<FavoriteResponse[]>> {
-    return this.http.get<BaseResponse<FavoriteResponse[]>>(`${this.apiUrl}/${userId}`);
+    return new Observable(observer => {
+      this.http.get<BaseResponse<FavoriteResponse[]>>(`${this.apiUrl}/${userId}`).subscribe({
+        next: (response) => {
+          // Update favorites list
+          if (response.data) {
+            this.favoriteIds = response.data.map(fav => fav.listingId);
+            this.favorites$.next([...this.favoriteIds]);
+          }
+          observer.next(response);
+          observer.complete();
+        },
+        error: (error) => {
+          observer.error(error);
+        }
+      });
+    });
+  }
+
+  getFavoritesByUserPaginated(userId: string, page: number = 0): Observable<BaseResponse<PageResponse<FavoriteResponse>>> {
+    return this.http.get<BaseResponse<PageResponse<FavoriteResponse>>>(`${this.apiUrl}/${userId}?page=${page}`);
   }
 
   checkIsFavorite(userId: string, listingId: string): Observable<boolean> {

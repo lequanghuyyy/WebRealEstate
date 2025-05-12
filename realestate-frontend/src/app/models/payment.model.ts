@@ -1,11 +1,60 @@
+export enum PaymentMethod {
+  CREDIT_CARD = 'CREDIT_CARD',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  CASH = 'CASH'
+}
+
+export enum PaymentStatus {
+  PENDING = 'PENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED'
+}
+
+export enum TransactionStyle {
+  RENT = 'RENT',
+  SALE = 'SALE'
+}
+
+export interface PaymentRequest {
+  transactionId: string;
+  amount: number;
+  paymentMethod: string;
+  commissionFee: number;
+  notes: string;
+  transactionStyle: TransactionStyle;
+  agentId: string;
+}
+
+export interface PaymentResponse {
+  id: string;
+  transactionId: string;
+  amount: number;
+  paymentMethod: string;
+  paymentStatus: string;
+  paymentDate: string;
+  commissionFee: number;
+  notes: string;
+  createdAt: string;
+  transactionStyle: TransactionStyle;
+}
+
 export interface Payment {
   id: string;
+  transactionId: string;
   amount: number;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  paymentType: 'full' | 'installment' | 'commission' | 'fee';
-  method: 'credit_card' | 'bank_transfer' | 'cash' | 'paypal' | 'other';
-  date: string;
-  transactionId?: string;
+  paymentMethod: PaymentMethod;
+  paymentStatus: PaymentStatus;
+  paymentDate: string;
+  commissionFee: number;
+  notes?: string;
+  createdAt: string;
+  transactionStyle: TransactionStyle;
+  
+  // Legacy fields for compatibility with existing components
+  status?: string;
+  paymentType?: string;
+  method?: string;
+  date?: string;
   propertyId?: string;
   propertyTitle?: string;
   payerId?: string;
@@ -13,5 +62,4 @@ export interface Payment {
   recipientId?: string;
   recipientName?: string;
   reference?: string;
-  notes?: string;
 } 

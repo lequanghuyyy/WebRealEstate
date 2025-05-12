@@ -1,13 +1,19 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, of } from 'rxjs';
+import { Observable, of, forkJoin, catchError, map } from 'rxjs';
 import { User } from '../models/user.model';
 import { Transaction } from '../models/transaction.model';
-import { Payment } from '../models/payment.model';
+import { Payment, PaymentMethod, PaymentStatus, TransactionStyle } from '../models/payment.model';
 import { Property } from '../models/property.model';
-import { Review } from '../models/review.model';
+// import { Review } from '../models/review.model';
 import { Contact } from '../models/contact.model';
 import { environment } from '../../environments/environment';
+
+interface BaseResponse<T> {
+  status: string;
+  message: string;
+  data: T;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -16,138 +22,97 @@ export class AdminService {
   private apiUrl = `${environment.apiUrl}/admin`;
 
   // Mock data for demo purposes
-  private mockUsers: User[] = [
-    {
-      id: '1',
-      email: 'user1@example.com',
-      name: 'John Doe',
-      role: 'user',
-      phone: '123-456-7890',
-      status: 'active',
-      createdAt: '2023-01-15',
-      lastLogin: '2023-05-20',
-      profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-      preferences: {
-        emailNotifications: true,
-        smsNotifications: false,
-        newsletter: true
-      }
-    },
-    {
-      id: '2',
-      email: 'agent1@example.com',
-      name: 'Jane Smith',
-      role: 'agent',
-      phone: '098-765-4321',
-      status: 'active',
-      createdAt: '2022-08-10',
-      lastLogin: '2023-05-22',
-      profileImage: 'https://randomuser.me/api/portraits/women/1.jpg',
-      agentInfo: {
-        licenseNumber: 'AG12345678',
-        agency: 'RealEstatePro Agency',
-        averageRating: 4.8,
-        listings: 24,
-        sales: 45
-      }
-    },
-    {
-      id: '3',
-      email: 'user2@example.com',
-      name: 'Bob Johnson',
-      role: 'user',
-      status: 'inactive',
-      createdAt: '2023-02-20',
-      lastLogin: '2023-03-10'
-    },
-    {
-      id: '4',
-      email: 'user3@example.com',
-      name: 'Alice Brown',
-      role: 'user',
-      phone: '555-123-4567',
-      status: 'active',
-      createdAt: '2023-03-05',
-      lastLogin: '2023-05-23',
-      profileImage: 'https://randomuser.me/api/portraits/women/2.jpg'
-    },
-    {
-      id: '5',
-      email: 'agent2@example.com',
-      name: 'Tom Wilson',
-      role: 'agent',
-      phone: '777-888-9999',
-      status: 'active',
-      createdAt: '2022-10-15',
-      lastLogin: '2023-05-21',
-      profileImage: 'https://randomuser.me/api/portraits/men/2.jpg',
-      agentInfo: {
-        licenseNumber: 'AG87654321',
-        agency: 'Prime Properties',
-        averageRating: 4.5,
-        listings: 18,
-        sales: 32
-      }
-    }
-  ];
-
   private mockTransactions: Transaction[] = [
     {
       id: 't1',
+      type: 'sale',
+      transactionType: 'sale',
       propertyId: 'p1',
       propertyTitle: 'Luxury Apartment in District 1',
       propertyType: 'apartment',
-      transactionType: 'sale',
       amount: 250000,
+      commissionFee: 7500,
       status: 'completed',
+      paymentStatus: 'paid',
+      date: '2023-05-10',
       buyerId: '1',
       buyerName: 'John Doe',
       sellerId: '2',
       sellerName: 'Jane Smith',
-      agentId: '2',
-      agentName: 'Jane Smith',
-      commission: 7500,
-      date: new Date('2023-04-15'),
-      completionDate: new Date('2023-05-10'),
+      agentId: '3',
+      agentName: 'Agent Smith',
       paymentMethod: 'bank_transfer',
-      notes: 'Transaction completed successfully'
+      notes: 'Smooth transaction, all documents verified',
+      property: {
+        id: 'p1',
+        title: 'Luxury Apartment in District 1',
+        image: 'assets/images/properties/apartment1.jpg'
+      },
+      client: {
+        name: 'John Doe',
+        email: 'john@example.com'
+      }
     },
     {
       id: 't2',
+      type: 'rent',
+      transactionType: 'rent',
       propertyId: 'p2',
       propertyTitle: 'Modern House in District 2',
       propertyType: 'house',
-      transactionType: 'rent',
       amount: 1200,
+      commissionFee: 600,
       status: 'pending',
+      paymentStatus: 'pending',
+      date: '2023-05-20',
       buyerId: '3',
       buyerName: 'Bob Johnson',
       sellerId: '5',
       sellerName: 'Tom Wilson',
-      agentId: '5',
-      agentName: 'Tom Wilson',
-      commission: 600,
-      date: new Date('2023-05-20'),
-      paymentMethod: 'credit_card'
+      startDate: '2023-06-01',
+      endDate: '2024-05-31',
+      paymentMethod: 'credit_card',
+      notes: 'Lease agreement pending signatures',
+      property: {
+        id: 'p2',
+        title: 'Modern House in District 2',
+        image: 'assets/images/properties/house1.jpg'
+      },
+      client: {
+        name: 'Bob Johnson',
+        email: 'bob@example.com'
+      }
+    }
+  ];
+  
+  private mockUsers: User[] = [
+    {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      role: 'user',
+      status: 'active',
+      phone: '123-456-7890',
+      createdAt: new Date('2023-01-15')
     },
     {
-      id: 't3',
-      propertyId: 'p3',
-      propertyTitle: 'Commercial Space Downtown',
-      propertyType: 'commercial',
-      transactionType: 'sale',
-      amount: 450000,
-      status: 'completed',
-      buyerId: '4',
-      buyerName: 'Alice Brown',
-      sellerId: '2',
-      sellerName: 'Jane Smith',
-      agentId: '2',
-      agentName: 'Jane Smith',
-      commission: 13500,
-      date: new Date('2023-03-10'),
-      completionDate: new Date('2023-04-05'),
-      paymentMethod: 'bank_transfer'
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      role: 'user',
+      status: 'active',
+      phone: '234-567-8901',
+      createdAt: new Date('2023-02-20')
+    },
+    {
+      id: '3',
+      name: 'Agent Smith',
+      email: 'agent@example.com',
+      role: 'agent',
+      status: 'active',
+      phone: '345-678-9012',
+      bio: 'Professional real estate agent with 5 years of experience',
+      createdAt: new Date('2023-03-05')
     }
   ];
 
@@ -155,9 +120,17 @@ export class AdminService {
     {
       id: 'pay1',
       transactionId: 't1',
+      amount: 250000,
+      paymentMethod: PaymentMethod.BANK_TRANSFER,
+      paymentStatus: PaymentStatus.COMPLETED,
+      paymentDate: '2023-05-10',
+      commissionFee: 7500,
+      notes: 'Full payment for property purchase',
+      createdAt: '2023-05-10',
+      transactionStyle: TransactionStyle.SALE,
+      // Legacy fields for backward compatibility
       propertyId: 'p1',
       propertyTitle: 'Luxury Apartment in District 1',
-      amount: 250000,
       paymentType: 'full',
       status: 'completed',
       payerId: '1',
@@ -171,9 +144,17 @@ export class AdminService {
     {
       id: 'pay2',
       transactionId: 't1',
+      amount: 7500,
+      paymentMethod: PaymentMethod.BANK_TRANSFER,
+      paymentStatus: PaymentStatus.COMPLETED,
+      paymentDate: '2023-05-12',
+      commissionFee: 0,
+      notes: 'Commission payment for property sale',
+      createdAt: '2023-05-12',
+      transactionStyle: TransactionStyle.SALE,
+      // Legacy fields for backward compatibility
       propertyId: 'p1',
       propertyTitle: 'Luxury Apartment in District 1',
-      amount: 7500,
       paymentType: 'commission',
       status: 'completed',
       payerId: '2',
@@ -187,9 +168,17 @@ export class AdminService {
     {
       id: 'pay3',
       transactionId: 't2',
+      amount: 1200,
+      paymentMethod: PaymentMethod.CREDIT_CARD,
+      paymentStatus: PaymentStatus.PENDING,
+      paymentDate: '2023-05-20',
+      commissionFee: 600,
+      notes: 'Rental payment',
+      createdAt: '2023-05-20',
+      transactionStyle: TransactionStyle.RENT,
+      // Legacy fields for backward compatibility
       propertyId: 'p2',
       propertyTitle: 'Modern House in District 2',
-      amount: 1200,
       paymentType: 'full',
       status: 'pending',
       payerId: '3',
@@ -244,7 +233,109 @@ export class AdminService {
 
   // Dashboard data
   getDashboardStats(): Observable<any> {
-    // In a real app, this would be an API call
+    // Connect to the real backend API endpoints
+    // Create observables for each API call
+    const usersCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/users/count`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching users count:', error);
+          return of(this.mockUsers.length);
+        })
+      );
+
+    const salesCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/sales/count`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching sales count:', error);
+          return of(this.mockTransactions.filter(t => t.transactionType === 'sale' || t.type === 'sale').length);
+        })
+      );
+
+    const rentalsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/rentals/count`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching rentals count:', error);
+          return of(this.mockTransactions.filter(t => t.transactionType === 'rent' || t.type === 'rent').length);
+        })
+      );
+
+    const commission$ = this.http.get<BaseResponse<string>>(`${environment.apiUrl}/api/v1/payments/commission`)
+      .pipe(
+        map(response => parseFloat(response.data) || 0),
+        catchError(error => {
+          console.error('Error fetching commission:', error);
+          return of(this.mockTransactions.reduce((sum, t) => sum + (t.commissionFee || 0), 0));
+        })
+      );
+
+    const listingsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/listings/count`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching listings count:', error);
+          return of(0); // Fallback to 0 since we don't have mock data for properties
+        })
+      );
+
+    // Combine all observables to return a single object with all stats
+    return forkJoin({
+      usersCount: usersCount$,
+      salesCount: salesCount$,
+      rentalsCount: rentalsCount$,
+      commission: commission$,
+      listingsCount: listingsCount$
+    }).pipe(
+      map(results => {
+        // Calculate current month revenue (using mock data as fallback)
+        const thisMonth = this.mockTransactions
+          .filter(t => {
+            const transactionDate = new Date(t.date);
+            const now = new Date();
+            return transactionDate.getMonth() === now.getMonth() && 
+                  transactionDate.getFullYear() === now.getFullYear();
+          })
+          .reduce((sum, t) => sum + t.amount, 0);
+
+        // Format the response to match the expected dashboard stats structure
+        return {
+          users: {
+            total: results.usersCount,
+            active: results.usersCount, // Assuming all users are active
+            agents: this.mockUsers.filter(u => u.role === 'agent').length // Using mock data as fallback
+          },
+          transactions: {
+            total: results.salesCount + results.rentalsCount,
+            sales: results.salesCount,
+            rentals: results.rentalsCount,
+            pending: this.mockTransactions.filter(t => t.status === 'pending' || t.status === 'PENDING').length,
+            completed: this.mockTransactions.filter(t => t.status === 'completed' || t.status === 'COMPLETED').length
+          },
+          revenue: {
+            total: results.commission, // Using commission as total revenue for now
+            commissions: results.commission,
+            thisMonth: thisMonth
+          },
+          properties: {
+            total: results.listingsCount,
+            forSale: Math.floor(results.listingsCount * 0.7), // Estimating 70% for sale
+            forRent: Math.floor(results.listingsCount * 0.3), // Estimating 30% for rent
+            pending: Math.floor(results.listingsCount * 0.1) // Estimating 10% pending
+          }
+        };
+      }),
+      catchError(error => {
+        console.error('Error combining dashboard stats:', error);
+        // Fallback to mock data in case of error
+        return this.getFallbackStats();
+      })
+    );
+  }
+
+  // New method to get fallback stats
+  private getFallbackStats(): Observable<any> {
     const stats = {
       users: {
         total: this.mockUsers.length,
@@ -253,27 +344,54 @@ export class AdminService {
       },
       transactions: {
         total: this.mockTransactions.length,
-        sales: this.mockTransactions.filter(t => t.transactionType === 'sale').length,
-        rentals: this.mockTransactions.filter(t => t.transactionType === 'rent').length,
-        pending: this.mockTransactions.filter(t => t.status === 'pending').length,
-        completed: this.mockTransactions.filter(t => t.status === 'completed').length
+        sales: this.mockTransactions.filter(t => t.transactionType === 'sale' || t.type === 'sale').length,
+        rentals: this.mockTransactions.filter(t => t.transactionType === 'rent' || t.type === 'rent').length,
+        pending: this.mockTransactions.filter(t => t.status === 'pending' || t.status === 'PENDING').length,
+        completed: this.mockTransactions.filter(t => t.status === 'completed' || t.status === 'COMPLETED').length
       },
       revenue: {
         total: this.mockTransactions.reduce((sum, t) => sum + t.amount, 0),
-        commissions: this.mockTransactions.reduce((sum, t) => sum + (t.commission || 0), 0),
+        commissions: this.mockTransactions.reduce((sum, t) => sum + (t.commissionFee || 0), 0),
         thisMonth: this.mockTransactions
-          .filter(t => new Date(t.date).getMonth() === new Date().getMonth())
+          .filter(t => {
+            const transactionDate = new Date(t.date);
+            const now = new Date();
+            return transactionDate.getMonth() === now.getMonth() && 
+                  transactionDate.getFullYear() === now.getFullYear();
+          })
           .reduce((sum, t) => sum + t.amount, 0)
       },
       properties: {
-        total: 45,
-        forSale: 30,
-        forRent: 15,
-        pending: 5
+        total: 120, // Mock data
+        forSale: 80,
+        forRent: 40,
+        pending: 15
       }
     };
     
     return of(stats);
+  }
+
+  // Transaction management
+  getTransactions(): Observable<Transaction[]> {
+    // In a real app: return this.http.get<Transaction[]>(`${this.apiUrl}/transactions`);
+    return of(this.mockTransactions);
+  }
+
+  updateTransactionStatus(id: string | number, status: string): Observable<Transaction> {
+    // In a real app: return this.http.patch<Transaction>(`${this.apiUrl}/transactions/${id}/status`, { status });
+    const transaction = this.mockTransactions.find(t => t.id === id);
+    if (!transaction) {
+      throw new Error('Transaction not found');
+    }
+    transaction.status = status;
+    if (status === 'completed') {
+      transaction.paymentStatus = 'paid';
+      transaction.completionDate = new Date();
+    } else if (status === 'cancelled') {
+      transaction.paymentStatus = 'cancelled';
+    }
+    return of({ ...transaction });
   }
 
   // User management
@@ -282,33 +400,24 @@ export class AdminService {
     return of(this.mockUsers);
   }
 
-  getUserById(id: string): Observable<User> {
-    // In a real app: return this.http.get<User>(`${this.apiUrl}/users/${id}`);
-    const user = this.mockUsers.find(u => u.id === id);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    return of(user);
-  }
-
-  updateUserStatus(id: string, status: 'active' | 'inactive' | 'suspended'): Observable<User> {
-    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${id}`, { status });
-    const user = this.mockUsers.find(u => u.id === id);
+  updateUserStatus(userId: string, status: 'active' | 'inactive' | 'suspended'): Observable<User> {
+    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${userId}/status`, { status });
+    const user = this.mockUsers.find(u => u.id === userId);
     if (!user) {
       throw new Error('User not found');
     }
     user.status = status;
-    return of(user);
+    return of({ ...user });
   }
 
-  updateUserRole(id: string, role: 'admin' | 'agent' | 'user'): Observable<User> {
-    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${id}`, { role });
-    const user = this.mockUsers.find(u => u.id === id);
+  updateUserRole(userId: string, role: 'user' | 'agent' | 'admin'): Observable<User> {
+    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${userId}/role`, { role });
+    const user = this.mockUsers.find(u => u.id === userId);
     if (!user) {
       throw new Error('User not found');
     }
     user.role = role;
-    return of(user);
+    return of({ ...user });
   }
 
   // Property management
@@ -327,31 +436,6 @@ export class AdminService {
     return of({ success: true, message: 'Property rejected' });
   }
 
-  // Transaction management
-  getTransactions(): Observable<Transaction[]> {
-    // In a real app: return this.http.get<Transaction[]>(`${this.apiUrl}/transactions`);
-    return of(this.mockTransactions);
-  }
-
-  getTransactionById(id: string): Observable<Transaction> {
-    // In a real app: return this.http.get<Transaction>(`${this.apiUrl}/transactions/${id}`);
-    const transaction = this.mockTransactions.find(t => t.id === id);
-    if (!transaction) {
-      throw new Error('Transaction not found');
-    }
-    return of(transaction);
-  }
-
-  updateTransactionStatus(id: string | number, status: 'pending' | 'completed' | 'cancelled' | 'refunded'): Observable<Transaction> {
-    // In a real app: return this.http.patch<Transaction>(`${this.apiUrl}/transactions/${id}`, { status });
-    const transaction = this.mockTransactions.find(t => t.id === String(id));
-    if (!transaction) {
-      throw new Error('Transaction not found');
-    }
-    transaction.status = status;
-    return of(transaction);
-  }
-
   // Payment management
   getPayments(): Observable<Payment[]> {
     // In a real app: return this.http.get<Payment[]>(`${this.apiUrl}/payments`);
@@ -368,10 +452,10 @@ export class AdminService {
   }
 
   // Review management
-  getReviews(): Observable<Review[]> {
-    // In a real app: return this.http.get<Review[]>(`${this.apiUrl}/reviews`);
-    return of([]);  // Mock data would come from the ReviewService
-  }
+  // getReviews(): Observable<Review[]> {
+  //   // In a real app: return this.http.get<Review[]>(`${this.apiUrl}/reviews`);
+  //   return of([]);  // Mock data would come from the ReviewService
+  // }
 
   moderateReview(id: string, action: 'approve' | 'reject'): Observable<any> {
     // In a real app: return this.http.patch<any>(`${this.apiUrl}/reviews/${id}/${action}`, {});

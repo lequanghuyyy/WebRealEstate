@@ -3,16 +3,15 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
-import { TransactionService, Transaction } from '../../../services/transaction.service';
-import { TransactionDialogComponent } from '../../shared/transaction-dialog/transaction-dialog.component';
-
-// Extended Transaction interface to include rent-specific fields
-export interface ExtendedTransaction extends Transaction {
-  startDate?: string;
-  endDate?: string;
-  paymentMethod?: string;
-  notes?: string;
-}
+import { TransactionService } from '../../../services/transaction.service';
+import { Transaction } from '../../../models/transaction.model';
+import { ExtendedTransaction, TransactionDialogComponent } from '../../shared/transaction-dialog/transaction-dialog.component';
+import { TransactionPaymentService } from '../../../services/transaction-payment.service';
+import { TransactionStyle } from '../../../models/payment.model';
+import { PaymentService } from '../../../services/payment.service';
+import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
+import { PaymentResponse } from '../../../models/payment.model';
+import { PaymentFormComponent } from '../../payments/payment-form.component';
 
 @Component({
   selector: 'app-agent-transactions',
@@ -24,7 +23,8 @@ export interface ExtendedTransaction extends Transaction {
     RouterModule, 
     FormsModule, 
     ReactiveFormsModule,
-    TransactionDialogComponent
+    TransactionDialogComponent,
+    PaymentFormComponent
   ]
 })
 export class AgentTransactionsComponent implements OnInit {
@@ -67,11 +67,21 @@ export class AgentTransactionsComponent implements OnInit {
   showTransactionDialog: boolean = false;
   selectedTransaction: ExtendedTransaction | null = null;
 
+  // Add new properties for payment form
+  showPaymentForm: boolean = false;
+  currentTransactionForPayment: ExtendedTransaction | null = null;
+
+  // For template use
+  TransactionStyle = TransactionStyle;
+
   constructor(
     private router: Router,
     private authService: AuthService,
     private transactionService: TransactionService,
-    private fb: FormBuilder
+    private transactionPaymentService: TransactionPaymentService,
+    private fb: FormBuilder,
+    private paymentService: PaymentService,
+    private toastr: ToastrWrapperService
   ) {
     this.filterForm = this.fb.group({
       searchQuery: [''],
@@ -92,6 +102,14 @@ export class AgentTransactionsComponent implements OnInit {
     
     // Load transactions data
     this.loadTransactions();
+    
+    // Check URL for transaction type
+    const url = this.router.url;
+    if (url.includes('?type=rent')) {
+      this.activeTab = 'rent';
+    } else if (url.includes('?type=buy')) {
+      this.activeTab = 'buy';
+    }
     
     // Listen for filter changes
     this.filterForm.valueChanges.subscribe(() => {
@@ -207,9 +225,17 @@ export class AgentTransactionsComponent implements OnInit {
           valueA = a.amount;
           valueB = b.amount;
           break;
-        case 'commission':
-          valueA = a.commission;
-          valueB = b.commission;
+        case 'deposit':
+          valueA = a.amount;
+          valueB = b.amount;
+          break;
+        case 'monthlyRent':
+          valueA = a.monthlyRent || 0;
+          valueB = b.monthlyRent || 0;
+          break;
+        case 'commissionFee':
+          valueA = a.commissionFee || 0;
+          valueB = b.commissionFee || 0;
           break;
         case 'status':
           valueA = a.status;
@@ -265,11 +291,11 @@ export class AgentTransactionsComponent implements OnInit {
     ).length;
     
     this.totalCommission = this.transactions.reduce(
-      (sum, t) => t.paymentStatus === 'paid' ? sum + t.commission : sum, 0
+      (sum, t) => t.paymentStatus === 'paid' ? sum + (t.commissionFee || 0) : sum, 0
     );
     
     this.pendingCommission = this.transactions.reduce(
-      (sum, t) => t.paymentStatus === 'pending' ? sum + t.commission : sum, 0
+      (sum, t) => t.paymentStatus === 'pending' ? sum + (t.commissionFee || 0) : sum, 0
     );
   }
 
@@ -310,12 +336,12 @@ export class AgentTransactionsComponent implements OnInit {
     }
   }
 
-  getFormattedCurrency(amount: number): string {
+  getFormattedCurrency(amount: number | undefined): string {
     return new Intl.NumberFormat('vi-VN', {
       style: 'currency',
       currency: 'VND',
       maximumFractionDigits: 0
-    }).format(amount);
+    }).format(amount || 0);
   }
 
   getDateFormatted(dateString: string): string {
@@ -445,6 +471,167 @@ export class AgentTransactionsComponent implements OnInit {
         error: (error) => {
           console.error('Error deleting transaction:', error);
           alert('Failed to delete transaction. Please try again.');
+        }
+      });
+    }
+  }
+
+  // Complete transaction with payment
+  completeTransaction(transaction: ExtendedTransaction): void {
+    const confirmMessage = transaction.type === 'sale'
+      ? 'Are you sure you want to complete this sales transaction? This will mark the property as sold.'
+      : 'Are you sure you want to complete this rental transaction? This will mark the property as rented.';
+  
+    if (confirm(confirmMessage)) {
+      // First process payment if needed
+      if (transaction.paymentStatus !== 'paid') {
+        this.processPayment(transaction);
+        return;
+      }
+      
+      transaction.isProcessing = true;
+      
+      // Then complete the transaction
+      this.transactionService.completeTransaction(
+        transaction.id?.toString() || '', 
+        transaction.type === 'rent'
+      ).subscribe({
+        next: () => {
+          transaction.status = 'completed';
+          transaction.isProcessing = false;
+          this.calculateSummary();
+          alert('Transaction completed successfully!');
+        },
+        error: (error) => {
+          console.error('Error completing transaction:', error);
+          transaction.isProcessing = false;
+          alert('Failed to complete transaction. Please try again.');
+        }
+      });
+    }
+  }
+
+  // Phương thức để lấy số lượng giao dịch thành công trong tháng
+  getCompletedTransactionsThisMonth(): number {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return this.transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transaction.status === 'completed' && 
+             transactionDate.getMonth() === currentMonth && 
+             transactionDate.getFullYear() === currentYear;
+    }).length;
+  }
+
+  // Phương thức để lấy số lượng giao dịch bán thành công trong tháng
+  getCompletedSalesThisMonth(): number {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return this.transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transaction.status === 'completed' && 
+             transaction.type === 'sale' &&
+             transactionDate.getMonth() === currentMonth && 
+             transactionDate.getFullYear() === currentYear;
+    }).length;
+  }
+
+  // Phương thức để lấy số lượng giao dịch thuê thành công trong tháng
+  getCompletedRentalsThisMonth(): number {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    
+    return this.transactions.filter(transaction => {
+      const transactionDate = new Date(transaction.date);
+      return transaction.status === 'completed' && 
+             transaction.type === 'rent' &&
+             transactionDate.getMonth() === currentMonth && 
+             transactionDate.getFullYear() === currentYear;
+    }).length;
+  }
+
+  // Calculate total commission for sale transactions
+  getTotalSaleCommission(): number {
+    return this.getFilteredSaleTransactions().reduce((total, transaction) => {
+      return total + (transaction.commissionFee || 0);
+    }, 0);
+  }
+
+  // Calculate total commission for rental transactions
+  getTotalRentalCommission(): number {
+    return this.getFilteredRentalTransactions().reduce((total, transaction) => {
+      return total + (transaction.commissionFee || 0);
+    }, 0);
+  }
+
+  // Process payment for a transaction
+  processPayment(transaction: ExtendedTransaction): void {
+    // Show payment form instead of direct processing
+    this.currentTransactionForPayment = transaction;
+    this.showPaymentForm = true;
+  }
+
+  // Handle payment completion from the payment form
+  handlePaymentComplete(paymentResponse: PaymentResponse): void {
+    if (this.currentTransactionForPayment) {
+      // Update transaction with payment information
+      this.currentTransactionForPayment.paymentStatus = 'paid';
+      this.currentTransactionForPayment.paymentMethod = paymentResponse.paymentMethod;
+      this.currentTransactionForPayment.isProcessing = false;
+      
+      // Update transaction in database if needed
+      this.transactionService.updateTransaction({
+        ...this.currentTransactionForPayment,
+        paymentStatus: 'paid'
+        // Include any additional fields needed by your backend
+      }).subscribe({
+        next: () => {
+          this.calculateSummary();
+          this.toastr.success('Payment processed successfully!');
+        },
+        error: (error) => {
+          console.error('Error updating transaction after payment:', error);
+          this.toastr.error('Payment processed but transaction update failed.');
+        }
+      });
+      
+      // Close payment form
+      this.showPaymentForm = false;
+      this.currentTransactionForPayment = null;
+    }
+  }
+
+  // Handle payment cancellation from the payment form
+  handlePaymentCancelled(): void {
+    this.showPaymentForm = false;
+    this.currentTransactionForPayment = null;
+  }
+
+  // Cancel a transaction
+  cancelTransaction(transaction: ExtendedTransaction): void {
+    if (confirm(`Are you sure you want to cancel transaction #${transaction.id}?`)) {
+      transaction.isProcessing = true;
+      
+      this.transactionService.cancelTransaction(
+        transaction.id?.toString() || '', 
+        transaction.type === 'rent'
+      ).subscribe({
+        next: () => {
+          transaction.status = 'cancelled';
+          transaction.paymentStatus = 'cancelled';
+          transaction.isProcessing = false;
+          this.calculateSummary();
+          alert('Transaction has been cancelled');
+        },
+        error: (error: any) => {
+          console.error('Error cancelling transaction:', error);
+          transaction.isProcessing = false;
+          alert('Failed to cancel transaction. Please try again.');
         }
       });
     }

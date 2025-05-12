@@ -1,10 +1,11 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Review } from '../../models/review.model';
+import { ReviewResponse, ReviewRequest } from '../../models/review.model';
 import { ReviewService } from '../../services/review.service';
 import { AuthService } from '../../services/auth.service';
 import { Router, RouterModule } from '@angular/router';
+import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
 
 @Component({
   selector: 'app-property-reviews',
@@ -16,28 +17,23 @@ import { Router, RouterModule } from '@angular/router';
 export class PropertyReviewsComponent implements OnInit {
   @Input() propertyId: string = '';
   
-  reviews: Review[] = [];
+  reviews: ReviewResponse[] = [];
   isLoading: boolean = true;
   showAddReview: boolean = false;
   reviewForm: FormGroup;
-  currentRoute: string = ''; // Đường dẫn hiện tại
-  
-  // Simulated current user
-  currentUser = {
-    id: 'user1',
-    name: 'Hoang Minh',
-    avatar: 'https://placehold.co/200x200/2c3e50/ffffff?text=HM'
-  };
+  currentRoute: string = '';
   
   hasReviewed: boolean = false;
   submitSuccessful: boolean = false;
   errorMessage: string = '';
+  averageRating: number = 0;
 
   constructor(
     private reviewService: ReviewService,
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private toastr: ToastrWrapperService
   ) {
     this.reviewForm = this.fb.group({
       rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
@@ -45,7 +41,6 @@ export class PropertyReviewsComponent implements OnInit {
       comment: ['', [Validators.required, Validators.minLength(20)]]
     });
     
-    // Lưu đường dẫn hiện tại để chuyển hướng sau khi đăng nhập
     this.currentRoute = this.router.url;
   }
 
@@ -53,22 +48,51 @@ export class PropertyReviewsComponent implements OnInit {
     this.loadReviews();
   }
 
+  ngOnChanges(): void {
+    if (this.propertyId) {
+      this.loadReviews();
+    }
+  }
+
   loadReviews(): void {
-    if (!this.propertyId) return;
+    if (!this.propertyId) {
+      console.warn('No property ID provided');
+      this.isLoading = false;
+      return;
+    }
     
-    this.reviewService.getReviewsByPropertyId(this.propertyId).subscribe({
+    console.log('Loading reviews for property ID:', this.propertyId);
+    this.isLoading = true;
+    
+    this.reviewService.getReviewsByListingId(this.propertyId).subscribe({
       next: (reviews) => {
-        this.reviews = reviews;
+        console.log('Received reviews:', reviews);
+        this.reviews = reviews || [];
         this.isLoading = false;
         
-        // Check if current user has already reviewed
-        this.hasReviewed = this.reviews.some(r => r.userId === this.currentUser.id);
+        this.averageRating = this.reviewService.calculateAverageRating(this.reviews);
+        
+        const currentUser = this.authService.getCurrentUser();
+        if (currentUser) {
+          this.hasReviewed = this.reviews.some(r => r.brId === currentUser.id);
+        }
       },
       error: (error) => {
         console.error('Error loading reviews:', error);
         this.isLoading = false;
+        this.errorMessage = 'Could not load reviews. Please try again later.';
       }
     });
+  }
+
+  // Method to get the average rating for the template
+  getAverageRating(): number {
+    return this.averageRating;
+  }
+
+  // Method to get the rounded average for star display
+  getRoundedAverage(): number {
+    return Math.round(this.averageRating);
   }
 
   toggleAddReview(): void {
@@ -90,106 +114,150 @@ export class PropertyReviewsComponent implements OnInit {
     }
 
     if (!this.authService.isLoggedIn()) {
-      this.router.navigate(['/auth/login'], { queryParams: { returnUrl: this.router.url } });
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
       return;
     }
 
     const currentUser = this.authService.getCurrentUser();
+    if (!currentUser || !currentUser.id) {
+      this.toastr.error('You must be logged in to write a review');
+      return;
+    }
 
-    // Create review request
-    const newReview = {
+    // Get form values and ensure they're not null/undefined
+    const title = this.reviewForm.get('title')?.value || '';
+    const comment = this.reviewForm.get('comment')?.value || '';
+    const rating = this.reviewForm.get('rating')?.value || 5;
+
+    // Check if required fields are not empty after trimming
+    if (!title.trim()) {
+      this.toastr.error('Review title cannot be empty');
+      return;
+    }
+
+    if (!comment.trim()) {
+      this.toastr.error('Review content cannot be empty');
+      return;
+    }
+
+    const newReview: ReviewRequest = {
       listingId: this.propertyId,
-      brId: currentUser?.id || '',
-      title: this.reviewForm.get('title')?.value,
-      contentReview: this.reviewForm.get('comment')?.value,
-      rate: this.reviewForm.get('rating')?.value
+      brId: currentUser.id,
+      title: title.trim(),
+      contentReview: comment.trim(),
+      rate: rating
     };
 
+    console.log('Submitting review:', newReview);
+    
     this.reviewService.createReview(newReview).subscribe({
       next: (response) => {
-        // Convert to local review format
-        const addedReview = {
-          id: response.id,
-          propertyId: response.listingId,
-          userId: response.brId,
-          rating: response.rate,
-          title: response.title || '',
-          comment: response.contentReview || '',
-          date: new Date(response.createdAt),
-          userName: currentUser?.firstName + ' ' + currentUser?.lastName || 'Anonymous',
-          userAvatar: '/assets/images/avatar-placeholder.jpg',
-          helpful: 0
-        };
+        console.log('Review created successfully:', response);
+        this.toastr.success('Your review has been posted!');
         
-        this.reviews.unshift(addedReview);
-        this.reviewForm.reset();
-        this.submitSuccessful = true;
+        this.reviews.unshift(response);
+        
+        this.averageRating = this.reviewService.calculateAverageRating(this.reviews);
+        
+        this.reviewForm.reset({ rating: 5 });
+        this.showAddReview = false;
         this.hasReviewed = true;
-        
-        setTimeout(() => {
-          this.submitSuccessful = false;
-        }, 5000);
       },
       error: (error) => {
         console.error('Error submitting review:', error);
+        this.toastr.error('There was an error submitting your review. Please try again.');
         this.errorMessage = 'There was an error submitting your review. Please try again.';
       }
     });
   }
 
-  markHelpful(reviewId: string): void {
-    this.reviewService.markHelpful(reviewId).subscribe({
+  likeReview(reviewId: string): void {
+    if (!this.authService.isLoggedIn()) {
+      this.toastr.info('Please log in to like reviews');
+      return;
+    }
+    
+    this.reviewService.likeReview(reviewId).subscribe({
       next: (updatedReview) => {
+        console.log('Review liked successfully:', updatedReview);
+        
         const index = this.reviews.findIndex(r => r.id === reviewId);
         if (index !== -1) {
           this.reviews[index] = updatedReview;
         }
+        
+        this.toastr.success('Thanks for your feedback!');
       },
       error: (error) => {
-        console.error('Error marking review as helpful:', error);
+        console.error('Error liking review:', error);
+        this.toastr.error('Could not like this review. Please try again later.');
       }
     });
   }
 
-  // Utility to display rating stars
-  getStarArray(rating: number): number[] {
-    return Array(5).fill(0).map((_, i) => i < rating ? 1 : 0);
-  }
-
-  // Calculate average rating
-  getAverageRating(): number {
-    if (this.reviews.length === 0) return 0;
+  // Method to handle marking a review as helpful
+  markHelpful(reviewId: string): void {
+    if (!this.authService.isLoggedIn()) {
+      this.toastr.info('Please log in to mark reviews as helpful');
+      return;
+    }
     
-    const sum = this.reviews.reduce((acc, review) => acc + review.rating, 0);
-    return Math.round((sum / this.reviews.length) * 10) / 10;
+    // Call the service method
+    this.reviewService.likeReview(reviewId).subscribe({
+      next: (updatedReview) => {
+        console.log('Review marked as helpful:', updatedReview);
+        
+        // Update the review in the list
+        const index = this.reviews.findIndex(r => r.id === reviewId);
+        if (index !== -1) {
+          this.reviews[index] = updatedReview;
+        }
+        
+        this.toastr.success('Thanks for your feedback!');
+      },
+      error: (error) => {
+        console.error('Error marking review as helpful:', error);
+        this.toastr.error('Could not mark this review as helpful. Please try again later.');
+      }
+    });
   }
 
-  // Round average rating
-  getRoundedAverage(): number {
-    return Math.round(this.getAverageRating());
+  getStarArray(rating: number): number[] {
+    return Array(5).fill(0).map((_, i) => i < Math.round(rating) ? 1 : 0);
   }
 
-  // Get percentage for each rating
   getRatingPercentage(rating: number): number {
     if (this.reviews.length === 0) return 0;
     
-    const count = this.reviews.filter(r => r.rating === rating).length;
+    const count = this.reviews.filter(r => r.rate === rating).length;
     return Math.round((count / this.reviews.length) * 100);
   }
 
-  // Format date
-  formatDate(date: Date): string {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('en-US');
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   }
 
-  // Calculate average rating (add this missing method)
-  calculateAverageRating(): number {
-    return this.getAverageRating();
-  }
-
-  // Kiểm tra người dùng đã đăng nhập chưa
   isLoggedIn(): boolean {
     return this.authService.isLoggedIn();
+  }
+  
+  getUserName(brId: string): string {
+    const user = this.authService.getCurrentUser();
+    if (user && user.id === brId) {
+      if (user.firstName && user.lastName) {
+        return `${user.firstName} ${user.lastName}`;
+      } else if (user.name) {
+        return user.name;
+      } else if (user.email) {
+        return user.email.split('@')[0];
+      }
+    }
+    
+    return 'User';
   }
 } 

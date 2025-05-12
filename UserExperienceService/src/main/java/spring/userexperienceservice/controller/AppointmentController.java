@@ -59,7 +59,7 @@ public class AppointmentController {
     @PatchMapping("/{id}/status/{status}")
     public ResponseEntity<BaseResponse<AppointmentResponse>> updateAppointmentStatus(
             @PathVariable String id, @PathVariable AppointmentStatus status) {
-        return ResponseFactory.ok(appointmentService.updateAppointmentStatus(id, status));
+        return ResponseFactory.ok(appointmentService.updateAppointmentStatus(id,status));
     }
 
     @DeleteMapping("/{id}")

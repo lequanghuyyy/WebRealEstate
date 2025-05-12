@@ -22,6 +22,8 @@ public class ListingRequest {
     private BigDecimal area;
     private Integer bedrooms;
     private Integer bathrooms;
+    private Integer yearBuilt;
+    private Integer view;
     private ListingType type;
     private ListingStatus status;
     private String ownerId;

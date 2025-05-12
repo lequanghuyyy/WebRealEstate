@@ -28,6 +28,8 @@ export class HeaderComponent implements OnInit {
   ) {}
   
   ngOnInit() {
+    console.log("HeaderComponent initialized");
+    
     // Check if user is logged in
     this.checkAuthStatus();
     
@@ -45,10 +47,16 @@ export class HeaderComponent implements OnInit {
   }
   
   checkAuthStatus() {
+    console.log("Checking auth status...");
+    
+    // Lấy trạng thái đăng nhập từ AuthService
     this.isLoggedIn = this.authService.isLoggedIn();
+    console.log("Is logged in:", this.isLoggedIn);
+    
     if (this.isLoggedIn) {
-      // Lấy thông tin user từ localStorage trước
+      // Lấy thông tin user từ localStorage
       this.currentUser = this.authService.getCurrentUser();
+      console.log("Current user:", this.currentUser);
       
       // Đăng ký theo dõi thay đổi của thông tin người dùng
       this.authService.currentUser$.subscribe(user => {
@@ -57,13 +65,19 @@ export class HeaderComponent implements OnInit {
         }
       });
       
+      // Cập nhật vai trò
       this.isAgent = this.authService.isAgent();
       this.isAdmin = this.authService.isAdmin();
+      console.log("User roles:", { isAgent: this.isAgent, isAdmin: this.isAdmin });
     } else {
       this.currentUser = null;
       this.isAgent = false;
       this.isAdmin = false;
+      console.log("No user logged in");
     }
+    
+    // Log để kiểm tra
+    console.log('Auth status checked:', { isLoggedIn: this.isLoggedIn, isAgent: this.isAgent, isAdmin: this.isAdmin });
   }
   
   // Cập nhật thông tin người dùng hiển thị

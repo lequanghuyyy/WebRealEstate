@@ -4,7 +4,7 @@ import { RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ReviewService } from '../../services/review.service';
 import { AuthService } from '../../services/auth.service';
-import { Review } from '../../models/review.model';
+import { ReviewResponse, ReviewRequest, Page } from '../../models/review.model';
 
 @Component({
   selector: 'app-reviews',
@@ -14,7 +14,20 @@ import { Review } from '../../models/review.model';
   styleUrls: ['./reviews.component.scss']
 })
 export class ReviewsComponent implements OnInit {
-  reviews: Review[] = [];
+  reviewsPage: Page<ReviewResponse> = {
+    content: [],
+    pageable: { pageNumber: 0, pageSize: 10 },
+    totalElements: 0,
+    totalPages: 0,
+    last: true,
+    first: true,
+    size: 0,
+    number: 0,
+    numberOfElements: 0,
+    empty: true
+  };
+  reviews: ReviewResponse[] = [];
+  currentPage: number = 0;
   isLoading: boolean = true;
   showConfirmDelete: boolean = false;
   deleteReviewId: string | null = null;
@@ -25,7 +38,7 @@ export class ReviewsComponent implements OnInit {
   editingReviewId: string | null = null;
   errorMessage: string = '';
   successMessage: string = '';
-  propertyId: string = ''; // Add missing property
+  listingId: string = ''; // Changed from propertyId to listingId
 
   constructor(
     private reviewService: ReviewService,
@@ -40,29 +53,105 @@ export class ReviewsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadUserReviews();
+    if (this.authService.isLoggedIn()) {
+      this.loadUserReviews(0);
+    } else {
+      this.isLoading = false;
+      this.errorMessage = 'You must be logged in to view your reviews';
+    }
   }
 
-  loadUserReviews(): void {
-    // Trong ứng dụng thực, lấy userId từ AuthService
-    // const userId = this.authService.getCurrentUser().id;
-    const userId = this.currentUserId; // Mã giả
+  loadUserReviews(page: number = 0): void {
+    this.isLoading = true;
+    const currentUser = this.authService.getCurrentUser();
     
-    this.reviewService.getReviewsByUserId(userId).subscribe({
-      next: (reviews) => {
-        this.reviews = reviews;
+    if (!currentUser || !currentUser.id) {
+      this.isLoading = false;
+      this.errorMessage = 'You must be logged in to view your reviews';
+      return;
+    }
+
+    console.log('Loading reviews for user ID:', currentUser.id);
+    
+    this.reviewService.getReviewsByUserId(currentUser.id, page).subscribe({
+      next: (pageData) => {
+        console.log('Received page data:', pageData);
+        this.reviewsPage = pageData;
+        
+        // Đảm bảo mỗi review có đầy đủ thông tin và không có trường null
+        if (pageData.content && Array.isArray(pageData.content)) {
+          this.reviews = pageData.content.map((review: ReviewResponse) => ({
+            ...review,
+            title: review.title || 'Untitled Review',
+            contentReview: review.contentReview || '',
+            rate: review.rate || 5,
+            countLike: review.countLike || 0,
+            createdAt: review.createdAt || new Date().toISOString()
+          }));
+        } else {
+          this.reviews = [];
+        }
+        
+        console.log('Processed reviews:', this.reviews);
+        this.currentPage = pageData.number;
         this.isLoading = false;
+        
+        if (this.reviews.length === 0) {
+          this.successMessage = 'You have not written any reviews yet.';
+        }
       },
       error: (error) => {
         console.error('Error loading reviews:', error);
         this.isLoading = false;
+        this.errorMessage = 'Failed to load reviews. Please try again.';
+        this.reviews = [];
       }
     });
   }
 
-  // Add this method to match the template
   fetchReviews(): void {
-    this.loadUserReviews();
+    this.loadUserReviews(this.currentPage);
+  }
+
+  nextPage(): void {
+    if (this.reviewsPage && !this.reviewsPage.last) {
+      this.loadUserReviews(this.currentPage + 1);
+    }
+  }
+
+  previousPage(): void {
+    if (this.reviewsPage && !this.reviewsPage.first) {
+      this.loadUserReviews(this.currentPage - 1);
+    }
+  }
+
+  goToPage(page: number): void {
+    if (this.reviewsPage && page >= 0 && page < this.reviewsPage.totalPages) {
+      this.loadUserReviews(page);
+    }
+  }
+
+  getPaginationRange(): number[] {
+    if (!this.reviewsPage) return [];
+    
+    const totalPages = this.reviewsPage.totalPages;
+    const currentPage = this.currentPage;
+    const range = 2; // Show 2 pages before and after current page
+    
+    if (totalPages <= 1) return [];
+    
+    let start = Math.max(0, currentPage - range);
+    let end = Math.min(totalPages - 1, currentPage + range);
+    
+    // Adjust if range is not fulfilled
+    if (currentPage - start < range) {
+      end = Math.min(totalPages - 1, end + (range - (currentPage - start)));
+    }
+    if (end - currentPage < range) {
+      start = Math.max(0, start - (range - (end - currentPage)));
+    }
+    
+    return Array.from({ length: end - start + 1 }, (_, i) => start + i);
   }
 
   confirmDelete(reviewId: string): void {
@@ -75,17 +164,17 @@ export class ReviewsComponent implements OnInit {
     this.deleteReviewId = null;
   }
 
-  // Fix to accept ID parameter
   deleteReview(id?: string): void {
     const reviewId = id || this.deleteReviewId;
     if (!reviewId) return;
     
     this.reviewService.deleteReview(reviewId).subscribe({
       next: () => {
-        // Successfully deleted
-        this.reviews = this.reviews.filter(review => review.id !== reviewId);
+        // Successfully deleted, reload current page to get updated data
+        this.loadUserReviews(this.currentPage);
         this.showConfirmDelete = false;
         this.deleteReviewId = null;
+        this.successMessage = 'Review deleted successfully.';
       },
       error: (error) => {
         console.error('Error deleting review:', error);
@@ -94,21 +183,20 @@ export class ReviewsComponent implements OnInit {
     });
   }
 
-  // Add this method to match the template
   saveReview(): void {
     if (this.editingReviewId) {
       this.updateReview();
     }
   }
 
-  editReview(review: Review): void {
+  editReview(review: ReviewResponse): void {
     this.editMode = true;
     this.editingReviewId = review.id;
-    this.propertyId = review.propertyId; // Set the property ID
+    this.listingId = review.listingId;
     this.reviewForm.patchValue({
-      title: review.title,
-      comment: review.comment,
-      rating: review.rating
+      title: review.title || '',
+      comment: review.contentReview || '',
+      rating: review.rate || 5
     });
   }
 
@@ -133,37 +221,35 @@ export class ReviewsComponent implements OnInit {
       return;
     }
 
+    // Get form values and ensure they're not null/undefined
+    const title = formValue.title || '';
+    const comment = formValue.comment || '';
+    const rating = formValue.rating || 5;
+
+    // Check if required fields are not empty after trimming
+    if (!title.trim()) {
+      this.errorMessage = 'Review title cannot be empty';
+      return;
+    }
+
+    if (!comment.trim()) {
+      this.errorMessage = 'Review content cannot be empty';
+      return;
+    }
+
     // Create updated review request
-    const updatedReview = {
-      listingId: this.propertyId,
+    const updatedReview: ReviewRequest = {
+      listingId: this.listingId,
       brId: currentUser.id,
-      title: formValue.title,
-      contentReview: formValue.comment,
-      rate: formValue.rating
+      title: title.trim(),
+      contentReview: comment.trim(),
+      rate: rating
     };
 
     this.reviewService.updateReview(this.editingReviewId, updatedReview).subscribe({
       next: (review) => {
-        // Convert to local review format
-        const updatedLocalReview = {
-          id: review.id,
-          propertyId: review.listingId,
-          userId: review.brId,
-          title: review.title || '',
-          comment: review.contentReview || '',
-          rating: review.rate,
-          date: new Date(review.createdAt),
-          userName: currentUser.name || 'Anonymous',
-          userAvatar: '/assets/images/avatar-placeholder.jpg',
-          helpful: review.countLike || 0
-        };
-        
-        // Update in the local array
-        const index = this.reviews.findIndex(r => r.id === this.editingReviewId);
-        if (index !== -1) {
-          this.reviews[index] = updatedLocalReview;
-        }
-        
+        // Reload the current page to refresh the data
+        this.loadUserReviews(this.currentPage);
         this.cancelEdit();
         this.successMessage = 'Review updated successfully.';
       },
@@ -180,8 +266,8 @@ export class ReviewsComponent implements OnInit {
   }
 
   // Format ngày tháng
-  formatDate(date: Date): string {
-    if (!date) return '';
-    return new Date(date).toLocaleDateString('vi-VN');
+  formatDate(dateStr: string): string {
+    if (!dateStr) return '';
+    return new Date(dateStr).toLocaleDateString('vi-VN');
   }
 } 

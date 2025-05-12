@@ -61,4 +61,8 @@ export class ToastrWrapperService {
   warning(message: string): void {
     this.showToast(message, 'warning');
   }
+
+  info(message: string): void {
+    this.showToast(message, 'info');
+  }
 } 

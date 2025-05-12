@@ -2,6 +2,7 @@
   <!-- Test Content to verify rendering -->
   <div class="test-banner" style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #3b82f6;">
     <h2 style="color: #3b82f6; margin: 0;">Admin Dashboard</h2>
+    <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">Connected to API: {{!error ? 'Yes' : 'No (using fallback data)'}}</p>
   </div>
 
   <!-- Loading State -->
@@ -9,7 +10,7 @@
     <div class="spinner-border text-primary" role="status">
       <span class="visually-hidden">Loading...</span>
     </div>
-    <p>Loading dashboard data...</p>
+    <p>Loading dashboard data from API endpoints...</p>
   </div>
 
   <!-- Error Message -->
@@ -21,9 +22,6 @@
   <!-- Dashboard Content -->
   <div class="dashboard-content" *ngIf="!isLoading">
     <h1 class="page-title">Dashboard</h1>
-    <p class="subtitle">Welcome to the admin dashboard</p>
-
-    <!-- Stats Cards -->
     <div class="stats-cards">
       <div class="row">
         <!-- Users Stats -->
@@ -36,22 +34,21 @@
               </div>
             </div>
             <div class="stats-card-body">
-              <div class="stats-number">{{ stats.users?.total || 0 }}</div>
+              <div class="stats-number">{{ stats.users.total }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
                   <span class="detail-label">Active:</span>
-                  <span class="detail-value">{{ stats.users?.active || 0 }}</span>
+                  <span class="detail-value">{{ stats.users.active }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Agents:</span>
-                  <span class="detail-value">{{ stats.users?.agents || 0 }}</span>
+                  <span class="detail-value">{{ stats.users.agents }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Transactions Stats -->
         <div class="col-md-6 col-lg-3">
           <div class="stats-card">
             <div class="stats-card-header">
@@ -61,15 +58,15 @@
               </div>
             </div>
             <div class="stats-card-body">
-              <div class="stats-number">{{ stats.transactions?.total || 0 }}</div>
+              <div class="stats-number">{{ stats.transactions.total }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
                   <span class="detail-label">Sales:</span>
-                  <span class="detail-value">{{ stats.transactions?.sales || 0 }}</span>
+                  <span class="detail-value">{{ stats.transactions.sales }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">Rentals:</span>
-                  <span class="detail-value">{{ stats.transactions?.rentals || 0 }}</span>
+                  <span class="detail-value">{{ stats.transactions.rentals }}</span>
                 </div>
               </div>
             </div>
@@ -86,15 +83,15 @@
               </div>
             </div>
             <div class="stats-card-body">
-              <div class="stats-number">{{ formatCurrency(stats.revenue?.total || 0) }}</div>
+              <div class="stats-number">{{ formatCurrency(stats.revenue.total) }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
                   <span class="detail-label">Commissions:</span>
-                  <span class="detail-value">{{ formatCurrency(stats.revenue?.commissions || 0) }}</span>
+                  <span class="detail-value">{{ formatCurrency(stats.revenue.commissions) }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">This Month:</span>
-                  <span class="detail-value">{{ formatCurrency(stats.revenue?.thisMonth || 0) }}</span>
+                  <span class="detail-value">{{ formatCurrency(stats.revenue.thisMonth) }}</span>
                 </div>
               </div>
             </div>
@@ -111,27 +108,21 @@
               </div>
             </div>
             <div class="stats-card-body">
-              <div class="stats-number">{{ stats.properties?.total || 0 }}</div>
+              <div class="stats-number">{{ stats.properties.total }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
                   <span class="detail-label">For Sale:</span>
-                  <span class="detail-value">{{ stats.properties?.forSale || 0 }}</span>
+                  <span class="detail-value">{{ stats.properties.forSale }}</span>
                 </div>
                 <div class="detail-item">
                   <span class="detail-label">For Rent:</span>
-                  <span class="detail-value">{{ stats.properties?.forRent || 0 }}</span>
+                  <span class="detail-value">{{ stats.properties.forRent }}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- User Info -->
-    <div class="user-info-section" style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
-      <h3>Current User Info</h3>
-      <pre style="background-color: #fff; padding: 15px; border-radius: 4px; overflow: auto;">{{ currentUser | json }}</pre>
     </div>
   </div>
 </div> 

@@ -3,6 +3,33 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
+import { Transaction } from '../../../models/transaction.model';
+
+interface DashboardStats {
+  users: {
+    total: number;
+    active: number;
+    agents: number;
+  };
+  transactions: {
+    total: number;
+    sales: number;
+    rentals: number;
+    pending: number;
+    completed: number;
+  };
+  revenue: {
+    total: number;
+    commissions: number;
+    thisMonth: number;
+  };
+  properties: {
+    total: number;
+    forSale: number;
+    forRent: number;
+    pending: number;
+  };
+}
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -12,8 +39,13 @@ import { AuthService } from '../../../services/auth.service';
   styleUrls: ['./admin-dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit {
-  stats: any = {};
-  recentTransactions: any[] = [];
+  stats: DashboardStats = {
+    users: { total: 0, active: 0, agents: 0 },
+    transactions: { total: 0, sales: 0, rentals: 0, pending: 0, completed: 0 },
+    revenue: { total: 0, commissions: 0, thisMonth: 0 },
+    properties: { total: 0, forSale: 0, forRent: 0, pending: 0 }
+  };
+  recentTransactions: Transaction[] = [];
   isLoading: boolean = true;
   error: string | null = null;
   currentUser: any;
@@ -30,36 +62,41 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDashboardData(): void {
     this.isLoading = true;
+    this.error = null;
     
-    // Simulate data if service fails
+    // Increase timeout for API calls
     const fallbackTimeout = setTimeout(() => {
       if (this.isLoading) {
+        this.error = 'API response timeout. Using fallback data.';
         this.provideFallbackData();
       }
-    }, 5000); // 5 second timeout
+    }, 15000); // 15 second timeout
     
     this.adminService.getDashboardStats().subscribe({
-      next: (data) => {
+      next: (data: DashboardStats) => {
         clearTimeout(fallbackTimeout);
         this.stats = data;
         this.isLoading = false;
+        console.log('Dashboard data loaded successfully:', data);
       },
-      error: (err) => {
+      error: (err: Error) => {
         clearTimeout(fallbackTimeout);
-        this.error = 'Failed to load dashboard data. Using fallback data.';
+        this.error = 'Failed to load dashboard data from API. Using fallback data.';
+        console.error('Dashboard API error:', err);
         this.provideFallbackData();
       }
     });
 
     // Get recent transactions
     this.adminService.getTransactions().subscribe({
-      next: (transactions) => {
+      next: (transactions: Transaction[]) => {
         // Sort by date (newest first) and take first 5
         this.recentTransactions = transactions
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 5);
       },
-      error: (err) => {
+      error: (err: Error) => {
+        console.error('Transactions API error:', err);
         // Provide fallback transaction data
         this.recentTransactions = this.getFallbackTransactions();
       }
@@ -77,7 +114,9 @@ export class AdminDashboardComponent implements OnInit {
       transactions: {
         total: 45,
         sales: 30,
-        rentals: 15
+        rentals: 15,
+        pending: 10,
+        completed: 35
       },
       revenue: {
         total: 125000,
@@ -87,38 +126,75 @@ export class AdminDashboardComponent implements OnInit {
       properties: {
         total: 120,
         forSale: 80,
-        forRent: 40
+        forRent: 40,
+        pending: 15
       }
     };
     
     this.recentTransactions = this.getFallbackTransactions();
   }
-  
-  getFallbackTransactions(): any[] {
+
+  getFallbackTransactions(): Transaction[] {
     return [
       {
         id: 'T001',
         propertyTitle: 'Modern Apartment in District 1',
         transactionType: 'sale',
+        type: 'sale',
         amount: 250000,
+        commissionFee: 7500,
         status: 'completed',
-        date: new Date()
+        paymentStatus: 'paid',
+        date: new Date().toISOString().split('T')[0],
+        property: {
+          id: 'P001',
+          title: 'Modern Apartment in District 1',
+          image: 'assets/images/properties/apartment1.jpg'
+        },
+        client: {
+          name: 'John Smith',
+          email: 'john@example.com'
+        }
       },
       {
         id: 'T002',
         propertyTitle: 'Luxury Villa with Pool',
         transactionType: 'sale',
+        type: 'sale',
         amount: 450000,
+        commissionFee: 13500,
         status: 'pending',
-        date: new Date(Date.now() - 86400000) // yesterday
+        paymentStatus: 'pending',
+        date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+        property: {
+          id: 'P002',
+          title: 'Luxury Villa with Pool',
+          image: 'assets/images/properties/villa1.jpg'
+        },
+        client: {
+          name: 'Sarah Johnson',
+          email: 'sarah@example.com'
+        }
       },
       {
         id: 'T003',
         propertyTitle: 'Office Space Downtown',
         transactionType: 'rent',
+        type: 'rent',
         amount: 2500,
+        commissionFee: 1250,
         status: 'completed',
-        date: new Date(Date.now() - 2 * 86400000) // 2 days ago
+        paymentStatus: 'paid',
+        date: new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0],
+        property: {
+          id: 'P003',
+          title: 'Office Space Downtown',
+          image: 'assets/images/properties/office1.jpg'
+        },
+        client: {
+          name: 'Business Corp',
+          email: 'info@business.com'
+        }
       }
     ];
   }
@@ -131,7 +207,7 @@ export class AdminDashboardComponent implements OnInit {
     }).format(amount);
   }
 
-  formatDate(date: Date): string {
+  formatDate(date: string | Date): string {
     if (!date) return '';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',

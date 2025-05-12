@@ -19,7 +19,7 @@ public class RecommendationController {
     @GetMapping("/{userId}")
     public ResponseEntity<BaseResponse<List<RecommendationResponse>>> getRecommendations(
             @PathVariable String userId,
-            @RequestParam(defaultValue = "3") int limit) {
+            @RequestParam(defaultValue = "4") int limit) {
         return ResponseFactory.ok(recommendationService.getRecommendations(userId, limit));
     }
 }

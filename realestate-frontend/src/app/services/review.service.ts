@@ -3,14 +3,13 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { Review } from '../models/review.model';
-import { ReviewRequest, ReviewResponse, BaseResponse } from '../models/user-experience.model';
+import { ReviewRequest, ReviewResponse, BaseResponse, Page } from '../models/review.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReviewService {
-  private apiUrl = `${environment.userExperienceServiceUrl}/reviews`;
+  private apiUrl = `${environment.apiUrl}/ux/reviews`;
   
   constructor(private http: HttpClient) { }
   
@@ -40,50 +39,141 @@ export class ReviewService {
 
   // Create a new review
   createReview(reviewData: ReviewRequest): Observable<ReviewResponse> {
+    console.log('Creating review:', reviewData);
     return this.http.post<BaseResponse<ReviewResponse>>(this.apiUrl, reviewData).pipe(
-      map(response => response.data)
+      map(response => {
+        console.log('Create review response:', response);
+        return response.data;
+      }),
+      catchError(error => {
+        console.error('Error creating review:', error);
+        throw error;
+      })
     );
   }
 
   // Update an existing review
   updateReview(id: string, reviewData: ReviewRequest): Observable<ReviewResponse> {
     return this.http.put<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}`, reviewData).pipe(
-      map(response => response.data)
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error updating review:', error);
+        throw error;
+      })
     );
   }
 
   // Delete a review
   deleteReview(id: string): Observable<void> {
     return this.http.delete<BaseResponse<void>>(`${this.apiUrl}/${id}`).pipe(
-      map(() => undefined as void)
+      map(() => undefined as void),
+      catchError(error => {
+        console.error('Error deleting review:', error);
+        throw error;
+      })
     );
   }
 
   // Get a review by ID
   getReviewById(id: string): Observable<ReviewResponse> {
     return this.http.get<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}`).pipe(
-      map(response => response.data)
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching review by ID:', error);
+        throw error;
+      })
     );
   }
 
   // Get reviews by buyer/renter ID
-  getReviewsByBrId(brId: string): Observable<ReviewResponse[]> {
-    return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/br/${brId}`).pipe(
-      map(response => response.data)
+  getReviewsByBrId(brId: string, page: number = 0): Observable<Page<ReviewResponse>> {
+    return this.http.get<any>(`${this.apiUrl}/br/${brId}?page=${page}`).pipe(
+      map(response => {
+        console.log('Raw response from API:', response);
+        
+        // Trường hợp API trả về đúng định dạng Page
+        if (response && response.data && response.data.content) {
+          return response.data as Page<ReviewResponse>;
+        }
+        
+        // Trường hợp API trả về dạng mảng thay vì Page
+        if (Array.isArray(response) || (response && Array.isArray(response.data))) {
+          const reviews = Array.isArray(response) ? response : response.data;
+          console.log('Converting array to Page object:', reviews);
+          
+          // Tạo Page object giả lập từ array
+          return {
+            content: reviews.map((review: any) => ({
+              ...review,
+              title: review.title || ''  // Đảm bảo title không null
+            })),
+            pageable: { pageNumber: page, pageSize: reviews.length },
+            totalElements: reviews.length,
+            totalPages: 1,
+            last: true,
+            first: true,
+            size: reviews.length,
+            number: page,
+            numberOfElements: reviews.length,
+            empty: reviews.length === 0
+          };
+        }
+        
+        // Fallback nếu không có dữ liệu
+        return {
+          content: [],
+          pageable: { pageNumber: 0, pageSize: 10 },
+          totalElements: 0,
+          totalPages: 0,
+          last: true,
+          first: true,
+          size: 0,
+          number: 0,
+          numberOfElements: 0,
+          empty: true
+        };
+      }),
+      catchError(error => {
+        console.error('Error fetching reviews by BR ID:', error);
+        return of({
+          content: [],
+          pageable: { pageNumber: 0, pageSize: 10 },
+          totalElements: 0,
+          totalPages: 0,
+          last: true,
+          first: true,
+          size: 0,
+          number: 0,
+          numberOfElements: 0,
+          empty: true
+        });
+      })
     );
   }
 
   // Get reviews by listing ID
   getReviewsByListingId(listingId: string): Observable<ReviewResponse[]> {
+    console.log('Fetching reviews for listing ID:', listingId);
     return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/listing/${listingId}`).pipe(
-      map(response => response.data)
+      map(response => {
+        console.log('Listing reviews response:', response);
+        return response.data;
+      }),
+      catchError(error => {
+        console.error('Error fetching reviews by listing ID:', error);
+        return of([]);
+      })
     );
   }
 
   // Like a review
   likeReview(id: string): Observable<ReviewResponse> {
     return this.http.post<BaseResponse<ReviewResponse>>(`${this.apiUrl}/${id}/like`, {}).pipe(
-      map(response => response.data)
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error liking review:', error);
+        throw error;
+      })
     );
   }
   
@@ -98,8 +188,7 @@ export class ReviewService {
         contentReview: 'Great location and amenities. Very clean and modern.',
         rate: 4,
         countLike: 5,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        createdAt: new Date().toISOString()
       },
       {
         id: '2',
@@ -109,8 +198,7 @@ export class ReviewService {
         contentReview: 'Amazing property with breathtaking views. Perfect for a family vacation.',
         rate: 5,
         countLike: 12,
-        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
       },
       {
         id: '3',
@@ -120,93 +208,42 @@ export class ReviewService {
         contentReview: 'Decent place for the price. Could use some maintenance on the bathroom fixtures.',
         rate: 3,
         countLike: 2,
-        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
-        updatedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
       }
     ];
   }
 
-  // Legacy methods using mock data
-  private mockReviews: Review[] = [
-    {
-      id: '1',
-      propertyId: '1',
-      userId: 'user1',
-      rating: 5,
-      title: 'Tuyệt vời! Ngôi nhà mơ ước',
-      comment: 'Tôi đã xem ngôi nhà này và nó vượt quá mong đợi. Thiết kế hiện đại, không gian rộng rãi và rất sáng sủa. Vị trí cũng rất thuận tiện.',
-      date: new Date('2023-05-15'),
-      userName: 'Hoàng Minh',
-      userAvatar: 'https://placehold.co/200x200/2c3e50/ffffff?text=HM',
-      helpful: 12
-    },
-    {
-      id: '2',
-      propertyId: '1',
-      userId: 'user2',
-      rating: 4,
-      title: 'Rất tốt nhưng còn vài điểm cần cải thiện',
-      comment: 'Ngôi nhà rất đẹp và thiết kế hợp lý. Tuy nhiên, hệ thống điều hòa hơi ồn và cần được bảo trì tốt hơn.',
-      date: new Date('2023-06-20'),
-      userName: 'Nguyễn Thảo',
-      userAvatar: 'https://placehold.co/200x200/e74c3c/ffffff?text=NT',
-      helpful: 5
-    },
-    {
-      id: '3',
-      propertyId: '2',
-      userId: 'user3',
-      rating: 5,
-      title: 'Căn hộ sang trọng đáng giá',
-      comment: 'Penthouse này thực sự tuyệt vời! Tầm nhìn ra thành phố ngoạn mục và các tiện nghi cao cấp. Đáng đồng tiền bát gạo.',
-      date: new Date('2023-07-10'),
-      userName: 'Trần Đức',
-      userAvatar: 'https://placehold.co/200x200/3498db/ffffff?text=TD',
-      helpful: 8
-    },
-    {
-      id: '4',
-      propertyId: '3',
-      userId: 'user1',
-      rating: 3,
-      title: 'Tiềm năng nhưng cần cải tạo',
-      comment: 'Cottage này có vị trí tốt và không gian ấm cúng, nhưng cần được sửa chữa và nâng cấp một số khu vực.',
-      date: new Date('2023-08-05'),
-      userName: 'Hoàng Minh',
-      userAvatar: 'https://placehold.co/200x200/2c3e50/ffffff?text=HM',
-      helpful: 3
-    }
-  ];
-
-  getReviewsByPropertyId(propertyId: string): Observable<Review[]> {
-    const propertyReviews = this.mockReviews.filter(
-      review => review.propertyId === propertyId
-    );
-    return of(propertyReviews);
+  // Legacy methods converted to use ReviewResponse
+  getReviewsByPropertyId(propertyId: string): Observable<ReviewResponse[]> {
+    return this.getReviewsByListingId(propertyId);
   }
 
-  getReviewsByUserId(userId: string): Observable<Review[]> {
-    const reviews = this.mockReviews.filter(review => review.userId === userId);
-    return of(reviews);
+  getReviewsByUserId(userId: string, page: number = 0): Observable<Page<ReviewResponse>> {
+    return this.getReviewsByBrId(userId, page);
   }
 
-  addReview(review: Omit<Review, 'id' | 'date' | 'helpful'>): Observable<Review> {
-    const newReview: Review = {
+  addReview(review: Omit<ReviewRequest, 'brId'>): Observable<ReviewResponse> {
+    // Simply redirect to the new API method
+    const newReviewRequest: ReviewRequest = {
       ...review,
-      id: `rev-${this.mockReviews.length + 1}`,
-      date: new Date(),
-      helpful: 0
+      brId: review.listingId, // This is a placeholder, should be replaced with actual user ID
+      rate: review.rate || 5
     };
-    this.mockReviews.push(newReview);
-    return of(newReview);
+    
+    return this.createReview(newReviewRequest);
   }
 
-  markHelpful(id: string): Observable<Review> {
-    const review = this.mockReviews.find(r => r.id === id);
-    if (review) {
-      review.helpful = (review.helpful || 0) + 1;
-      return of(review);
+  markHelpful(id: string): Observable<ReviewResponse> {
+    return this.likeReview(id);
+  }
+
+  // Helper method to calculate average rating
+  calculateAverageRating(reviews: ReviewResponse[]): number {
+    if (!reviews || reviews.length === 0) {
+      return 0;
     }
-    return of({} as Review);
+    
+    const sum = reviews.reduce((acc, review) => acc + review.rate, 0);
+    return parseFloat((sum / reviews.length).toFixed(1));
   }
 } 

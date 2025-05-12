@@ -2,6 +2,7 @@ package spring.userexperienceservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -44,8 +45,10 @@ public class ReviewController {
     }
 
     @GetMapping("/br/{brId}")
-    public ResponseEntity<BaseResponse<List<ReviewResponse>>> getReviewsByBrId(@PathVariable String brId) {
-        return ResponseFactory.ok(reviewService.getReviewsByBrId(brId));
+    public ResponseEntity<BaseResponse<Page<ReviewResponse>>> getReviewsByBrId(@PathVariable String brId
+    ,  @RequestParam(name = "page", defaultValue = "0") int page) {
+        Page<ReviewResponse> reviews = reviewService.getReviewsByBrId(brId, page);
+        return ResponseFactory.ok(reviews);
     }
 
     @GetMapping("/listing/{listingId}")

@@ -19,36 +19,36 @@
   <div *ngIf="!isLoading && !error" class="filter-tabs mt-4">
     <button 
       class="btn" 
-      [class.active]="filterStatus === 'all'"
-      (click)="changeFilter('all')"
+      [class.active]="filterStatus === 'ALL'"
+      (click)="changeFilter('ALL')"
     >
       All
     </button>
     <button 
       class="btn" 
-      [class.active]="filterStatus === 'pending'"
-      (click)="changeFilter('pending')"
+      [class.active]="filterStatus === 'PENDING'"
+      (click)="changeFilter('PENDING')"
     >
       Pending
     </button>
     <button 
       class="btn" 
-      [class.active]="filterStatus === 'confirmed'"
-      (click)="changeFilter('confirmed')"
+      [class.active]="filterStatus === 'CONFIRMED'"
+      (click)="changeFilter('CONFIRMED')"
     >
       Confirmed
     </button>
     <button 
       class="btn" 
-      [class.active]="filterStatus === 'completed'"
-      (click)="changeFilter('completed')"
+      [class.active]="filterStatus === 'COMPLETED'"
+      (click)="changeFilter('COMPLETED')"
     >
       Completed
     </button>
     <button 
       class="btn" 
-      [class.active]="filterStatus === 'cancelled'"
-      (click)="changeFilter('cancelled')"
+      [class.active]="filterStatus === 'CANCELLED'"
+      (click)="changeFilter('CANCELLED')"
     >
       Cancelled
     </button>
@@ -130,15 +130,12 @@
               <span class="badge" [ngClass]="getStatusBadgeClass(appointment.status)">
                 {{ getStatusText(appointment.status) }}
               </span>
-              <small class="d-block mt-1 text-muted">
-                Updated: {{ formatDate(appointment.updatedAt || appointment.createdAt) }}
-              </small>
             </div>
             
             <div class="action-buttons">
               <!-- Show cancel button only for pending or confirmed appointments -->
               <button 
-                *ngIf="appointment.status === 'pending' || appointment.status === 'confirmed'" 
+                *ngIf="appointment.status === 'PENDING' || appointment.status === 'CONFIRMED'" 
                 class="btn btn-sm btn-outline-danger w-100 mb-2"
                 (click)="cancelAppointment(appointment.id)"
               >
