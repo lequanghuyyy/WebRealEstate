@@ -23,7 +23,9 @@ public class ListingMapper {
         return modelMapper.map(listingRequest, ListingEntity.class);
     }
     public ListingResponse convertToListingResponse(ListingEntity listingEntity) {
-        return modelMapper.map(listingEntity, ListingResponse.class);
+        ListingResponse listingResponse = modelMapper.map(listingEntity, ListingResponse.class);
+        listingResponse.setListingStatus(listingEntity.getStatus());
+        return listingResponse;
     }
 
     public ListingEntity updateListingEntity(ListingEntity existingEntity, ListingRequest request) {

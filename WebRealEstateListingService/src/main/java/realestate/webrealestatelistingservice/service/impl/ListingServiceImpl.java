@@ -4,6 +4,7 @@ import com.cloudinary.Cloudinary;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.apache.coyote.BadRequestException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import realestate.webrealestatelistingservice.constant.ListingStatus;
 import realestate.webrealestatelistingservice.constant.ListingType;
+import realestate.webrealestatelistingservice.dto.Position;
 import realestate.webrealestatelistingservice.dto.paging.PageDto;
 import realestate.webrealestatelistingservice.dto.request.ListingRequest;
 import realestate.webrealestatelistingservice.dto.request.ListingSearchRequest;
@@ -22,9 +24,12 @@ import realestate.webrealestatelistingservice.exception.NotFoundException;
 import realestate.webrealestatelistingservice.mapper.ListingMapper;
 import realestate.webrealestatelistingservice.repository.ListingRepository;
 import realestate.webrealestatelistingservice.repository.specification.ListingSpecification;
+import realestate.webrealestatelistingservice.service.GeocodingService;
 import realestate.webrealestatelistingservice.service.ListingService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +40,7 @@ public class ListingServiceImpl implements ListingService {
     ListingRepository listingRepository;
     ListingMapper listingMapper;
     Cloudinary cloudinary;
+    GeocodingService geocodingService;
 
     @Override
     public ListingResponse createListing(ListingRequest listingRequest) {
@@ -42,6 +48,14 @@ public class ListingServiceImpl implements ListingService {
         if (listingEntity.getStatus() == null) {
             listingEntity.setStatus(ListingStatus.AVAILABLE);
         }
+        Optional<Position> posOpt = geocodingService.geocode(listingRequest.getAddress());
+        if (posOpt.isEmpty()) {
+            throw new RuntimeException("Địa chỉ không hợp lệ");
+        }
+        Position pos = posOpt.get();
+        listingEntity.setLatitude(BigDecimal.valueOf(pos.getLat()));
+        listingEntity.setLongitude(BigDecimal.valueOf(pos.getLon()));
+
         listingEntity = listingRepository.save(listingEntity);
         return listingMapper.convertToListingResponse(listingEntity);
     }
