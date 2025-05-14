@@ -58,12 +58,6 @@ import { ListingResponse, ListingStatus, ListingType, PageDto } from '../../../m
                   <td>{{ listing.id | slice:0:8 }}...</td>
                   <td>
                     <div class="d-flex align-items-center">
-                      <img 
-                        [src]="listing.image" 
-                        alt="{{ listing.title }}" 
-                        class="listing-thumbnail me-2"
-                        onError="this.src='/assets/images/property-placeholder.jpg'"
-                      >
                       <div>
                         <div class="fw-bold">{{ listing.title }}</div>
                         <small>{{ listing.address }}, {{ listing.city }}</small>
@@ -92,6 +86,9 @@ import { ListingResponse, ListingStatus, ListingType, PageDto } from '../../../m
                     <div class="btn-group">
                       <button class="btn btn-sm btn-outline-primary" [routerLink]="['/property', listing.id]">
                         <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-sm btn-outline-info" [routerLink]="['/admin/listings/edit', listing.id]">
+                        <i class="fas fa-edit"></i>
                       </button>
                       <button class="btn btn-sm btn-outline-success" (click)="approveListing(listing.id)" *ngIf="listing.status === 'PENDING'">
                         <i class="fas fa-check"></i>
@@ -161,13 +158,6 @@ import { ListingResponse, ListingStatus, ListingType, PageDto } from '../../../m
     .subtitle {
       color: #6c757d;
       margin-bottom: 0;
-    }
-    
-    .listing-thumbnail {
-      width: 50px;
-      height: 50px;
-      object-fit: cover;
-      border-radius: 4px;
     }
   `]
 })

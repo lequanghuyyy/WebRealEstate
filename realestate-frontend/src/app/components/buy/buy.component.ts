@@ -5,13 +5,14 @@ import { Router, RouterModule } from '@angular/router';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
 import { TransactionStatus } from '../../models/transaction.model';
+import { DefaultImageDirective } from '../../directives/default-image.directive';
 
 @Component({
   selector: 'app-buy',
   templateUrl: './buy.component.html',
   styleUrls: ['./buy.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, DefaultImageDirective]
 })
 export class BuyComponent implements OnInit {
   transactions: Transaction[] = [];

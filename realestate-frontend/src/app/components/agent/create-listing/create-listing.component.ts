@@ -7,6 +7,9 @@ import { AuthService } from '../../../services/auth.service';
 import { Property } from '../../../models/property.model';
 import { UserAdapters } from '../../../utils/user-adapters';
 import { ListingRequest, ListingType, ListingPropertyType } from '../../../models/listing.model';
+import { ListingService } from '../../../services/listing.service';
+import { forkJoin, of } from 'rxjs';
+import { switchMap, catchError } from 'rxjs/operators';
 
 @Component({
   selector: 'app-create-listing',
@@ -46,22 +49,22 @@ export class CreateListingComponent implements OnInit {
     private propertyApiService: PropertyApiService,
     private authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private listingService: ListingService
   ) {
     this.listingForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(100)]],
       description: ['', [Validators.required, Validators.minLength(20)]],
-      address: ['', Validators.required],
-      city: ['', Validators.required],
-      price: [null, [Validators.required, Validators.min(0)]],
-      area: [null, [Validators.required, Validators.min(1)]],
-      bedrooms: [null, [Validators.min(0)]],
-      bathrooms: [null, [Validators.min(0)]],
-      yearBuilt: [null, [Validators.min(1900), Validators.max(new Date().getFullYear())]],
-      type: ['sale', Validators.required],
-      status: ['available', Validators.required],
-      style: ['house', Validators.required],
-      tags: [[]]
+      address: ['', [Validators.required, Validators.minLength(5)]],
+      city: ['', [Validators.required]],
+      price: ['', [Validators.required, Validators.min(0)]],
+      area: ['', [Validators.required, Validators.min(0)]],
+      bedrooms: ['', [Validators.required, Validators.min(0), Validators.max(20)]],
+      bathrooms: ['', [Validators.required, Validators.min(0), Validators.max(20)]],
+      yearBuilt: ['', [Validators.required, Validators.min(1900), Validators.max(new Date().getFullYear())]],
+      type: ['sale', [Validators.required]],
+      style: ['house', [Validators.required]],
+      status: ['available']
     });
   }
 
@@ -140,17 +143,15 @@ export class CreateListingComponent implements OnInit {
     
     const formValue = this.listingForm.value;
     
-    // For image: 
-    // - For new listings: If no image, send empty string
-    // - For editing: If no new image selected, send empty string and let backend handle keeping the existing image
-    const imageToUse = this.imagePreviewUrls.length > 0 ? this.imagePreviewUrls[0] : '';
+    // For single image approach:
+    // const imageToUse = this.imagePreviewUrls.length > 0 ? this.imagePreviewUrls[0] : '';
     
     const listingRequest: ListingRequest = {
       title: formValue.title,
       description: formValue.description,
       address: formValue.address,
       city: formValue.city,
-      image: imageToUse,
+      image: '', // Will be updated after images are uploaded
       price: formValue.price,
       area: formValue.area,
       bedrooms: formValue.bedrooms || 0,
@@ -162,38 +163,110 @@ export class CreateListingComponent implements OnInit {
     };
     
     if (this.editMode && this.listingId) {
-      this.propertyApiService.updateListing(this.listingId, listingRequest).subscribe({
-        next: (updatedListing) => {
-          this.isSubmitting = false;
-          this.successMessage = 'Property listing updated successfully!';
-          
-          setTimeout(() => {
-            this.router.navigate(['/property', updatedListing.id]);
-          }, 1500);
-        },
-        error: (error) => {
-          console.error('Error updating property:', error);
-          this.errorMessage = 'Failed to update property. Please try again.';
-          this.isSubmitting = false;
-        }
-      });
+      // Update listing
+      this.propertyApiService.updateListing(this.listingId, listingRequest)
+        .pipe(
+          switchMap(updatedListing => {
+            // If we have images to upload
+            if (this.selectedImages.length > 0) {
+              return this.uploadImages(updatedListing.id);
+            }
+            return of(updatedListing);
+          })
+        )
+        .subscribe({
+          next: (updatedListing) => {
+            this.isSubmitting = false;
+            this.successMessage = 'Property listing updated successfully!';
+            
+            setTimeout(() => {
+              this.router.navigate(['/property', updatedListing.id]);
+            }, 1500);
+          },
+          error: (error) => {
+            console.error('Error updating property:', error);
+            this.errorMessage = 'Failed to update property. Please try again.';
+            this.isSubmitting = false;
+          }
+        });
     } else {
-      this.propertyApiService.createListing(listingRequest).subscribe({
-        next: (newListing) => {
-          this.isSubmitting = false;
-          this.successMessage = 'Property listing created successfully!';
-          
-          setTimeout(() => {
-            this.router.navigate(['/property', newListing.id]);
-          }, 1500);
-        },
-        error: (error) => {
-          console.error('Error creating property:', error);
-          this.errorMessage = 'Failed to create property. Please try again.';
-          this.isSubmitting = false;
-        }
-      });
+      // Create new listing
+      this.propertyApiService.createListing(listingRequest)
+        .pipe(
+          switchMap(newListing => {
+            // If we have images to upload
+            if (this.selectedImages.length > 0) {
+              return this.uploadImages(newListing.id);
+            }
+            return of(newListing);
+          })
+        )
+        .subscribe({
+          next: (newListing) => {
+            this.isSubmitting = false;
+            this.successMessage = 'Property listing created successfully!';
+            
+            setTimeout(() => {
+              this.router.navigate(['/property', newListing.id]);
+            }, 1500);
+          },
+          error: (error) => {
+            console.error('Error creating property:', error);
+            this.errorMessage = 'Failed to create property. Please try again.';
+            this.isSubmitting = false;
+          }
+        });
     }
+  }
+
+  // Upload all images for a listing
+  private uploadImages(listingId: string) {
+    if (this.selectedImages.length === 0) {
+      return of({ id: listingId });
+    }
+    
+    // If only one image, use single upload
+    if (this.selectedImages.length === 1) {
+      return this.listingService.uploadListingImage(listingId, this.selectedImages[0])
+        .pipe(
+          switchMap(imageUrl => {
+            // Update the main listing image with the first uploaded image
+            return this.propertyApiService.updateListing(listingId, { image: imageUrl } as any)
+              .pipe(
+                catchError(error => {
+                  console.error('Error updating listing with image URL:', error);
+                  return of({ id: listingId });
+                })
+              );
+          }),
+          catchError(error => {
+            console.error('Error uploading image:', error);
+            return of({ id: listingId });
+          })
+        );
+    }
+    
+    // For multiple images, use multiple upload
+    return this.listingService.uploadMultipleListingImages(listingId, this.selectedImages)
+      .pipe(
+        switchMap(imageUrls => {
+          if (imageUrls.length > 0) {
+            // Update the main listing image with the first uploaded image
+            return this.propertyApiService.updateListing(listingId, { image: imageUrls[0] } as any)
+              .pipe(
+                catchError(error => {
+                  console.error('Error updating listing with image URL:', error);
+                  return of({ id: listingId });
+                })
+              );
+          }
+          return of({ id: listingId });
+        }),
+        catchError(error => {
+          console.error('Error uploading multiple images:', error);
+          return of({ id: listingId });
+        })
+      );
   }
 
     private mapPropertyType(style: string): ListingPropertyType {

@@ -341,44 +341,70 @@ export class AuthService {
 
   // Method to check user roles
   isAdmin(): boolean {
-    const user = this.getCurrentUser();
-    if (!user) {
-      return false;
-    }
-    
-    // Handle case where roles is not an array but a single string
-    if (typeof user.roles === 'string') {
-      const roleStr = String(user.roles).toUpperCase();
-      return roleStr === 'ADMIN' || roleStr === 'ROLE_ADMIN';
-    }
-    
-    // Handle case where roles might not be defined
-    if (!user.roles) {
-      return false;
-    }
-    
-    // If roles is an array (most common case)
-    if (Array.isArray(user.roles)) {
-      // Directly check for 'ADMIN' role as it appears in the received data
-      if (user.roles.includes('ADMIN')) {
-        return true;
-      }
-      
-      // Normalized check for different case formats
-      const normalizedRoles = user.roles.map(role => {
-        if (typeof role === 'string') {
-          return role.toUpperCase();
+    // Check localStorage directly
+    const storedUser = localStorage.getItem(this.userKey);
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.roles) {
+          if (Array.isArray(user.roles)) {
+            return user.roles.includes('ADMIN');
+          } else if (typeof user.roles === 'string') {
+            return user.roles === 'ADMIN';
+          }
         }
-        return '';
-      });
-      
-      // Check all possible admin role variations
-      return normalizedRoles.some(r => 
-        r === 'ADMIN' || 
-        r === 'ROLE_ADMIN' || 
-        r === 'ADMINISTRATOR');
+      } catch (e) {
+        console.error('Error parsing user data from localStorage', e);
+      }
     }
     
+    // No valid user data or no admin role
+    return false;
+  }
+
+  // Check if current user is a buyer
+  isBuyer(): boolean {
+    // Check localStorage directly
+    const storedUser = localStorage.getItem(this.userKey);
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.roles) {
+          if (Array.isArray(user.roles)) {
+            return user.roles.includes('BUYER');
+          } else if (typeof user.roles === 'string') {
+            return user.roles === 'BUYER';
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing user data from localStorage', e);
+      }
+    }
+    
+    // No valid user data or no buyer role
+    return false;
+  }
+  
+  // Check if current user is a renter
+  isRenter(): boolean {
+    // Check localStorage directly
+    const storedUser = localStorage.getItem(this.userKey);
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        if (user.roles) {
+          if (Array.isArray(user.roles)) {
+            return user.roles.includes('RENTER');
+          } else if (typeof user.roles === 'string') {
+            return user.roles === 'RENTER';
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing user data from localStorage', e);
+      }
+    }
+    
+    // No valid user data or no renter role
     return false;
   }
 

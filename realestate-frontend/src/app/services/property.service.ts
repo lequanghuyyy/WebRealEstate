@@ -119,6 +119,34 @@ export class PropertyService {
 
   // Helper method to convert ListingResponse to Property model
   private convertListingToProperty(listing: ListingResponse): Property {
+    // Xác định ảnh để sử dụng
+    let propertyImages = [];
+    
+    // Nếu listing có mảng images và không rỗng, sử dụng mảng đó
+    if (listing.images && listing.images.length > 0) {
+      propertyImages = listing.images.map(img => img.imageUrl);
+    } 
+    // Nếu listing có trường image và không rỗng, sử dụng trường đó
+    else if (listing.image && listing.image.trim() !== '') {
+      propertyImages = [listing.image];
+    } 
+    // Nếu không có ảnh nào, sử dụng ảnh mặc định
+    else {
+      propertyImages = ['assets/images/property-1.jpg'];
+    }
+
+    // Get the owner info from the ownerId which is the agent
+    let agentInfo = {
+      id: listing.ownerId,
+      name: 'Agent', // Will be updated in PropertyDetailsComponent by UserService
+      email: 'agent@example.com',
+      phone: '123-456-7890',
+      photo: 'assets/images/agent-placeholder.jpg',
+      title: 'Real Estate Agent'
+    };
+
+    // Try to get user/agent by ID if we implement that later
+
     return {
       id: listing.id,
       title: listing.title,
@@ -140,14 +168,8 @@ export class PropertyService {
         yearBuilt: listing.yearBuilt || new Date().getFullYear() - 3 // Use actual yearBuilt or fallback
       },
       amenities: [],
-      images: [listing.image || 'assets/images/property-placeholder.jpg'],
-      agent: {
-        id: listing.ownerId,
-        name: 'Agent',
-        email: 'agent@example.com',
-        phone: '123-456-7890',
-        photo: 'assets/images/agent-placeholder.jpg'
-      },
+      images: propertyImages,
+      agent: agentInfo,
       tags: [listing.propertyType],
       createdAt: listing.createdAt,
       updatedAt: listing.updatedAt,

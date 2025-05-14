@@ -37,18 +37,17 @@
         <div class="link-group">
           <h4>Property Types</h4>
           <ul>
-            <li><a routerLink="/listings/apartment">Apartments</a></li>
-            <li><a routerLink="/listings/house">Houses</a></li>
-            <li><a routerLink="/listings/villa">Villas</a></li>
+            <li><a [routerLink]="['/properties']" [queryParams]="{propertyType: 'Apartment'}">Apartments</a></li>
+            <li><a [routerLink]="['/properties']" [queryParams]="{propertyType: 'House'}">Houses</a></li>
+            <li><a [routerLink]="['/properties']" [queryParams]="{propertyType: 'Villa'}">Villas</a></li>
           </ul>
         </div>
 
         <div class="link-group">
           <h4>Services</h4>
           <ul>
-            <li><a routerLink="/services/buying">Buying</a></li>
-            <li><a routerLink="/services/selling">Selling</a></li>
-            <li><a routerLink="/services/renting">Renting</a></li>
+            <li><a [routerLink]="['/properties']" [queryParams]="{type: 'SALE'}">Buying</a></li>
+            <li><a [routerLink]="['/properties']" [queryParams]="{type: 'RENT'}">Renting</a></li>
           </ul>
         </div>
 

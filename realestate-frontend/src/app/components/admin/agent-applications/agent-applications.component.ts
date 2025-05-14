@@ -55,7 +55,7 @@ export class AgentApplicationsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading agent applications', err);
-        this.error = 'Không thể tải dữ liệu đăng ký. Vui lòng thử lại sau.';
+        this.error = 'Unable to load application data. Please try again later.';
         this.isLoading = false;
       }
     });
@@ -118,7 +118,7 @@ export class AgentApplicationsComponent implements OnInit {
           this.applyFilters();
         }
         
-        this.successMessage = `Đã phê duyệt đăng ký của ${result.fullName} thành công!`;
+        this.successMessage = `Successfully approved ${result.fullName}'s application!`;
         this.showApproveModal = false;
         
         // Hide success message after 5 seconds
@@ -128,7 +128,7 @@ export class AgentApplicationsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error approving application', err);
-        this.error = 'Không thể phê duyệt đăng ký. Vui lòng thử lại sau.';
+        this.error = 'Unable to approve the application. Please try again later.';
         
         // Hide error after 5 seconds
         setTimeout(() => {
@@ -143,7 +143,7 @@ export class AgentApplicationsComponent implements OnInit {
     
     const notes = this.applicationForm.value.notes;
     if (!notes || notes.trim() === '') {
-      this.error = 'Vui lòng cung cấp lý do từ chối đăng ký';
+      this.error = 'Please provide a reason for rejecting the application';
       return;
     }
     
@@ -158,7 +158,7 @@ export class AgentApplicationsComponent implements OnInit {
           this.applyFilters();
         }
         
-        this.successMessage = `Đã từ chối đăng ký của ${result.fullName}.`;
+        this.successMessage = `Successfully rejected ${result.fullName}'s application.`;
         this.showRejectModal = false;
         
         // Hide success message after 5 seconds
@@ -168,7 +168,7 @@ export class AgentApplicationsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error rejecting application', err);
-        this.error = 'Không thể từ chối đăng ký. Vui lòng thử lại sau.';
+        this.error = 'Unable to reject the application. Please try again later.';
         
         // Hide error after 5 seconds
         setTimeout(() => {
@@ -186,9 +186,9 @@ export class AgentApplicationsComponent implements OnInit {
 
   formatDate(dateString: string): string {
     const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      day: '2-digit',
-      month: '2-digit',
+    return date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'

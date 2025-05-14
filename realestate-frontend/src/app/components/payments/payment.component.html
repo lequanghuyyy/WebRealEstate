@@ -175,7 +175,7 @@
               </span>
             </td>
             <td class="actions">
-              <button class="btn btn-sm btn-outline-primary view-btn" title="View Details">
+              <button class="btn btn-sm btn-outline-primary view-btn" title="View Details" (click)="viewPaymentDetails(payment)">
                 <i class="fas fa-eye"></i>
               </button>
               <button *ngIf="payment.paymentStatus === 'PENDING'"
@@ -224,6 +224,97 @@
           </ul>
         </nav>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Details Modal -->
+<div class="payment-detail-modal" *ngIf="selectedPayment" (click)="closePaymentDetails($event)">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <div class="header-content">
+        <h3>
+          <i class="fas fa-file-invoice-dollar me-2"></i>
+          Payment Details
+        </h3>
+        <span [ngClass]="getPaymentStatusClass(selectedPayment.paymentStatus)" class="status-badge">
+          {{ selectedPayment.paymentStatus }}
+        </span>
+      </div>
+      <button class="close-btn" (click)="closePaymentDetails()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    
+    <!-- Modal Body -->
+    <div class="modal-body">
+      <div class="detail-section">
+        <div class="detail-row">
+          <div class="detail-label">Payment ID</div>
+          <div class="detail-value">{{ selectedPayment.id }}</div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Transaction ID</div>
+          <div class="detail-value id-value">{{ selectedPayment.transactionId }}</div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Amount</div>
+          <div class="detail-value amount">{{ getFormattedCurrency(selectedPayment.amount) }}</div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Commission Fee</div>
+          <div class="detail-value">{{ getFormattedCurrency(selectedPayment.commissionFee) }}</div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Payment Method</div>
+          <div class="detail-value">
+            <i class="fas me-2" [ngClass]="getPaymentMethodIcon(selectedPayment.paymentMethod)"></i>
+            {{ selectedPayment.paymentMethod.replace('_', ' ') }}
+          </div>
+        </div>
+        
+        <div class="detail-row">
+          <div class="detail-label">Payment Date</div>
+          <div class="detail-value">{{ getDateFormatted(selectedPayment.createdAt) }}</div>
+        </div>
+        
+        <div class="detail-row" *ngIf="selectedPayment.paymentDate">
+          <div class="detail-label">Settlement Date</div>
+          <div class="detail-value">{{ getDateFormatted(selectedPayment.paymentDate) }}</div>
+        </div>
+        
+        <div class="detail-row" *ngIf="selectedPayment.notes">
+          <div class="detail-label">Notes</div>
+          <div class="detail-value notes">{{ selectedPayment.notes }}</div>
+        </div>
+      </div>
+      
+      <div class="transaction-details" *ngIf="selectedPayment.transaction">
+        <h4>Transaction Information</h4>
+        <div class="detail-row">
+          <div class="detail-label">Property</div>
+          <div class="detail-value">{{ selectedPayment.transaction.propertyTitle || 'N/A' }}</div>
+        </div>
+        <div class="detail-row">
+          <div class="detail-label">Type</div>
+          <div class="detail-value">{{ selectedPayment.transactionStyle || 'N/A' }}</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Modal Footer -->
+    <div class="modal-footer">
+      <button class="btn btn-outline-secondary" (click)="closePaymentDetails()">Close</button>
+      <button *ngIf="selectedPayment.paymentStatus === 'PENDING'" 
+              class="btn btn-success" 
+              (click)="completePayment(selectedPayment); closePaymentDetails()">
+        <i class="fas fa-check me-2"></i>Mark as Completed
+      </button>
     </div>
   </div>
 </div> 

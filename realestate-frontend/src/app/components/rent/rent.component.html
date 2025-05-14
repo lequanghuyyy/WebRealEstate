@@ -39,7 +39,7 @@
             </div>
             <div class="stat-content">
               <h3>{{ totalRentals }}</h3>
-              <p>Total Rentals</p>
+              <p>Total Transactions</p>
             </div>
           </div>
         </div>
@@ -49,8 +49,8 @@
               <i class="fas fa-check-circle"></i>
             </div>
             <div class="stat-content">
-              <h3>{{ activeRentals }}</h3>
-              <p>Active Rentals</p>
+              <h3>{{ completedTransactions }}</h3>
+              <p>Completed</p>
             </div>
           </div>
         </div>
@@ -60,8 +60,8 @@
               <i class="fas fa-clock"></i>
             </div>
             <div class="stat-content">
-              <h3>{{ pendingApprovals }}</h3>
-              <p>Pending Approvals</p>
+              <h3>{{ pendingTransactions }}</h3>
+              <p>Pending</p>
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@
                 <td>
                   <div class="property-info">
                     <div class="property-image">
-                      <img [src]="transaction.property.image || 'assets/images/properties/placeholder.jpg'" alt="Property">
+                      <img [src]="transaction.property.image || 'assets/images/property-1.jpg'" alt="Property" appDefaultImage>
                     </div>
                     <div class="property-details">
                       <h5>{{ transaction.property.title }}</h5>
@@ -196,49 +196,6 @@
               </tr>
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-
-    <!-- Upcoming Payments Section -->
-    <div class="card mt-4">
-      <div class="card-header">
-        <h3 class="mb-0">Upcoming Payments</h3>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6">
-            <div class="upcoming-payment-card">
-              <div class="payment-date">
-                <span class="month">OCT</span>
-                <span class="day">15</span>
-              </div>
-              <div class="payment-details">
-                <h5>Monthly Rent Payment</h5>
-                <p>Masteri An Phu Apartment</p>
-                <p class="amount">{{ formatCurrency(25000000) }}</p>
-              </div>
-              <div class="payment-actions">
-                <button class="btn btn-sm btn-primary">Pay Now</button>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-6">
-            <div class="upcoming-payment-card">
-              <div class="payment-date">
-                <span class="month">NOV</span>
-                <span class="day">01</span>
-              </div>
-              <div class="payment-details">
-                <h5>Monthly Rent Payment</h5>
-                <p>Urban Loft</p>
-                <p class="amount">{{ formatCurrency(35000000) }}</p>
-              </div>
-              <div class="payment-actions">
-                <button class="btn btn-sm btn-primary">Pay Now</button>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>

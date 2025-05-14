@@ -6,13 +6,15 @@ import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
 import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { TransactionService } from '../../../services/transaction.service';
+import { DefaultImageDirective } from '../../../directives/default-image.directive';
 import { 
   ListingResponse, 
   ListingType, 
   ListingStatus, 
   ListingStatusUpdateRequest,
   ListingPropertyType,
-  PageDto 
+  PageDto,
+  ListingImageResponse
 } from '../../../models/listing.model';
 import { 
   RentalStatus,
@@ -25,7 +27,7 @@ import {
   templateUrl: './agent-rent.component.html',
   styleUrls: ['./agent-rent.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule]
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DefaultImageDirective]
 })
 export class AgentRentComponent implements OnInit {
   // Properties
@@ -72,6 +74,9 @@ export class AgentRentComponent implements OnInit {
 
   // Rental transactions
   rentalTransactions: RentalTransactionResponse[] = [];
+
+  // Default image path
+  defaultImage: string = 'assets/images/placeholder-property.jpg';
   
   constructor(
     private authService: AuthService,
@@ -120,6 +125,9 @@ export class AgentRentComponent implements OnInit {
           this.listings = pageData.items.filter(item => item.ownerId === this.agentId);
           console.log(`Found ${this.listings.length} rental listings for agent ${this.agentId} out of ${pageData.items.length} total`);
           
+          // Fetch images for each listing
+          this.loadListingImages();
+          
           this.applyFilters();
           this.calculateStats();
           this.isLoading = false;
@@ -132,6 +140,39 @@ export class AgentRentComponent implements OnInit {
       });
     }
   }
+
+  loadListingImages(): void {
+    // For each listing, try to get main image
+    this.listings.forEach(listing => {
+      // Nếu listing có sẵn mainURL thì sử dụng luôn
+      if (listing.mainURL) {
+        listing.image = listing.mainURL;
+      }
+      // Nếu không có mainURL nhưng có images array
+      else if (listing.images && listing.images.length > 0) {
+        // Kiểm tra xem images là mảng chuỗi hay mảng object
+        if (typeof listing.images[0] === 'string') {
+          listing.image = listing.images[0];
+        } else if (listing.images[0].hasOwnProperty('imageUrl')) {
+          listing.image = listing.images[0].imageUrl;
+        }
+      }
+      // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
+      else if (!listing.image && listing.id) {
+        this.listingService.getMainImageUrl(listing.id).subscribe({
+          next: (imageUrl: string) => {
+            if (imageUrl) {
+              listing.image = imageUrl;
+            }
+          },
+          error: (err) => {
+            console.error(`Error loading main image for listing ${listing.id}:`, err);
+            // Use default image in case of error - already handled by directive
+          }
+        });
+      }
+    });
+  }
   
   loadRentalRequests(): void {
     if (this.agentId) {
@@ -140,6 +181,9 @@ export class AgentRentComponent implements OnInit {
           this.rentalRequests = requests;
           this.filteredRequests = [...requests];
           this.pendingRequests = requests.filter(req => req.status === 'PENDING').length;
+          
+          // Load images for each request listing
+          this.loadRequestListingImages();
         },
         error: (err: any) => {
           console.error('Error loading rental requests:', err);
@@ -155,6 +199,9 @@ export class AgentRentComponent implements OnInit {
           this.activeRentalsList = rentals;
           this.filteredRentals = [...rentals];
           this.activeRentals = rentals.length;
+          
+          // Load images for each active rental listing
+          this.loadRentalListingImages();
         },
         error: (err: any) => {
           console.error('Error loading active rentals:', err);
@@ -184,7 +231,14 @@ export class AgentRentComponent implements OnInit {
     // Apply status filter
     if (this.statusFilter !== 'all') {
       result = result.filter(listing => 
-        listing.status.toLowerCase() === this.statusFilter.toLowerCase()
+        listing.status?.toLowerCase() === this.statusFilter.toLowerCase() ||
+        listing.listingStatus?.toLowerCase() === this.statusFilter.toLowerCase()
+      );
+    } else {
+      // Nếu không có filter nào được chọn, mặc định chỉ hiển thị các listing có status AVAILABLE
+      result = result.filter(listing => 
+        listing.status === ListingStatus.AVAILABLE || 
+        listing.listingStatus === ListingStatus.AVAILABLE
       );
     }
     
@@ -222,9 +276,20 @@ export class AgentRentComponent implements OnInit {
   }
   
   calculateStats(): void {
-    this.activeListings = this.listings.filter(l => l.status === ListingStatus.AVAILABLE).length;
-    this.pendingListings = this.listings.filter(l => l.status === ListingStatus.PENDING).length;
-    this.rentedListings = this.listings.filter(l => l.status === ListingStatus.RENTED).length;
+    this.activeListings = this.listings.filter(l => 
+      l.status === ListingStatus.AVAILABLE || 
+      l.listingStatus === ListingStatus.AVAILABLE
+    ).length;
+    
+    this.pendingListings = this.listings.filter(l => 
+      l.status === ListingStatus.PENDING || 
+      l.listingStatus === ListingStatus.PENDING
+    ).length;
+    
+    this.rentedListings = this.listings.filter(l => 
+      l.status === ListingStatus.RENTED || 
+      l.listingStatus === ListingStatus.RENTED
+    ).length;
   }
   
   changeTab(tab: 'listings' | 'requests' | 'rentals'): void {
@@ -275,6 +340,11 @@ export class AgentRentComponent implements OnInit {
   }
   
   getStatusClass(status: string): string {
+    // Nếu status là null hoặc undefined, trả về rỗng
+    if (!status) {
+      return '';
+    }
+    
     switch (status) {
       case ListingStatus.AVAILABLE:
         return 'status-available';
@@ -505,6 +575,72 @@ export class AgentRentComponent implements OnInit {
       error: (err: any) => {
         console.error('Error cancelling rental:', err);
         this.toastr.error('Failed to cancel rental');
+      }
+    });
+  }
+
+  loadRequestListingImages(): void {
+    this.rentalRequests.forEach(request => {
+      if (request.listing) {
+        // Nếu listing có sẵn mainURL thì sử dụng luôn
+        if (request.listing.mainURL) {
+          request.listing.image = request.listing.mainURL;
+        }
+        // Nếu không có mainURL nhưng có images array
+        else if (request.listing.images && request.listing.images.length > 0) {
+          // Kiểm tra xem images là mảng chuỗi hay mảng object
+          if (typeof request.listing.images[0] === 'string') {
+            request.listing.image = request.listing.images[0];
+          } else if (request.listing.images[0].hasOwnProperty('imageUrl')) {
+            request.listing.image = request.listing.images[0].imageUrl;
+          }
+        }
+        // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
+        else if (request.listing.id && !request.listing.image) {
+          this.listingService.getMainImageUrl(request.listing.id).subscribe({
+            next: (imageUrl: string) => {
+              if (imageUrl) {
+                request.listing.image = imageUrl;
+              }
+            },
+            error: (err) => {
+              console.error(`Error loading image for request listing ${request.listing.id}:`, err);
+            }
+          });
+        }
+      }
+    });
+  }
+  
+  loadRentalListingImages(): void {
+    this.activeRentalsList.forEach(rental => {
+      if (rental.listing) {
+        // Nếu listing có sẵn mainURL thì sử dụng luôn
+        if (rental.listing.mainURL) {
+          rental.listing.image = rental.listing.mainURL;
+        }
+        // Nếu không có mainURL nhưng có images array
+        else if (rental.listing.images && rental.listing.images.length > 0) {
+          // Kiểm tra xem images là mảng chuỗi hay mảng object
+          if (typeof rental.listing.images[0] === 'string') {
+            rental.listing.image = rental.listing.images[0];
+          } else if (rental.listing.images[0].hasOwnProperty('imageUrl')) {
+            rental.listing.image = rental.listing.images[0].imageUrl;
+          }
+        }
+        // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
+        else if (rental.listing.id && !rental.listing.image) {
+          this.listingService.getMainImageUrl(rental.listing.id).subscribe({
+            next: (imageUrl: string) => {
+              if (imageUrl) {
+                rental.listing.image = imageUrl;
+              }
+            },
+            error: (err) => {
+              console.error(`Error loading image for rental listing ${rental.listing.id}:`, err);
+            }
+          });
+        }
       }
     });
   }

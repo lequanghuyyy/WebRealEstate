@@ -20,7 +20,7 @@
           <li class="nav-item"><a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a></li>
           <li class="nav-item"><a routerLink="/properties" routerLinkActive="active">Properties</a></li>
           <li class="nav-item" *ngIf="isAgent"><a routerLink="/agent/transactions" routerLinkActive="active">Transactions</a></li>
-          <li class="nav-item" *ngIf="isLoggedIn"><a routerLink="/payments" routerLinkActive="active">Payments</a></li>
+          <li class="nav-item" *ngIf="isLoggedIn && !isBuyer && !isRenter"><a routerLink="/payments" routerLinkActive="active">Payments</a></li>
           <li class="nav-item">
             <a *ngIf="!isAgent" routerLink="/buy" routerLinkActive="active">Buy</a>
             <a *ngIf="isAgent" routerLink="/agent/buy" routerLinkActive="active">Sale</a>
@@ -63,7 +63,7 @@
                 (error)="handleImageError($event)"
               >
             </div>
-            <span class="user-name">{{ currentUser?.name || 'User' }}</span>
+            <span class="user-name">{{ currentUser?.name || 'Guest' }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           
@@ -74,16 +74,7 @@
             </a>
             <div *ngIf="isAdmin" class="dropdown-divider"></div>
             
-            <!-- Agent Dashboard Link - only visible for agents -->
-            <!-- <a *ngIf="isAgent" routerLink="/agent/transactions" class="dropdown-item">
-              <i class="fas fa-exchange-alt"></i> Transactions
-            </a> -->
-            <!-- <a *ngIf="isAgent" routerLink="/agent/create-listing" class="dropdown-item">
-              <i class="fas fa-plus-circle"></i> Create Listing
-            </a> -->
-            <!-- <a *ngIf="isAgent" routerLink="/agent/appointments" class="dropdown-item">
-              <i class="fas fa-calendar-check"></i> Appointments
-            </a> -->
+          
             <div *ngIf="isAgent" class="dropdown-divider"></div>
             
             <a routerLink="/profile" class="dropdown-item">
@@ -101,7 +92,7 @@
             <a *ngIf="!isAgent && !isAdmin" routerLink="/reviews" class="dropdown-item">
               <i class="fas fa-star"></i> My Reviews
             </a>
-            <a *ngIf="!isAgent && !isAdmin" routerLink="/payments" class="dropdown-item">
+            <a *ngIf="!isAgent && !isAdmin && !isBuyer && !isRenter" routerLink="/payments" class="dropdown-item">
               <i class="fas fa-credit-card"></i> My Payments
             </a>
             <div class="dropdown-divider"></div>

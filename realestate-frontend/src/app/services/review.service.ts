@@ -157,6 +157,13 @@ export class ReviewService {
     return this.http.get<BaseResponse<ReviewResponse[]>>(`${this.apiUrl}/listing/${listingId}`).pipe(
       map(response => {
         console.log('Listing reviews response:', response);
+        // Ensure each review has a title and handle null titles
+        if (response.data && Array.isArray(response.data)) {
+          return response.data.map(review => ({
+            ...review,
+            title: review.title || 'Untitled Review'
+          }));
+        }
         return response.data;
       }),
       catchError(error => {

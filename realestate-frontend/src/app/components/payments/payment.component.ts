@@ -37,6 +37,9 @@ export class PaymentComponent implements OnInit {
   totalAmount: number = 0;
   pendingAmount: number = 0;
   
+  // Payment details modal
+  selectedPayment: any = null;
+  
   // Pagination
   pageSize: number = 10;
   currentPage: number = 0; // Changed to 0-based for backend compatibility
@@ -240,6 +243,42 @@ export class PaymentComponent implements OnInit {
       case 'CASH': return 'fa-money-bill';
       default: return 'fa-credit-card';
     }
+  }
+  
+  // View payment details
+  viewPaymentDetails(payment: any): void {
+    if (!payment || !payment.transactionId) {
+      this.toastr.error('Cannot view payment details: Invalid payment data');
+      return;
+    }
+    
+    this.isLoading = true;
+    this.paymentService.getPaymentByTransactionId(payment.transactionId).subscribe({
+      next: (paymentDetails) => {
+        console.log('Payment details:', paymentDetails);
+        this.isLoading = false;
+        this.selectedPayment = paymentDetails;
+        
+        // Add body class to prevent scrolling when modal is open
+        document.body.classList.add('modal-open');
+      },
+      error: (error) => {
+        console.error('Error fetching payment details:', error);
+        this.isLoading = false;
+        this.toastr.error('Failed to load payment details. Please try again.');
+      }
+    });
+  }
+  
+  // Close payment details modal
+  closePaymentDetails(event?: MouseEvent): void {
+    if (event && (event.target as HTMLElement).className !== 'payment-detail-modal') {
+      return;
+    }
+    this.selectedPayment = null;
+    
+    // Remove body class to re-enable scrolling
+    document.body.classList.remove('modal-open');
   }
   
   completePayment(payment: any): void {

@@ -4,6 +4,9 @@ import { RouterModule } from '@angular/router';
 import { AppointmentService } from '../../../services/appointment.service';
 import { Appointment } from '../../../models/appointment.model';
 import { AuthService } from '../../../services/auth.service';
+import { ListingService } from '../../../services/listing.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-user-appointments',
@@ -24,7 +27,8 @@ export class UserAppointmentsComponent implements OnInit {
 
   constructor(
     private appointmentService: AppointmentService,
-    private authService: AuthService
+    private authService: AuthService,
+    private listingService: ListingService
   ) { }
 
   ngOnInit(): void {
@@ -37,9 +41,43 @@ export class UserAppointmentsComponent implements OnInit {
     this.error = null;
     
     if (this.currentUser && this.currentUser.id) {
-      this.appointmentService.getAppointmentsByUserId(this.currentUser.id).subscribe({
-        next: (data) => {
-          this.appointments = data;
+      this.appointmentService.getAppointmentsByUserId(this.currentUser.id).pipe(
+        switchMap(appointments => {
+          // Store the appointments temporarily
+          const appointmentsWithListingIds = appointments;
+          
+          // Create arrays of observables for fetching listing details
+          const listingDetailsObservables = appointmentsWithListingIds.map(appointment => 
+            this.listingService.getListingById(appointment.propertyId.toString()).pipe(
+              catchError(() => of(null))
+            )
+          );
+          
+          // Execute all requests in parallel
+          return forkJoin(
+            of(appointmentsWithListingIds),
+            forkJoin(listingDetailsObservables)
+          );
+        })
+      ).subscribe({
+        next: ([appointments, listingDetails]) => {
+          console.log('Fetched appointments:', appointments);
+          console.log('Fetched listing details:', listingDetails);
+          
+          // Merge listing details with appointments
+          this.appointments = appointments.map((appointment, index) => {
+            const listingDetail = listingDetails[index];
+            
+            let updatedAppointment = { ...appointment };
+            
+            // Update property title if listing details are available
+            if (listingDetail) {
+              updatedAppointment.propertyTitle = listingDetail.title;
+            }
+            
+            return updatedAppointment;
+          });
+          
           this.applyFilter();
           this.isLoading = false;
         },

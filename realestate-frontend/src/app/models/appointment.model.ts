@@ -2,7 +2,6 @@ export interface Appointment {
   id: string | number;
   propertyId: string | number;
   propertyTitle: string;
-  propertyImage?: string;
   buyerId: string | number;
   buyerName: string;
   agentId: string | number;

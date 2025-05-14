@@ -45,7 +45,17 @@ public class ListingEntity {
     private Integer bedrooms;
     private Integer bathrooms;
 
+    private String mainURL;
+
     private Integer yearBuilt;
+
+    // Tích hợp Google Maps API để lấy tọa độ
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
+
 
     @Column(nullable = false)
     private Integer view = 0;

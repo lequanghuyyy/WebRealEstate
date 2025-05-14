@@ -24,8 +24,18 @@
   <!-- Main Content -->
   <div class="container main-content">
     <div class="row">
+      <!-- Toggle Filters Button for Desktop -->
+      <div class="col-12 mb-3">
+        <div class="filters-toggle-container">
+          <button class="btn toggle-filter-btn" (click)="toggleFilterSidebar()">
+            <i class="fas" [ngClass]="isFilterSidebarVisible ? 'fa-toggle-on' : 'fa-toggle-off'"></i>
+            {{ isFilterSidebarVisible ? 'Hide Filter' : 'Show Filter' }}
+          </button>
+        </div>
+      </div>
+
       <!-- Sidebar Filters -->
-      <div class="col-lg-3 col-md-4">
+      <div [ngClass]="isFilterSidebarVisible ? 'col-lg-3 col-md-4' : 'd-none d-lg-none'">
         <div class="filters-sidebar" [class.mobile-open]="showMobileFilters">
           <div class="filters-header">
             <h3>Filters</h3>
@@ -252,12 +262,19 @@
       </div>
 
       <!-- Properties Grid -->
-      <div class="col-lg-9 col-md-8">
+      <div [ngClass]="isFilterSidebarVisible ? 'col-lg-9 col-md-8' : 'col-12'">
         <div class="properties-content">
           <div class="properties-header">
             <div class="properties-count">
               <h2>Available Properties</h2>
               <p>{{ totalItems }} properties found</p>
+              
+              <!-- Mobile Filters Toggle -->
+              <div class="d-flex align-items-center d-lg-none mb-3">
+                <button class="btn filter-toggle-btn" (click)="toggleMobileFilters()">
+                  <i class="fas fa-filter"></i> {{ showMobileFilters ? 'Hide Filters' : 'Show Filters' }}
+                </button>
+              </div>
               
               <!-- Active filters display -->
               <div class="active-filters" *ngIf="hasActiveFilters()">
@@ -295,12 +312,6 @@
             </div>
             
             <div class="properties-actions">
-              <div class="mobile-filter-toggle d-lg-none">
-                <button (click)="toggleMobileFilters()">
-                  <i class="fas fa-filter"></i> Filters
-                </button>
-              </div>
-              
               <div class="sort-options">
                 <label for="sortBy">Sort By:</label>
                 <select 
@@ -341,11 +352,11 @@
           </div>
 
           <!-- Properties Grid -->
-          <div class="properties-grid" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
+          <div class="properties-grid" [ngClass]="{'expanded-grid': !isFilterSidebarVisible}" *ngIf="!isLoading && !errorMessage && filteredProperties.length > 0">
             <div class="property-card" *ngFor="let property of filteredProperties">
               <div class="property-image">
                 <a [routerLink]="['/property', property.id]">
-                  <img [src]="property.image || 'assets/images/property-placeholder.jpg'" [alt]="property.title">
+                  <img [src]="property.mainURL || property.image || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
                 </a>
                 <div class="property-tags">
                   <span class="tag-status" 

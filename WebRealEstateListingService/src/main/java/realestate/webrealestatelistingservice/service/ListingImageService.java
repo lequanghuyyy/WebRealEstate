@@ -13,4 +13,6 @@ public interface ListingImageService {
     List<ListingImageResponse> getImagesByListing(String listingId);
     List<String> uploadMultipleImages(String listingId, MultipartFile[] files);
     void deleteImage(String imageId);
+    String replaceImage(String imageId, MultipartFile file);
+    void setMainImage(String listingId, String imageId);
 }

@@ -51,11 +51,7 @@
                   <i class="fas fa-search me-2"></i> Saved Searches
                 </a>
               </li>
-              <li class="nav-item">
-                <a class="nav-link" [class.active]="activeTab === 'recent'" (click)="setActiveTab('recent')">
-                  <i class="fas fa-history me-2"></i> Recently Viewed
-                </a>
-              </li>
+        
             </ul>
           </div>
         </div>
@@ -370,46 +366,7 @@
         </div>
         
         <!-- Recently Viewed Tab -->
-        <div class="tab-content" *ngIf="activeTab === 'recent'">
-          <div class="card">
-            <div class="card-header">
-              <h5 class="mb-0">Recently Viewed Properties</h5>
-            </div>
-            <div class="card-body">
-              <div class="recent-list">
-                <div class="alert alert-info" *ngIf="recentlyViewed.length === 0">
-                  You haven't viewed any properties recently.
-                </div>
-                
-                <div class="property-item" *ngFor="let property of recentlyViewed">
-                  <div class="row">
-                    <div class="col-md-4">
-                      <img [src]="property.image" alt="Property Image" class="img-fluid property-img">
-                    </div>
-                    <div class="col-md-8">
-                      <div class="property-info">
-                        <h5>{{ property.title }}</h5>
-                        <h6 class="price">{{ property.price }}</h6>
-                        <p class="location">{{ property.location }}</p>
-                        <div class="features">
-                          <span><i class="fas fa-bed"></i> {{ property.beds }} beds</span>
-                          <span><i class="fas fa-bath"></i> {{ property.baths }} baths</span>
-                          <span><i class="fas fa-ruler-combined"></i> {{ property.area }}</span>
-                        </div>
-                        <div class="actions mt-3">
-                          <a href="#" class="btn btn-sm btn-outline-primary me-2">View Details</a>
-                          <button class="btn btn-sm btn-outline-primary">
-                            <i class="far fa-heart"></i> Add to Favorites
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  
         <!-- Appointments Tab -->
         <div class="tab-content" *ngIf="activeTab === 'appointments'">
           <app-user-appointments></app-user-appointments>

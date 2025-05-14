@@ -141,7 +141,7 @@
           
           <tr *ngFor="let listing of filteredListings">
             <td class="listing-image">
-              <img [src]="listing.image || 'assets/images/placeholder-property.jpg'" [alt]="listing.title" class="img-thumbnail">
+              <img [src]="listing.mainURL || listing.image || defaultImage" [alt]="listing.title" class="img-thumbnail" appDefaultImage [appDefaultImage]="defaultImage">
             </td>
             <td class="listing-details">
               <h5 class="listing-title">{{ listing.title }}</h5>
@@ -157,8 +157,8 @@
             </td>
             <td class="listing-price">{{ formatPrice(listing.price) }}</td>
             <td class="listing-status">
-              <span class="status-badge" [ngClass]="getStatusClass(listing.status)">
-                {{ listing.status }}
+              <span class="status-badge" [ngClass]="getStatusClass(listing.status || listing.listingStatus)">
+                {{ listing.status || listing.listingStatus }}
               </span>
             </td>
             <td class="listing-views">

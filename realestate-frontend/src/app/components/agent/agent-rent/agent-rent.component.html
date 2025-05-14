@@ -177,7 +177,7 @@
             
             <tr *ngFor="let listing of filteredListings">
               <td class="listing-image">
-                <img [src]="listing.image || 'assets/images/placeholder-property.jpg'" [alt]="listing.title" class="img-thumbnail">
+                <img [src]="listing.mainURL || listing.image || defaultImage" [alt]="listing.title" class="img-thumbnail" appDefaultImage [appDefaultImage]="defaultImage">
               </td>
               <td class="listing-details">
                 <h5 class="listing-title">{{ listing.title }}</h5>
@@ -193,8 +193,8 @@
               </td>
               <td class="listing-price">{{ formatPrice(listing.price) }}</td>
               <td class="listing-status">
-                <span class="status-badge" [ngClass]="getStatusClass(listing.status)">
-                  {{ listing.status }}
+                <span class="status-badge" [ngClass]="getStatusClass(listing.status || listing.listingStatus)">
+                  {{ listing.status || listing.listingStatus }}
                 </span>
               </td>
               <td class="listing-views">
@@ -307,11 +307,11 @@
                 
                 <tr *ngFor="let request of filteredRequests">
                   <td class="request-property">
-                    <div class="d-flex align-items-center">
-                      <img [src]="request.propertyImage" alt="Property" class="img-thumbnail me-2" width="60">
-                      <div>
-                        <h6 class="mb-0">{{ request.propertyTitle }}</h6>
-                        <small class="text-muted">ID: {{ request.propertyId }}</small>
+                    <div class="property-image">
+                      <img [src]="request.listing?.mainURL || request.listing?.image || defaultImage" [alt]="request.listing?.title" class="img-thumbnail" appDefaultImage [appDefaultImage]="defaultImage">
+                      <div class="property-details">
+                        <h6 class="mb-0">{{ request.propertyTitle || request.listing?.title }}</h6>
+                        <small class="text-muted">ID: {{ request.propertyId || request.listing?.id }}</small>
                       </div>
                     </div>
                   </td>
@@ -386,11 +386,11 @@
                 
                 <tr *ngFor="let rental of filteredRentals">
                   <td class="rental-property">
-                    <div class="d-flex align-items-center">
-                      <img [src]="rental.propertyImage" alt="Property" class="img-thumbnail me-2" width="60">
-                      <div>
-                        <h6 class="mb-0">{{ rental.propertyTitle }}</h6>
-                        <small class="text-muted">ID: {{ rental.propertyId }}</small>
+                    <div class="property-image">
+                      <img [src]="rental.listing?.mainURL || rental.listing?.image || defaultImage" [alt]="rental.listing?.title" class="img-thumbnail" appDefaultImage [appDefaultImage]="defaultImage">
+                      <div class="property-details">
+                        <h6 class="mb-0">{{ rental.propertyTitle || rental.listing?.title }}</h6>
+                        <small class="text-muted">ID: {{ rental.propertyId || rental.listing?.id }}</small>
                       </div>
                     </div>
                   </td>

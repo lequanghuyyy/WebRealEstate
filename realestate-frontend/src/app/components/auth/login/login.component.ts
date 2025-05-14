@@ -27,6 +27,7 @@ export class LoginComponent implements OnInit {
   errorMessage: string | null = null;
   debugInfo: string | null = null;
   registrationSuccess = false;
+  redirectUrl: string | null = null;
   
   constructor(
     private authService: AuthService,
@@ -40,6 +41,9 @@ export class LoginComponent implements OnInit {
       if (params['registered'] === 'success') {
         this.registrationSuccess = true;
       }
+      if (params['redirect']) {
+        this.redirectUrl = params['redirect'];
+      }
     });
     
     // If user is already logged in, redirect based on role
@@ -50,98 +54,60 @@ export class LoginComponent implements OnInit {
     this.authService.checkServiceHealth();
   }
   
-  onSignIn() {
-    this.errorMessage = null;
-    this.debugInfo = null;
+  onSubmit() {
+    // Set loading state
     this.isLoading = true;
+    this.errorMessage = '';
     
-    console.log('Login attempt with username:', this.loginData.username);
-    
-    // Basic validation
-    if (!this.loginData.username || !this.loginData.password) {
-      this.errorMessage = 'Username and password are required';
-      this.isLoading = false;
-      return;
-    }
-    
-    // Add a slight delay to ensure UI feedback
-    setTimeout(() => {
-      console.log('Sending login request to AuthService');
-      this.authService.login(this.loginData.username, this.loginData.password)
-        .subscribe({
-          next: (response) => {
-            console.log('Login successful, response received:', response);
-            
-            // Token is already saved in the AuthService login method
-            const token = response.token;
-            if (token) {
-              console.log('Token received, extracting roles');
-              // Extract roles directly from the token
-              const roles = this.authService.getRolesFromToken(token);
-              console.log('Roles extracted from token:', roles);
-              
-              if (roles && roles.length > 0) {
-                this.isLoading = false;
-                console.log('Redirecting based on roles from token');
-                this.redirectByRoles(roles);
-              } else {
-                // Fallback to fetching user if roles weren't in the token
-                console.log('No roles in token, fetching user data');
-                this.authService.fetchCurrentUser().subscribe({
-                  next: (user) => {
-                    console.log('User data fetched successfully:', user);
-                    this.isLoading = false;
-                    this.redirectBasedOnRole();
-                  },
-                  error: (err) => {
-                    console.error('Error fetching user data:', err);
-                    this.isLoading = false;
-                    // Vẫn chuyển hướng kể cả khi không lấy được thông tin user chi tiết
-                    this.router.navigate(['/']);
-                  }
-                });
+    // Make login request
+    this.authService.login(this.loginData.username, this.loginData.password)
+      .subscribe({
+        next: (response) => {
+          console.log('Login successful');
+          
+          // Force fetch user details immediately after login
+          const userId = this.authService.getUserIdFromToken();
+          if (userId) {
+            this.authService.fetchUserById(userId).subscribe({
+              next: (user) => {
+                console.log('User details fetched after login:', user);
+                // Update current user in auth service
+                this.authService.updateCurrentUser(user);
+                
+                // Then redirect to dashboard or homepage
+                this.router.navigate([this.redirectUrl || '/']);
+              },
+              error: (error) => {
+                console.error('Error fetching user details:', error);
+                // Still redirect even if we couldn't fetch details
+                this.router.navigate([this.redirectUrl || '/']);
               }
-            } else {
-              // Trường hợp không có token, chuyển về trang chủ
-              console.warn('No token in response, redirecting to home page');
-              this.isLoading = false;
-              this.router.navigate(['/']);
-            }
-          },
-          error: (err) => {
-            this.isLoading = false;
-            console.error('Login error:', err);
-            
-            // Special handling for pending agent approval error
-            if (err.message && err.message.includes('pending approval')) {
-              this.errorMessage = 'Your agent account is pending approval by an administrator. Please check back later.';
-              return;
-            }
-            
-            // More detailed error handling
-            if (err.status === 0) {
-              this.errorMessage = 'Cannot connect to the server. Please ensure the backend is running and check CORS settings.';
-            } else if (err.status === 401) {
-              this.errorMessage = err.error?.message || err.error?.description || 'Invalid username or password.';
-            } else if (err.status === 403) {
-              this.errorMessage = 'Access forbidden. Your account may be locked or disabled.';
-            } else if (err.status === 404) {
-              this.errorMessage = 'Login service not found. Please check API endpoint configuration.';
-            } else {
-              this.errorMessage = err.error?.message || err.error?.description || 'Login failed. Please try again later.';
-            }
-            
-            // Add additional debug info on screen during testing
-            if (!environment.production) {
-              this.debugInfo = `Status: ${err.status}, Error: ${JSON.stringify(err.error || {})}, 
-              Backend may not be running or proxy configuration issue.`;
-            }
+            });
+          } else {
+            // If no userId, just redirect
+            this.router.navigate([this.redirectUrl || '/']);
           }
-        });
-    }, 500);
+          
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Login error:', error);
+          this.isLoading = false;
+          
+          // Format user-friendly error message
+          if (error.status === 401) {
+            this.errorMessage = 'Invalid username or password';
+          } else if (error.status === 403) {
+            this.errorMessage = 'Your account is disabled';
+          } else if (error.message) {
+            this.errorMessage = error.message;
+          } else {
+            this.errorMessage = 'An error occurred during login. Please try again.';
+          }
+        }
+      });
   }
   
-  // New method to redirect based on roles from token
   private redirectByRoles(roles: string[]) {
     this.isLoading = false;
     console.log('Redirecting with roles:', roles);
@@ -179,16 +145,14 @@ export class LoginComponent implements OnInit {
     }
   }
   
-  // Helper method to redirect based on user role
   private redirectBasedOnRole() {
     const user = this.authService.getCurrentUser();
     if (!user) {
       return;
     }
-    
+
     const roles = user.roles || [];
     
-    // Kiểm tra nếu là agent và đang chờ xét duyệt
     if (roles.includes('AGENT') && user.status === 'PENDING_APPROVAL') {
       console.log('Agent account pending approval, displaying error message');
       this.errorMessage = 'Your agent account is pending approval by an administrator. Please check back later.';

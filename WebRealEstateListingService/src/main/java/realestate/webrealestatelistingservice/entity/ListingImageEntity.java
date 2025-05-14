@@ -25,6 +25,9 @@ public class ListingImageEntity {
     @Column(nullable = false)
     private String imageUrl;
 
+    @Column(name = "public_id")
+    private String publicId;
+
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 

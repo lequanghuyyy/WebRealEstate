@@ -159,7 +159,6 @@ export class AppointmentService {
       id: response.id,
       propertyId: response.listingId,
       propertyTitle: response.propertyTitle || 'Property',
-      propertyImage: response.propertyImage || 'assets/images/properties/default.jpg',
       buyerId: response.brId,
       buyerName: response.buyerName || 'Client',
       agentId: response.agentId,

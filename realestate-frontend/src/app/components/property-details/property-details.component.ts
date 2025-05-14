@@ -11,13 +11,20 @@ import { AppointmentService } from '../../services/appointment.service';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
 import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
+import { ListingService } from '../../services/listing.service';
+import { ListingImageResponse } from '../../models/listing.model';
+import { forkJoin, of } from 'rxjs';
+import { catchError, switchMap } from 'rxjs/operators';
+import { DefaultImageDirective } from '../../directives/default-image.directive';
+import { UserService } from '../../services/user.service';
+import { UserResponse } from '../../models/auth.model';
 
 @Component({
   selector: 'app-property-details',
   templateUrl: './property-details.component.html',
   styleUrls: ['./property-details.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule, PropertyReviewsComponent]
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, PropertyReviewsComponent, DefaultImageDirective]
 })
 export class PropertyDetailsComponent implements OnInit {
   // Private injections
@@ -29,6 +36,8 @@ export class PropertyDetailsComponent implements OnInit {
   private favoriteService = inject(FavoriteService);
   private toastr = inject(ToastrWrapperService);
   private fb = inject(FormBuilder);
+  private listingService = inject(ListingService);
+  private userService = inject(UserService);
   
   // Component properties
   propertyId: string | null = null;
@@ -51,9 +60,13 @@ export class PropertyDetailsComponent implements OnInit {
   // User authentication
   isAuthenticated: boolean = false;
   userId: string | null = null;
+  isAgent: boolean = false;
   
   // Favorite status
   isFavorite: boolean = false;
+  
+  // Listing images
+  listingImages: ListingImageResponse[] = [];
 
   constructor() {
     this.contactForm = this.fb.group({
@@ -96,12 +109,27 @@ export class PropertyDetailsComponent implements OnInit {
     });
   }
   
+  // Thêm hàm tiền tải ảnh để cải thiện trải nghiệm người dùng
+  private preloadImages(imageUrls: string[]): void {
+    if (!imageUrls || imageUrls.length === 0) return;
+    
+    // Chỉ tiền tải tối đa 5 ảnh để tránh tải quá nhiều
+    const imagesToPreload = imageUrls.slice(0, 5);
+    
+    // Tiền tải các ảnh
+    imagesToPreload.forEach(url => {
+      const img = new Image();
+      img.src = url;
+    });
+  }
+  
   private checkAuthStatus(): void {
     this.isAuthenticated = this.authService.isLoggedIn();
     if (this.isAuthenticated) {
       const user = this.authService.getCurrentUser();
       if (user) {
         this.userId = user.id;
+        this.isAgent = this.authService.isAgent();
         if (this.propertyId) {
           this.checkFavoriteStatus();
         }
@@ -109,6 +137,7 @@ export class PropertyDetailsComponent implements OnInit {
     } else {
       this.isAuthenticated = false;
       this.userId = null;
+      this.isAgent = false;
     }
   }
 
@@ -120,21 +149,102 @@ export class PropertyDetailsComponent implements OnInit {
     }
 
     this.isLoading = true;
-    this.propertyService.getPropertyById(this.propertyId).subscribe({
-      next: (response: any) => {
-        this.property = response;
-        this.isLoading = false;
+    
+    // Parallel requests for property details, main image and all images
+    forkJoin({
+      propertyDetails: this.propertyService.getPropertyById(this.propertyId).pipe(
+        catchError(error => {
+          console.error('Error loading property details:', error);
+          return of(null);
+        })
+      ),
+      mainImageUrl: this.listingService.getMainImageUrl(this.propertyId).pipe(
+        catchError(error => {
+          console.error('Error loading main image URL:', error);
+          return of('assets/images/property-1.jpg');
+        })
+      ),
+      listingImages: this.listingService.getListingImages(this.propertyId).pipe(
+        catchError(error => {
+          console.error('Error loading listing images:', error);
+          return of([]);
+        })
+      )
+    }).subscribe({
+      next: (results) => {
+        this.property = results.propertyDetails;
+        this.listingImages = results.listingImages;
+        
+        // If we have images from the listing API, update the property images
+        if (this.listingImages && this.listingImages.length > 0) {
+          if (!this.property) {
+            this.property = {} as Property;
+          }
+          
+          // Create/update the images array with all image URLs from Cloudinary
+          this.property.images = this.listingImages.map(img => img.imageUrl);
+          
+          // If we have a main image URL, make sure it's the first in the array
+          if (results.mainImageUrl && results.mainImageUrl !== 'assets/images/property-1.jpg') {
+            // Find the index of the main image in the array
+            const mainImgIndex = this.property.images.findIndex(url => url === results.mainImageUrl);
+            if (mainImgIndex > 0) {
+              // Move the main image to the beginning of the array
+              const mainImg = this.property.images.splice(mainImgIndex, 1)[0];
+              this.property.images.unshift(mainImg);
+            }
+          }
+          
+          // Tiền tải ảnh để cải thiện trải nghiệm
+          this.preloadImages(this.property.images);
+        } else if (this.property && (!this.property.images || this.property.images.length === 0)) {
+          // If no images are available, set a default image
+          this.property.images = ['assets/images/property-1.jpg'];
+        }
+        
+        // Load agent information if we have a property with an ownerId
+        if (this.property && this.property.agent && this.property.agent.id) {
+          this.userService.getUserById(this.property.agent.id.toString()).subscribe({
+            next: (userResponse) => {
+              // Update agent information with real user data
+              if (this.property && this.property.agent) {
+                this.property.agent.name = userResponse.firstName + ' ' + userResponse.lastName || 'Agent';
+                this.property.agent.email = userResponse.email || 'agent@example.com';
+                this.property.agent.phone = userResponse.phone || '123-456-7890';
+                
+                // If user has a profile image, use it
+                if (userResponse.photo) {
+                  this.property.agent.photo = userResponse.photo;
+                }
+                
+                // Get role/title
+                if (userResponse.roles && userResponse.roles.includes('AGENT')) {
+                  this.property.agent.title = 'Licensed Real Estate Agent';
+                }
+              }
+            },
+            error: (error) => {
+              console.error('Error loading agent details:', error);
+              // Keep default agent information on error
+            },
+            complete: () => {
+              this.isLoading = false;
+            }
+          });
+        } else {
+          this.isLoading = false;
+        }
         
         if (this.property) {
-          // Safe call to loadSimilarProperties with a null check
+          // Load similar properties and check favorite status
           this.loadSimilarProperties(this.property);
-          
-          // Update page title with property name
-          document.title = `${this.property?.title} | Real Estate`;
+          document.title = `${this.property?.title || 'Property Details'} | Real Estate`;
           
           if (this.isAuthenticated && this.userId) {
             this.checkFavoriteStatus();
           }
+        } else {
+          this.errorMessage = 'Property not found';
         }
       },
       error: (error) => {
@@ -221,20 +331,43 @@ export class PropertyDetailsComponent implements OnInit {
   }
 
   setActiveImage(index: number): void {
-    this.activeImageIndex = index;
+    if (index === this.activeImageIndex) return; // Không làm gì nếu ảnh đã được chọn
+    
+    // Thêm hiệu ứng mờ đi trước khi chuyển ảnh
+    const mainImage = document.querySelector('.main-image') as HTMLElement;
+    if (mainImage) {
+      // Thêm class để tạo hiệu ứng mờ
+      mainImage.style.opacity = '0.5';
+      mainImage.style.transition = 'opacity 0.2s ease';
+      
+      // Sau khi mờ, thì mới đổi ảnh và hiện lại
+      setTimeout(() => {
+        this.activeImageIndex = index;
+        
+        // Sau khi đổi ảnh, cho hiện lại
+        setTimeout(() => {
+          mainImage.style.opacity = '1';
+        }, 50);
+      }, 200);
+    } else {
+      // Fallback nếu không tìm thấy element
+      this.activeImageIndex = index;
+    }
   }
 
   nextImage(): void {
     if (this.property && this.property.images) {
-      this.activeImageIndex = (this.activeImageIndex + 1) % this.property.images.length;
+      const newIndex = (this.activeImageIndex + 1) % this.property.images.length;
+      this.setActiveImage(newIndex);
     }
   }
 
   prevImage(): void {
     if (this.property && this.property.images) {
-      this.activeImageIndex = this.activeImageIndex === 0 
+      const newIndex = this.activeImageIndex === 0 
         ? this.property.images.length - 1 
         : this.activeImageIndex - 1;
+      this.setActiveImage(newIndex);
     }
   }
 
@@ -392,6 +525,12 @@ export class PropertyDetailsComponent implements OnInit {
     // If opening schedule form, close contact form
     if (this.showScheduleForm) {
       this.showContactForm = false;
+      setTimeout(() => {
+        const element = document.querySelector('.schedule-viewing');
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }, 100);
     }
   }
 } 

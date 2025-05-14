@@ -111,6 +111,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .rate(entity.getRate())
                 .countLike(entity.getCountLike())
                 .createdAt(entity.getCreatedAt())
+                .title(entity.getTitle())
                 .build();
     }
 }

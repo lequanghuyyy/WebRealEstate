@@ -32,5 +32,7 @@ public class ListingResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private ListingPropertyType propertyType;
+    private String mainURL;
+    private ListingStatus listingStatus;
 }
 

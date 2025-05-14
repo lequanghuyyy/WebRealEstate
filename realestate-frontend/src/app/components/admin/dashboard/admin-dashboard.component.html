@@ -2,25 +2,6 @@
   <!-- Test Content to verify rendering -->
   <div class="test-banner" style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #3b82f6;">
     <h2 style="color: #3b82f6; margin: 0;">Admin Dashboard</h2>
-    <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">
-      API Status: {{apiStatus ? 'Connected' : error ? 'Connection Failed' : 'Connecting...'}}
-    </p>
-    <div *ngIf="endpointStatus && showEndpointDetails" style="margin-top: 8px; font-size: 12px;">
-      <p style="margin: 2px 0; color: #4b5563;" *ngFor="let endpoint of endpointStatus | keyvalue">
-        <span>{{endpoint.key}}: </span>
-        <span [style.color]="endpoint.value ? '#16a34a' : '#dc2626'">
-          {{endpoint.value ? 'Success' : 'Fallback'}}
-        </span>
-      </p>
-      <button class="btn btn-sm btn-outline-primary mt-2" (click)="toggleEndpointDetails()">
-        Hide Details
-      </button>
-    </div>
-    <div *ngIf="!showEndpointDetails && error">
-      <button class="btn btn-sm btn-outline-primary mt-2" (click)="toggleEndpointDetails()">
-        Show Connection Details
-      </button>
-    </div>
   </div>
 
   <!-- Loading State -->

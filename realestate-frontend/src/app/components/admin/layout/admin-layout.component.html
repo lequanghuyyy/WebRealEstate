@@ -1,86 +1,50 @@
 <div class="admin-layout">
-  <!-- Header -->
+  <!-- Header styled like the user interface -->
   <header class="header">
     <div class="container-fluid">
       <div class="header-content">
-        <div class="logo d-lg-none">
-          <a [routerLink]="['/admin/dashboard']">
-            <div class="logo-container">
-              <span class="logo-icon"><i class="fas fa-building"></i></span>
-              <span class="logo-text">Prop</span>
-              <span class="logo-highlight">Admin</span>
-            </div>
-          </a>
+        <div class="left-section">
+          <!-- Sidebar Toggle Button -->
+          <button class="sidebar-toggle" (click)="toggleSidebar()">
+            <i class="fas" [ngClass]="sidebarCollapsed ? 'fa-bars' : 'fa-times'"></i>
+          </button>
+          
+          <div class="logo">
+            <a [routerLink]="['/admin/dashboard']">
+              <span class="logo-text">RealEstate</span>
+              <span class="logo-highlight">Pro</span>
+            </a>
+          </div>
         </div>
         
         <!-- Mobile Menu Toggle -->
-        <button class="mobile-menu-toggle d-lg-none" (click)="toggleMobileMenu()">
+        <div class="mobile-toggle d-lg-none" (click)="toggleMobileMenu()">
           <i class="fas" [ngClass]="mobileMenuOpen ? 'fa-times' : 'fa-bars'"></i>
-        </button>
-        
-        <!-- Sidebar Toggle Button for desktop -->
-        <button class="sidebar-toggle d-none d-lg-flex" (click)="toggleSidebar()">
-          <i class="fas" [ngClass]="sidebarCollapsed ? 'fa-bars' : 'fa-times'"></i>
-        </button>
-        
-        <!-- Main Navigation -->
-        <nav class="nav-menu d-lg-none" [ngClass]="{'open': mobileMenuOpen}">
-          <ul class="nav-list">
-            <li class="nav-item">
-              <a [routerLink]="['/admin/dashboard']" routerLinkActive="active">
-                <i class="fas fa-tachometer-alt"></i> Dashboard
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/users']" routerLinkActive="active">
-                <i class="fas fa-users"></i> Users
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/agent-applications']" routerLinkActive="active">
-                <i class="fas fa-user-check"></i> Agent Applications
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/listings']" routerLinkActive="active">
-                <i class="fas fa-home"></i> Listings
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/transactions']" routerLinkActive="active">
-                <i class="fas fa-exchange-alt"></i> Transactions
-              </a>
-            </li>
-            <li class="nav-item">
-              <a [routerLink]="['/admin/payments']" routerLinkActive="active">
-                <i class="fas fa-dollar-sign"></i> Payments
-              </a>
-            </li>
-          </ul>
-        </nav>
+        </div>
         
         <!-- Header actions -->
         <div class="header-actions">
-          <!-- Notification dropdown -->
-
-          <!-- User Menu -->
+          <!-- User Menu with user interface style -->
           <div class="user-menu">
             <div class="user-dropdown" [ngClass]="{'open': userDropdownOpen}">
               <button class="user-dropdown-toggle" (click)="toggleUserDropdown()">
                 <div class="user-avatar">
                   <img [src]="user?.profileImageUrl || 'assets/images/default-avatar.jpg'" alt="Admin">
                 </div>
-                <span class="user-name">{{ user?.name || user?.firstName || 'Administrator' }}</span>
+                <span class="user-name">{{ user?.name || user?.firstName || 'User' }}</span>
                 <i class="fas" [ngClass]="userDropdownOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
               </button>
               
               <div class="user-dropdown-menu" *ngIf="userDropdownOpen">
                 <div class="dropdown-header">
                   <strong>{{ user?.name || (user?.firstName + ' ' + user?.lastName) }}</strong>
-                  <p>{{ user?.roles?.includes('ADMIN') ? 'Administrator' : '' }}</p>
+                  <p *ngIf="user?.roles?.includes('ADMIN')">Admin Panel</p>
                 </div>
                 <a [routerLink]="['/admin/settings']" class="dropdown-item">
                   <i class="fas fa-cog"></i> Settings
+                </a>
+                <a [routerLink]="['/']" class="dropdown-item">
+                  <i class="fas fa-home"></i> Visit Website
                 </a>
                 <div class="dropdown-divider"></div>
                 <a (click)="logout()" class="dropdown-item">
@@ -94,54 +58,49 @@
     </div>
   </header>
 
-  <!-- Sidebar for Tablet/Desktop -->
-  <div class="admin-sidebar" [ngClass]="{'collapsed': sidebarCollapsed}">
-    <div class="sidebar-header">
-      <div class="logo-container">
-        <span class="logo-icon"><i class="fas fa-building"></i></span>
-        <span class="logo-text" *ngIf="!sidebarCollapsed">Prop</span>
-        <span class="logo-highlight" *ngIf="!sidebarCollapsed">Admin</span>
-      </div>
-    </div>
-    
-    <div class="sidebar-user" *ngIf="!sidebarCollapsed">
-      <div class="user-avatar">
-        <img [src]="user?.profileImageUrl || 'assets/images/default-avatar.jpg'" alt="Admin">
-      </div>
-      <div class="user-info">
-        <h5 class="user-name">{{ user?.name || (user?.firstName + ' ' + user?.lastName) || 'Administrator' }}</h5>
-        <p class="user-role">{{ user?.roles?.includes('ADMIN') ? 'Administrator' : '' }}</p>
-      </div>
-    </div>
-    
-    <nav class="sidebar-nav">
-      <ul class="sidebar-menu">
-        <li class="sidebar-item" *ngFor="let item of menuItems">
-          <a [routerLink]="[item.path]" routerLinkActive="active" [title]="sidebarCollapsed ? item.label : ''">
-            <i class="{{item.icon}}"></i>
-            <span *ngIf="!sidebarCollapsed">{{item.label}}</span>
-          </a>
-        </li>
-      </ul>
-    </nav>
-  </div>
+  <div class="admin-body-container">
+    <!-- Sidebar for Tablet/Desktop -->
+    <div class="admin-sidebar" [ngClass]="{'collapsed': sidebarCollapsed, 'expanded': !sidebarCollapsed}">
+      <div class="sidebar-content">
+        <nav class="sidebar-nav">
+          <ul class="sidebar-menu">
+            <li class="sidebar-item" *ngFor="let item of menuItems">
+              <a [routerLink]="[item.path]" routerLinkActive="active" [title]="sidebarCollapsed ? item.label : ''">
+                <i class="{{item.icon}}"></i>
+                <span *ngIf="!sidebarCollapsed">{{item.label}}</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
 
-  <!-- Main Content -->
-  <div class="main-content" [ngClass]="{'sidebar-open': !sidebarCollapsed, 'sidebar-collapsed': sidebarCollapsed}">
-    <div class="content-header">
-      <div class="container-fluid">
-        <div class="page-breadcrumb">
-          <h1 class="page-title">Admin Dashboard</h1>
-          <nav aria-label="breadcrumb">
-          </nav>
+        <div class="sidebar-footer" *ngIf="!sidebarCollapsed">
+          <div class="user-info">
+            <div class="user-avatar">
+              <img [src]="user?.profileImageUrl || 'assets/images/default-avatar.jpg'" alt="User">
+            </div>
+            <div>
+              <h6 class="mb-0">{{ user?.name || user?.firstName || 'User' }}</h6>
+              <p class="text-muted small mb-0" *ngIf="user?.roles?.includes('ADMIN')">Admin Panel</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-    
-    <div class="content-body">
-      <div class="container-fluid p-4">
-        <router-outlet></router-outlet>
-      </div>
-    </div>
+
+    <!-- Main Content -->
+    <main class="main-content" [ngClass]="{'sidebar-open': !sidebarCollapsed, 'sidebar-collapsed': sidebarCollapsed}">
+      <router-outlet></router-outlet>
+    </main>
   </div>
+
+  <!-- Mobile Navigation Menu -->
+  <nav class="mobile-nav-menu d-lg-none" [ngClass]="{'active': mobileMenuOpen}">
+    <ul class="nav-list">
+      <li class="nav-item" *ngFor="let item of menuItems">
+        <a [routerLink]="[item.path]" routerLinkActive="active" (click)="toggleMobileMenu()">
+          <i class="{{item.icon}} me-2"></i> {{item.label}}
+        </a>
+      </li>
+    </ul>
+  </nav>
 </div>

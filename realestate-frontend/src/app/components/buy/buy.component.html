@@ -127,120 +127,30 @@
                 </td>
               </tr>
               
-              <!-- Example transaction rows (replace with actual data) -->
-              <tr>
+              <!-- Dynamic transaction rows from actual data -->
+              <tr *ngFor="let transaction of filteredTransactions">
                 <td>
                   <div class="property-info">
                     <div class="property-image">
-                      <img src="https://placehold.co/70x50/3498db/ffffff" alt="Property">
+                      <img [src]="transaction.property.image || 'assets/images/property-1.jpg'" alt="Property" appDefaultImage>
                     </div>
                     <div class="property-details">
-                      <h5>Luxury Villa with Pool</h5>
-                      <p>123 Main Street, City</p>
+                      <h5>{{ transaction.property.title || transaction.propertyTitle || 'Property' }}</h5>
+                      <p>Location information</p>
                     </div>
                   </div>
                 </td>
-                <td>May 12, 2023</td>
-                <td>$450,000</td>
-                <td><span class="status-badge completed">Completed</span></td>
+                <td>{{ formatDate(transaction.date) }}</td>
+                <td>{{ formatPrice(transaction.amount) }}</td>
+                <td><span class="status-badge" [ngClass]="getStatusClass(transaction.status)">{{ transaction.status }}</span></td>
                 <td>
-                  <button class="btn btn-icon" routerLink="/transaction/1">
+                  <button class="btn btn-icon" [routerLink]="['/transaction', transaction.id]">
                     <i class="fas fa-eye"></i>
                   </button>
-                  <button class="btn btn-icon" (click)="downloadReceipt('1')">
+                  <button class="btn btn-icon" (click)="downloadReceipt(transaction.id ? transaction.id.toString() : '')" *ngIf="transaction.status === transactionStatusEnum.COMPLETED">
                     <i class="fas fa-download"></i>
                   </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="property-info">
-                    <div class="property-image">
-                      <img src="https://placehold.co/70x50/2ecc71/ffffff" alt="Property">
-                    </div>
-                    <div class="property-details">
-                      <h5>Modern Apartment Downtown</h5>
-                      <p>456 Park Avenue, City</p>
-                    </div>
-                  </div>
-                </td>
-                <td>June 3, 2023</td>
-                <td>$320,000</td>
-                <td><span class="status-badge confirmed">Confirmed</span></td>
-                <td>
-                  <button class="btn btn-icon" routerLink="/transaction/2">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-icon" (click)="downloadReceipt('2')">
-                    <i class="fas fa-download"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="property-info">
-                    <div class="property-image">
-                      <img src="https://placehold.co/70x50/e74c3c/ffffff" alt="Property">
-                    </div>
-                    <div class="property-details">
-                      <h5>Seaside Bungalow</h5>
-                      <p>789 Beach Road, Coastal City</p>
-                    </div>
-                  </div>
-                </td>
-                <td>July 18, 2023</td>
-                <td>$275,000</td>
-                <td><span class="status-badge pending">Pending</span></td>
-                <td>
-                  <button class="btn btn-icon" routerLink="/transaction/3">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-icon cancel-button" (click)="cancelTransaction('3')">
-                    <i class="fas fa-times"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="property-info">
-                    <div class="property-image">
-                      <img src="https://placehold.co/70x50/9b59b6/ffffff" alt="Property">
-                    </div>
-                    <div class="property-details">
-                      <h5>Country Estate</h5>
-                      <p>101 Rural Route, Countryside</p>
-                    </div>
-                  </div>
-                </td>
-                <td>Aug 5, 2023</td>
-                <td>$580,000</td>
-                <td><span class="status-badge canceled">Canceled</span></td>
-                <td>
-                  <button class="btn btn-icon" routerLink="/transaction/4">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  <div class="property-info">
-                    <div class="property-image">
-                      <img src="https://placehold.co/70x50/f39c12/ffffff" alt="Property">
-                    </div>
-                    <div class="property-details">
-                      <h5>Urban Loft</h5>
-                      <p>222 Downtown Ave, Metro City</p>
-                    </div>
-                  </div>
-                </td>
-                <td>Sep 14, 2023</td>
-                <td>$395,000</td>
-                <td><span class="status-badge pending">Pending</span></td>
-                <td>
-                  <button class="btn btn-icon" routerLink="/transaction/5">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn btn-icon cancel-button" (click)="cancelTransaction('5')">
+                  <button class="btn btn-icon cancel-button" (click)="cancelTransaction(transaction.id ? transaction.id.toString() : '')" *ngIf="transaction.status === transactionStatusEnum.PENDING">
                     <i class="fas fa-times"></i>
                   </button>
                 </td>
@@ -267,60 +177,26 @@
     </div>
 
     <!-- Transaction Timeline -->
-    <div class="card mt-4">
+    <div class="card mt-4" *ngIf="transactions && transactions.length > 0">
       <div class="card-header">
         <h3>Recent Activity</h3>
       </div>
       <div class="card-body">
         <div class="transaction-timeline">
-          <div class="timeline-item">
-            <div class="timeline-marker completed">
-              <i class="fas fa-check"></i>
+          <div class="timeline-item" *ngFor="let transaction of transactions.slice(0, 5)">
+            <div class="timeline-marker" [ngClass]="getStatusClass(transaction.status)">
+              <i class="fas" [ngClass]="{'fa-check': transaction.status === transactionStatusEnum.COMPLETED, 'fa-times': transaction.status === transactionStatusEnum.CANCELLED, 'fa-clock': transaction.status === transactionStatusEnum.PENDING}"></i>
             </div>
             <div class="timeline-content">
-              <div class="timeline-date">September 14, 2023</div>
-              <h4>Transaction Initiated: Urban Loft</h4>
-              <p>You've started the purchase process for Urban Loft property.</p>
+              <div class="timeline-date">{{ formatDate(transaction.date) }}</div>
+              <h4>{{ transaction.status === transactionStatusEnum.COMPLETED ? 'Transaction Completed' : transaction.status === transactionStatusEnum.CANCELLED ? 'Transaction Canceled' : 'Transaction Initiated' }}: {{ transaction.property.title || 'Property' }}</h4>
+              <p>{{ transaction.status === transactionStatusEnum.COMPLETED ? 'Congratulations! You\'ve completed the purchase of your new property.' : transaction.status === transactionStatusEnum.CANCELLED ? 'The transaction was canceled.' : 'You\'ve started the purchase process for this property.' }}</p>
             </div>
           </div>
-          <div class="timeline-item">
-            <div class="timeline-marker canceled">
-              <i class="fas fa-times"></i>
-            </div>
+          <div class="timeline-item" *ngIf="transactions.length === 0">
             <div class="timeline-content">
-              <div class="timeline-date">August 5, 2023</div>
-              <h4>Transaction Canceled: Country Estate</h4>
-              <p>The transaction was canceled due to financing issues.</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-marker pending">
-              <i class="fas fa-clock"></i>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-date">July 18, 2023</div>
-              <h4>Offer Accepted: Seaside Bungalow</h4>
-              <p>Your offer has been accepted. Pending final documentation.</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-marker completed">
-              <i class="fas fa-check"></i>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-date">June 3, 2023</div>
-              <h4>Transaction Confirmed: Modern Apartment</h4>
-              <p>The purchase agreement has been signed by all parties.</p>
-            </div>
-          </div>
-          <div class="timeline-item">
-            <div class="timeline-marker completed">
-              <i class="fas fa-check"></i>
-            </div>
-            <div class="timeline-content">
-              <div class="timeline-date">May 12, 2023</div>
-              <h4>Transaction Completed: Luxury Villa</h4>
-              <p>Congratulations! You've completed the purchase of your new property.</p>
+              <h4>No recent activity</h4>
+              <p>Your transaction history will appear here.</p>
             </div>
           </div>
         </div>

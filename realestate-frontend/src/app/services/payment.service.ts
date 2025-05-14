@@ -62,7 +62,7 @@ export class PaymentService {
       agentId = currentUser?.id || '';
     }
 
-    return this.http.get<any>(`${this.apiUrl}/agent/${agentId}/${page}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/find/${agentId}/${page}`).pipe(
       map(response => response.data),
       tap(paymentsPage => console.log('Found agent payments:', paymentsPage)),
       catchError(error => {

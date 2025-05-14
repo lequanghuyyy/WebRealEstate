@@ -15,13 +15,14 @@ import {
 import { debounceTime, distinctUntilChanged, switchMap, catchError, takeUntil } from 'rxjs/operators';
 import { Subject, of, Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { DefaultImageDirective } from '../../directives/default-image.directive';
 
 @Component({
   selector: 'app-properties',
   templateUrl: './properties.component.html',
   styleUrls: ['./properties.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DefaultImageDirective]
 })
 export class PropertiesComponent implements OnInit, OnDestroy {
   properties: ListingResponse[] = [];
@@ -61,6 +62,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
   };
   
   showMobileFilters: boolean = false;
+  
+  // Track filter sidebar visibility
+  isFilterSidebarVisible: boolean = true;
   
   // For search debounce
   private searchTerms = new Subject<void>();
@@ -351,6 +355,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
       const endIndex = startIndex + this.itemsPerPage;
       this.filteredProperties = filtered.slice(startIndex, endIndex);
       this.properties = this.filteredProperties;
+      
+      // Process main images for the filtered properties
+      this.processMainImages(this.filteredProperties);
     }
     
     this.isLoading = false;
@@ -367,27 +374,32 @@ export class PropertiesComponent implements OnInit, OnDestroy {
   loadPropertiesFromServer(forceRefresh: boolean = false): void {
     this.isLoading = true;
     this.errorMessage = null;
-        const searchRequest = this.createSearchRequest();
-            if (!forceRefresh && this.lastSearchRequest && 
-        JSON.stringify(this.lastSearchRequest) === JSON.stringify(searchRequest)) {
+    const searchRequest = this.createSearchRequest();
+    if (!forceRefresh && this.lastSearchRequest && 
+      JSON.stringify(this.lastSearchRequest) === JSON.stringify(searchRequest)) {
       this.isLoading = false;
       return;
     }
     
     // Save current request
     this.lastSearchRequest = {...searchRequest};
-        const hasFilters = this.hasActiveFilters();
+    const hasFilters = this.hasActiveFilters();
     if (hasFilters) {
       console.log('Sending search request to server:', searchRequest);
       this.propertyApiService.searchListings(searchRequest).subscribe({
         next: (response: PageDto<ListingResponse>) => {
           console.log('Search response from server:', response);
-                    if (response.items) {
+          
+          if (response.items) {
             this.properties = response.items;
             this.filteredProperties = response.items;
             this.totalItems = response.totalElements || 0;
             this.totalPages = response.totalPages || 0;
-                        if (this.currentPage > this.totalPages && this.totalPages > 0) {
+            
+            // Process the mainURL for each property if available
+            this.processMainImages(this.filteredProperties);
+            
+            if (this.currentPage > this.totalPages && this.totalPages > 0) {
               this.currentPage = this.totalPages;
               this.updateQueryParams();
               // Reload with corrected page
@@ -438,6 +450,24 @@ export class PropertiesComponent implements OnInit, OnDestroy {
     } else {
       this.loadAllPropertiesPaged();
     }
+  }
+  
+  // Process main images for properties
+  private processMainImages(properties: ListingResponse[]): void {
+    if (!properties || properties.length === 0) return;
+    
+    // For each property, if mainURL is undefined but property has images, 
+    // set the first image as the main URL
+    properties.forEach(property => {
+      if (!property.mainURL && property.images && property.images.length > 0) {
+        // Check if the image is a string or an object with imageUrl
+        if (typeof property.images[0] === 'string') {
+          property.mainURL = property.images[0];
+        } else if (property.images[0].hasOwnProperty('imageUrl')) {
+          property.mainURL = property.images[0].imageUrl;
+        }
+      }
+    });
   }
   
   createSearchRequest(): ListingSearchRequest {
@@ -635,6 +665,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
           const endIndex = startIndex + this.itemsPerPage;
           this.filteredProperties = listings.slice(startIndex, endIndex);
           
+          // Process main images
+          this.processMainImages(this.filteredProperties);
+          
           this.isLoading = false;
           this.applyLocalSorting();
         }
@@ -678,6 +711,10 @@ export class PropertiesComponent implements OnInit, OnDestroy {
           this.filteredProperties = response.items;
           this.totalItems = response.totalElements;
           this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+          
+          // Process the mainURL for each property if available
+          this.processMainImages(this.filteredProperties);
+          
           this.isLoading = false;
           
           // Apply sorting
@@ -710,6 +747,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
           this.filteredProperties = response.items;
           this.totalItems = response.totalElements;
           this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+          
+          // Process the mainURL for each property if available
+          this.processMainImages(this.filteredProperties);
           
           // Apply sorting
           this.applyLocalSorting();
@@ -762,5 +802,42 @@ export class PropertiesComponent implements OnInit, OnDestroy {
     this.currentPage = 1;
     this.updateQueryParams();
     this.applyFilters(true);
+  }
+
+  // Toggle filter sidebar visibility
+  toggleFilterSidebar(): void {
+    this.isFilterSidebarVisible = !this.isFilterSidebarVisible;
+    
+    // Điều chỉnh số lượng item trên mỗi trang dựa trên trạng thái filter
+    if (!this.isFilterSidebarVisible) {
+      // Khi ẩn filter, hiển thị nhiều item hơn
+      this.itemsPerPage = 12;
+    } else {
+      // Khi hiện filter, quay lại số lượng mặc định
+      this.itemsPerPage = 8;
+    }
+    
+    // Tính toán lại tổng số trang
+    this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
+    
+    // Nếu trang hiện tại lớn hơn tổng số trang mới, đặt về trang cuối cùng
+    if (this.currentPage > this.totalPages && this.totalPages > 0) {
+      this.currentPage = this.totalPages;
+    }
+    
+    // Cập nhật lại dữ liệu hiển thị
+    if (this.allPropertiesCache.length > 0 && this.canFilterLocally()) {
+      this.filterPropertiesLocally();
+    } else if (this.properties.length > 0) {
+      // Áp dụng phân trang mới
+      const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+      const endIndex = Math.min(startIndex + this.itemsPerPage, this.properties.length);
+      this.filteredProperties = this.properties.slice(startIndex, endIndex);
+    }
+    
+    // Allow the DOM to update before recalculating layout
+    setTimeout(() => {
+      window.dispatchEvent(new Event('resize'));
+    }, 300);
   }
 }

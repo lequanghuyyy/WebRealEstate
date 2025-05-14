@@ -24,6 +24,7 @@ export interface ListingModel {
   address: string;
   city: string;
   image: string;
+  mainURL?: string;
   price: number;
   area: number;
   view: number;
@@ -36,6 +37,14 @@ export interface ListingModel {
   createdAt: string | Date;
   updatedAt: string | Date;
   propertyType: ListingPropertyType;
+}
+
+export interface ListingImageResponse {
+  id: string;
+  listingId: string;
+  imageUrl: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
 }
 
 export interface ListingSearchRequest {
@@ -69,6 +78,8 @@ export interface BaseResponse<T> {
 }
 
 export interface ListingResponse extends ListingModel {
+  images?: ListingImageResponse[];
+  listingStatus?: ListingStatus;
 }
 
 export interface ListingRequest {

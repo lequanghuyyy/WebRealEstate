@@ -21,73 +21,7 @@ declare var bootstrap: any; // For TypeScript to recognize bootstrap
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule],
   templateUrl: './admin-payments.component.html',
-  styles: [`
-    .admin-payments {
-      padding: 1rem;
-    }
-    
-    .content-header {
-      margin-bottom: 1.5rem;
-    }
-    
-    .page-title {
-      margin: 0 0 0.25rem;
-      font-size: 1.75rem;
-      font-weight: 600;
-      color: #2c3e50;
-    }
-    
-    .subtitle {
-      color: #6c757d;
-      margin-bottom: 0;
-    }
-    
-    .pagination-controls {
-      margin-top: 1rem;
-      display: flex;
-      justify-content: center;
-    }
-    
-    /* Modal fixes */
-    .modal-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1050;
-    }
-    
-    .modal-backdrop {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #000;
-      opacity: 0.5;
-      z-index: 1040;
-    }
-    
-    .modal {
-      z-index: 1050;
-      display: block;
-    }
-    
-    .modal-content {
-      box-shadow: 0 5px 15px rgba(0,0,0,.5);
-      background-color: white;
-      border-radius: 5px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-    
-    .modal-body {
-      padding: 20px;
-      max-height: calc(90vh - 120px);
-      overflow-y: auto;
-    }
-  `]
+  styleUrls: ['./admin-payments.component.scss']
 })
 export class AdminPaymentsComponent implements OnInit {
   payments: ExtendedPayment[] = [];
@@ -496,6 +430,40 @@ export class AdminPaymentsComponent implements OnInit {
           document.body.removeChild(toast);
         }
       }, 3000);
+    }
+  }
+
+  getStatusBackgroundClass(status: string | undefined): string {
+    if (!status) return 'status-unknown';
+    
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'status-completed';
+      case 'pending':
+        return 'status-pending';
+      case 'failed':
+        return 'status-failed';
+      case 'refunded':
+        return 'status-refunded';
+      default:
+        return 'status-unknown';
+    }
+  }
+  
+  getStatusIconClass(status: string | undefined): string {
+    if (!status) return 'fa-question-circle text-secondary';
+    
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'fa-check-circle text-success';
+      case 'pending':
+        return 'fa-clock text-warning';
+      case 'failed':
+        return 'fa-times-circle text-danger';
+      case 'refunded':
+        return 'fa-undo text-secondary';
+      default:
+        return 'fa-question-circle text-secondary';
     }
   }
 }

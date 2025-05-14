@@ -1,0 +1,173 @@
+// Admin payments component styles
+.payments-header {
+  background: linear-gradient(135deg, #2193b0, #6dd5ed);
+  padding: 2rem 0;
+  color: white;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  
+  h2 {
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: white;
+  }
+  
+  .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+  
+  .btn-outline-primary {
+    border-color: white;
+    color: white;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+  
+  .btn-primary {
+    background-color: white;
+    color: #2193b0;
+    border-color: white;
+    
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.9);
+      color: #2193b0;
+      border-color: white;
+    }
+  }
+}
+
+// Card styles
+.card {
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  }
+}
+
+// Table styles
+.table {
+  thead {
+    th {
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #e9ecef;
+      padding: 1rem;
+    }
+  }
+  
+  tbody {
+    tr {
+      &:hover {
+        background-color: rgba(33, 147, 176, 0.05);
+      }
+    }
+    
+    td {
+      padding: 1rem;
+      vertical-align: middle;
+    }
+  }
+}
+
+// Filter section
+.filters-section {
+  border-radius: 8px 8px 0 0;
+}
+
+// Empty state
+.empty-state {
+  padding: 2rem 0;
+  
+  i {
+    color: #e9ecef;
+  }
+  
+  h5 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+}
+
+// Pagination
+.pagination-section {
+  border-radius: 0 0 8px 8px;
+}
+
+.page-item {
+  .page-link {
+    color: #2193b0;
+    border-color: #e9ecef;
+    
+    &:hover {
+      background-color: rgba(33, 147, 176, 0.1);
+    }
+  }
+  
+  &.active .page-link {
+    background-color: #2193b0;
+    border-color: #2193b0;
+  }
+}
+
+// Payment row styles
+.payment-row {
+  transition: background-color 0.2s ease;
+}
+
+// Badge styles
+.badge {
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+// Modal styles
+.modal-content {
+  border: none;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.modal-header, .modal-footer {
+  border-color: #f8f9fa;
+}
+
+.payment-status-banner {
+  &.status-completed {
+    background-color: rgba(40, 167, 69, 0.1);
+  }
+  
+  &.status-pending {
+    background-color: rgba(255, 193, 7, 0.1);
+  }
+  
+  &.status-failed {
+    background-color: rgba(220, 53, 69, 0.1);
+  }
+  
+  &.status-refunded {
+    background-color: rgba(108, 117, 125, 0.1);
+  }
+}
+
+// Detail group
+.detail-group {
+  margin-bottom: 1.5rem;
+  
+  label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  .detail-value {
+    font-weight: 500;
+  }
+} 

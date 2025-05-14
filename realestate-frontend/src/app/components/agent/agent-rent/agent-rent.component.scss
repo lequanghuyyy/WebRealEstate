@@ -338,4 +338,32 @@
     display: block;
     overflow-x: auto;
   }
+}
+
+.property-image {
+  display: flex;
+  align-items: center;
+  
+  img {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-right: 10px;
+  }
+  
+  .property-details {
+    display: flex;
+    flex-direction: column;
+    
+    h6 {
+      margin-bottom: 0;
+      font-size: 14px;
+    }
+    
+    small {
+      color: #6c757d;
+      font-size: 12px;
+    }
+  }
 } 

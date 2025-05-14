@@ -5,6 +5,7 @@ import { AppointmentService } from '../../../services/appointment.service';
 import { Appointment } from '../../../models/appointment.model';
 import { AuthService } from '../../../services/auth.service';
 import { UserService } from '../../../services/user.service';
+import { ListingService } from '../../../services/listing.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
@@ -28,7 +29,8 @@ export class AgentAppointmentsComponent implements OnInit {
   constructor(
     private appointmentService: AppointmentService,
     private authService: AuthService,
-    private userService: UserService
+    private userService: UserService,
+    private listingService: ListingService
   ) { }
 
   ngOnInit(): void {
@@ -46,32 +48,50 @@ export class AgentAppointmentsComponent implements OnInit {
           // Store the appointments temporarily
           const appointmentsWithClientIds = appointments;
           
-          // Create an array of observables for fetching client details
+          // Create arrays of observables for fetching client details and listing details
           const clientDetailsObservables = appointmentsWithClientIds.map(appointment => 
             this.userService.getUserById(appointment.buyerId.toString()).pipe(
-              catchError(() => of(null)) // Handle errors for individual client requests
+              catchError(() => of(null))
             )
           );
           
-          // Execute all client detail requests in parallel
+          const listingDetailsObservables = appointmentsWithClientIds.map(appointment => 
+            this.listingService.getListingById(appointment.propertyId.toString()).pipe(
+              catchError(() => of(null))
+            )
+          );
+          
+          // Execute all requests in parallel
           return forkJoin(
             of(appointmentsWithClientIds),
-            forkJoin(clientDetailsObservables)
+            forkJoin(clientDetailsObservables),
+            forkJoin(listingDetailsObservables)
           );
         })
       ).subscribe({
-        next: ([appointments, clientDetails]) => {
-          // Merge client details with appointments
+        next: ([appointments, clientDetails, listingDetails]) => {
+          console.log('Fetched appointments:', appointments);
+          console.log('Fetched client details:', clientDetails);
+          console.log('Fetched listing details:', listingDetails);
+          
+          // Merge client details and listing details with appointments
           this.appointments = appointments.map((appointment, index) => {
             const clientDetail = clientDetails[index];
+            const listingDetail = listingDetails[index];
+            
+            let updatedAppointment = { ...appointment };
+            
+            // Update buyer name if client details are available
             if (clientDetail) {
-              // Update the buyerName with the full name from user service
-              return {
-                ...appointment,
-                buyerName: `${clientDetail.firstName} ${clientDetail.lastName}`
-              };
+              updatedAppointment.buyerName = `${clientDetail.firstName} ${clientDetail.lastName}`;
             }
-            return appointment;
+            
+            // Update property title if listing details are available
+            if (listingDetail) {
+              updatedAppointment.propertyTitle = listingDetail.title;
+            }
+            
+            return updatedAppointment;
           });
           
           this.applyFilter();

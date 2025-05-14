@@ -91,7 +91,8 @@
     <!-- Properties Grid -->
     <div *ngIf="!featuredLoading && !featuredError && featuredProperties.length > 0" class="property-grid">
       <div class="property-card" *ngFor="let property of featuredProperties">
-        <div class="property-image" [style.background-image]="'url(' + (property.image || 'assets/images/property-placeholder.jpg') + ')'">
+        <div class="property-image">
+          <img [src]="property.image || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
           <div class="property-tag">{{ property.type }}</div>
           <div class="view-count"><i class="fas fa-eye"></i> {{ property.view || 0 }} views</div>
         </div>
@@ -151,7 +152,8 @@
     <!-- Properties Grid -->
     <div *ngIf="!recommendationLoading && !recommendationError && recommendedProperties.length > 0" class="property-grid">
       <div class="property-card" *ngFor="let property of recommendedProperties">
-        <div class="property-image" [style.background-image]="'url(' + (property.image || 'assets/images/property-placeholder.jpg') + ')'">
+        <div class="property-image">
+          <img [src]="property.image || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
           <div class="property-tag">{{ property.type }}</div>
         </div>
         <div class="property-details">
@@ -192,9 +194,9 @@
         <span>Rent Property</span>
       </a>
       
-      <a routerLink="/agents" class="quick-link">
+      <a routerLink="/properties" class="quick-link">
         <i class="fas fa-user-tie"></i>
-        <span>Find Agents</span>
+        <span>Find Properties</span>
       </a>
       
       <a routerLink="/about" class="quick-link">
@@ -250,7 +252,7 @@
     <div class="cta-content">
       <h2>Ready to find your dream home?</h2>
       <p>Connect with one of our agents today and start your journey to homeownership.</p>
-      <a routerLink="/agents" class="cta-btn">Connect with an Agent</a>
+      <a routerLink="/properties" class="cta-btn">Connect with an Agent</a>
     </div>
   </section>
 </div>

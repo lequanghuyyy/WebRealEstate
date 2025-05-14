@@ -5,13 +5,14 @@ import { RouterModule, Router } from '@angular/router';
 import { TransactionService } from '../../services/transaction.service';
 import { Transaction } from '../../models/transaction.model';
 import { RentalStatus } from '../../models/transaction.model';
+import { DefaultImageDirective } from '../../directives/default-image.directive';
 
 @Component({
   selector: 'app-rent',
   templateUrl: './rent.component.html',
   styleUrls: ['./rent.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DefaultImageDirective]
 })
 export class RentComponent implements OnInit {
   transactions: Transaction[] = [];
@@ -23,6 +24,8 @@ export class RentComponent implements OnInit {
   totalRentals: number = 0;
   activeRentals: number = 0;
   pendingApprovals: number = 0;
+  completedTransactions: number = 0;
+  pendingTransactions: number = 0;
   
   // Expose enum to the template
   rentalStatusEnum = RentalStatus;
@@ -74,6 +77,8 @@ export class RentComponent implements OnInit {
     this.totalRentals = this.transactions.length;
     this.activeRentals = this.transactions.filter(t => t.status === RentalStatus.APPROVED).length;
     this.pendingApprovals = this.transactions.filter(t => t.status === RentalStatus.PENDING).length;
+    this.completedTransactions = this.transactions.filter(t => t.status === RentalStatus.COMPLETED).length;
+    this.pendingTransactions = this.transactions.filter(t => t.status === RentalStatus.PENDING).length;
   }
   
   applyFilters(): void {

@@ -1,7 +1,7 @@
 <div class="agent-applications-container">
   <div class="header">
-    <h2 class="title">Quản lý đăng ký Agent</h2>
-    <p class="subtitle">Duyệt đơn đăng ký và yêu cầu trở thành đối tác môi giới bất động sản</p>
+    <h2 class="title">Agent Applications Management</h2>
+    <p class="subtitle">Review and process applications to become real estate agent partners</p>
   </div>
 
   <!-- Notifications -->
@@ -21,7 +21,7 @@
       <input 
         type="text" 
         class="form-control search-input" 
-        placeholder="Tìm theo tên, email..." 
+        placeholder="Search by name, email..." 
         (input)="onSearch($event)"
       >
       <i class="fas fa-search search-icon"></i>
@@ -33,28 +33,28 @@
         class="btn" 
         (click)="changeFilter('pending')"
       >
-        <span class="badge bg-warning">Đang chờ duyệt</span>
+        <span class="badge bg-warning">Pending</span>
       </button>
       <button 
         [class.active]="filterStatus === 'approved'" 
         class="btn" 
         (click)="changeFilter('approved')"
       >
-        <span class="badge bg-success">Đã duyệt</span>
+        <span class="badge bg-success">Approved</span>
       </button>
       <button 
         [class.active]="filterStatus === 'rejected'" 
         class="btn" 
         (click)="changeFilter('rejected')"
       >
-        <span class="badge bg-danger">Từ chối</span>
+        <span class="badge bg-danger">Rejected</span>
       </button>
       <button 
         [class.active]="filterStatus === 'all'" 
         class="btn" 
         (click)="changeFilter('all')"
       >
-        <span class="badge bg-secondary">Tất cả</span>
+        <span class="badge bg-secondary">All</span>
       </button>
     </div>
   </div>
@@ -62,9 +62,9 @@
   <!-- Loading spinner -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="spinner-border text-primary" role="status">
-      <span class="visually-hidden">Đang tải...</span>
+      <span class="visually-hidden">Loading...</span>
     </div>
-    <p>Đang tải dữ liệu...</p>
+    <p>Loading data...</p>
   </div>
 
   <!-- Applications list -->
@@ -72,18 +72,18 @@
     <table class="table table-hover">
       <thead>
         <tr>
-          <th>Tên</th>
+          <th>Name</th>
           <th>Email</th>
-          <th>Số điện thoại</th>
-          <th>Ngày đăng ký</th>
-          <th>Trạng thái</th>
-          <th>Thao tác</th>
+          <th>Phone</th>
+          <th>Application Date</th>
+          <th>Status</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngIf="filteredApplications.length === 0">
           <td colspan="6" class="text-center py-4">
-            <p class="text-muted">Không có đơn đăng ký nào phù hợp với tiêu chí tìm kiếm</p>
+            <p class="text-muted">No applications match your search criteria</p>
           </td>
         </tr>
         <tr *ngFor="let app of filteredApplications">
@@ -97,8 +97,8 @@
               'bg-success': app.status === 'approved',
               'bg-danger': app.status === 'rejected'
             }">
-              {{ app.status === 'pending' ? 'Đang chờ' : 
-                 app.status === 'approved' ? 'Đã duyệt' : 'Từ chối' }}
+              {{ app.status === 'pending' ? 'Pending' : 
+                 app.status === 'approved' ? 'Approved' : 'Rejected' }}
             </span>
           </td>
           <td class="actions-column">
@@ -127,29 +127,29 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Duyệt đơn đăng ký</h5>
+          <h5 class="modal-title">Approve Application</h5>
           <button type="button" class="btn-close" (click)="closeModals()"></button>
         </div>
         <div class="modal-body" *ngIf="selectedApplication">
-          <p>Bạn sắp duyệt đơn đăng ký của <strong>{{ selectedApplication.fullName }}</strong>.</p>
-          <p>Người dùng sẽ được cấp quyền Agent và có thể đăng bất động sản trên hệ thống.</p>
+          <p>You are about to approve <strong>{{ selectedApplication.fullName }}</strong>'s application.</p>
+          <p>The user will be granted Agent privileges and can list properties on the system.</p>
           
           <form [formGroup]="applicationForm">
             <div class="mb-3">
-              <label for="approveNotes" class="form-label">Ghi chú (tùy chọn)</label>
+              <label for="approveNotes" class="form-label">Notes (optional)</label>
               <textarea 
                 id="approveNotes" 
                 class="form-control" 
                 rows="3" 
-                placeholder="Thêm ghi chú nếu cần..."
+                placeholder="Add notes if needed..."
                 formControlName="notes"
               ></textarea>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModals()">Hủy</button>
-          <button type="button" class="btn btn-success" (click)="approveApplication()">Duyệt đơn</button>
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+          <button type="button" class="btn btn-success" (click)="approveApplication()">Approve</button>
         </div>
       </div>
     </div>
@@ -160,32 +160,32 @@
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">Từ chối đơn đăng ký</h5>
+          <h5 class="modal-title">Reject Application</h5>
           <button type="button" class="btn-close" (click)="closeModals()"></button>
         </div>
         <div class="modal-body" *ngIf="selectedApplication">
-          <p>Bạn sắp từ chối đơn đăng ký của <strong>{{ selectedApplication.fullName }}</strong>.</p>
+          <p>You are about to reject <strong>{{ selectedApplication.fullName }}</strong>'s application.</p>
           
           <form [formGroup]="applicationForm">
             <div class="mb-3">
-              <label for="rejectNotes" class="form-label">Lý do từ chối <span class="text-danger">*</span></label>
+              <label for="rejectNotes" class="form-label">Reason for rejection <span class="text-danger">*</span></label>
               <textarea 
                 id="rejectNotes" 
                 class="form-control" 
                 rows="3" 
-                placeholder="Vui lòng cung cấp lý do từ chối đơn đăng ký..."
+                placeholder="Please provide a reason for rejecting this application..."
                 formControlName="notes"
                 required
               ></textarea>
-              <div *ngIf="error && error.includes('lý do')" class="text-danger mt-1">
+              <div *ngIf="error && error.includes('reason')" class="text-danger mt-1">
                 {{ error }}
               </div>
             </div>
           </form>
         </div>
         <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" (click)="closeModals()">Hủy</button>
-          <button type="button" class="btn btn-danger" (click)="rejectApplication()">Từ chối đơn</button>
+          <button type="button" class="btn btn-secondary" (click)="closeModals()">Cancel</button>
+          <button type="button" class="btn btn-danger" (click)="rejectApplication()">Reject</button>
         </div>
       </div>
     </div>

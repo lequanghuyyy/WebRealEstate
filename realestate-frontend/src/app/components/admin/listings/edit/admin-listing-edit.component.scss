@@ -1,0 +1,142 @@
+.admin-listing-edit {
+  padding: 1.5rem;
+}
+
+.content-header {
+  margin-bottom: 1.5rem;
+}
+
+.page-title {
+  margin: 0 0 0.25rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.subtitle {
+  color: #6c757d;
+  margin-bottom: 0;
+}
+
+.section-title {
+  font-weight: 600;
+  color: #2c3e50;
+  margin: 1.5rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+.image-card {
+  position: relative;
+  margin-bottom: 1rem;
+  border-radius: 0.375rem;
+  overflow: hidden;
+  border: 1px solid #dee2e6;
+  
+  &.is-main {
+    border: 2px solid #ffc107;
+    box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.2);
+  }
+  
+  .image-container {
+    position: relative;
+    padding-top: 75%; /* 4:3 aspect ratio */
+    
+    img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .image-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+    
+    &:hover .image-overlay {
+      opacity: 1;
+    }
+  }
+  
+  .main-badge {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffc107;
+    color: #212529;
+    font-size: 0.75rem;
+    padding: 0.25rem;
+    text-align: center;
+    font-weight: bold;
+  }
+}
+
+.selected-files {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #dee2e6;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  
+  .selected-file {
+    display: flex;
+    align-items: center;
+    padding: 0.375rem 0;
+    
+    &:not(:last-child) {
+      border-bottom: 1px solid #e9ecef;
+    }
+    
+    .filename {
+      margin-left: 0.5rem;
+      flex-grow: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .filesize {
+      color: #6c757d;
+      font-size: 0.875rem;
+      margin-left: 0.5rem;
+    }
+  }
+}
+
+.form-label {
+  font-weight: 500;
+}
+
+// Make invalid fields more obvious
+.is-invalid {
+  border-color: #dc3545;
+  padding-right: calc(1.5em + 0.75rem);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right calc(0.375em + 0.1875rem) center;
+  background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
+}
+
+// Responsive adjustments
+@media (max-width: 992px) {
+  .col-lg-4 {
+    margin-top: 1.5rem;
+  }
+} 

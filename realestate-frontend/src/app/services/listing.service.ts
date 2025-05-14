@@ -10,7 +10,8 @@ import {
   PageDto, 
   ListingSearchRequest, 
   ListingStatusUpdateRequest,
-  ListingType
+  ListingType,
+  ListingImageResponse
 } from '../models/listing.model';
 
 @Injectable({
@@ -367,6 +368,144 @@ export class ListingService {
         map(response => response.data),
         catchError(error => {
           console.error(`Error cancelling rental ${rentalId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Image related methods
+
+  /**
+   * Get all images for a listing
+   * @param listingId The ID of the listing
+   */
+  getListingImages(listingId: string): Observable<ListingImageResponse[]> {
+    return this.http.get<BaseResponse<ListingImageResponse[]>>(`${this.apiUrl}/${listingId}/images`)
+      .pipe(
+        map(response => {
+          // Kiểm tra nếu không có ảnh nào, trả về ảnh mặc định
+          if (!response.data || response.data.length === 0) {
+            // Sử dụng ảnh property-1.jpg từ thư mục assets/images
+            const defaultImage: ListingImageResponse = {
+              id: 'default',
+              listingId: listingId,
+              imageUrl: 'assets/images/property-1.jpg',
+              createdAt: new Date(),
+              updatedAt: new Date()
+            };
+            return [defaultImage];
+          }
+          return response.data;
+        }),
+        catchError(error => {
+          console.error(`Error fetching images for listing ${listingId}:`, error);
+          // Trả về ảnh mặc định nếu có lỗi
+          const defaultImage: ListingImageResponse = {
+            id: 'default',
+            listingId: listingId,
+            imageUrl: 'assets/images/property-1.jpg',
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
+          return of([defaultImage]);
+        })
+      );
+  }
+
+  /**
+   * Set an image as the main image for a listing
+   * @param listingId The ID of the listing
+   * @param imageId The ID of the image to set as main
+   */
+  setMainImage(listingId: string, imageId: string): Observable<void> {
+    return this.http.put<BaseResponse<void>>(`${this.apiUrl}/${listingId}/images/setMain/${imageId}`, {})
+      .pipe(
+        map(() => void 0),
+        catchError(error => {
+          console.error(`Error setting main image for listing ${listingId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  /**
+   * Get the main image URL for a listing
+   * @param listingId The ID of the listing
+   */
+  getMainImageUrl(listingId: string): Observable<string> {
+    return this.http.get<BaseResponse<string>>(`${this.apiUrl}/${listingId}/mainImage`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error getting main image URL for listing ${listingId}:`, error);
+          // Return default image URL if error
+          return of('assets/images/property-1.jpg');
+        })
+      );
+  }
+
+  // Modify uploadListingImage to set first image as main if none exists
+  uploadListingImage(listingId: string, file: File): Observable<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('setAsMain', 'true'); // Add parameter to set as main if it's the first image
+
+    return this.http.post<BaseResponse<string>>(`${this.apiUrl}/${listingId}/images/upload`, formData)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error uploading image for listing ${listingId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  /**
+   * Upload multiple images for a listing
+   * @param listingId The ID of the listing
+   * @param files The image files to upload
+   */
+  uploadMultipleListingImages(listingId: string, files: File[]): Observable<string[]> {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('files', file);
+    });
+
+    return this.http.post<BaseResponse<string[]>>(`${this.apiUrl}/${listingId}/images/uploadMultiple`, formData)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error uploading multiple images for listing ${listingId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Modify existing replaceListingImage method to update mainURL if needed
+  replaceListingImage(imageId: string, file: File, isMain: boolean = false): Observable<string> {
+    const formData = new FormData();
+    formData.append('file', file);
+    if (isMain) {
+      formData.append('isMain', 'true');
+    }
+
+    return this.http.put<BaseResponse<string>>(`${this.apiUrl}/images/${imageId}`, formData)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error replacing image with ID ${imageId}:`, error);
+          throw error;
+        })
+      );
+  }
+
+  // Modify existing deleteListingImage method to update mainURL if needed
+  deleteListingImage(imageId: string, listingId: string): Observable<void> {
+    return this.http.delete<BaseResponse<void>>(`${this.apiUrl}/images/${imageId}?listingId=${listingId}`)
+      .pipe(
+        map(() => void 0),
+        catchError(error => {
+          console.error(`Error deleting image with ID ${imageId}:`, error);
           throw error;
         })
       );

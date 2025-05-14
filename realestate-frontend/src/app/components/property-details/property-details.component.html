@@ -2,10 +2,10 @@
   <div class="container pt-1 pb-2">
     <!-- Property navigation links -->
     <div class="navigation-links" style="margin-top: 0; padding-top: 0;">
-      <div class="breadcrumbs" style="margin-bottom: 10px; font-size: 14px; color: #555; padding-top: 5px;">
-        <a routerLink="/" style="text-decoration: none; color: #555; transition: color 0.3s ease;">Home</a> / 
-        <a routerLink="/properties" style="text-decoration: none; color: #555; transition: color 0.3s ease;">Properties</a> / 
-        <span class="current" style="color: #2c3e50; font-weight: 500;">{{ property?.title || 'Property #' + propertyId }}</span>
+      <div class="breadcrumbs" style="margin-bottom: 10px; font-size: 14px; padding-top: 5px;">
+        <a routerLink="/" class="breadcrumb-link home">Home</a> / 
+        <a routerLink="/properties" class="breadcrumb-link properties">Properties</a> / 
+        <span class="breadcrumb-link current">{{ property?.title || 'Property #' + propertyId }}</span>
       </div>
     </div>
 
@@ -36,10 +36,10 @@
           <div class="property-owner">
             <span class="owner-label">Listed by:</span>
             <div class="owner-info">
-              <img [src]="property.agent.photo" alt="Agent photo" class="owner-photo">
+              <img [src]="property.agent.photo" alt="Agent photo" class="owner-photo" appDefaultImage>
               <div class="owner-details">
-                <span class="owner-name">{{property.agent.name}}</span>
-                <span class="owner-title">{{property.agent.title || 'Real Estate Agent'}}</span>
+                <span class="owner-name">{{ property.agent.name }}</span>
+                <span class="owner-title">{{ property.agent.title || 'Real Estate Agent' }}</span>
               </div>
             </div>
           </div>
@@ -58,17 +58,17 @@
 
       <!-- Image gallery -->
       <div class="property-gallery">
-        <div class="main-image-container">
-          <button class="gallery-nav prev" (click)="prevImage()">&#10094;</button>
-          <img [src]="property.images[activeImageIndex]" alt="Property image" class="main-image">
-          <button class="gallery-nav next" (click)="nextImage()">&#10095;</button>
+        <div class="main-image-container" [ngClass]="{'single-image': property.images.length === 1}">
+          <button class="gallery-nav prev" (click)="prevImage()" *ngIf="property.images.length > 1">&#10094;</button>
+          <img [src]="property.images[activeImageIndex]" [alt]="'Property image - ' + property.title" class="main-image" appDefaultImage loading="lazy">
+          <button class="gallery-nav next" (click)="nextImage()" *ngIf="property.images.length > 1">&#10095;</button>
         </div>
-        <div class="thumbnail-container">
+        <div class="thumbnail-container" *ngIf="property.images.length > 1">
           <div *ngFor="let image of property.images; let i = index" 
                class="thumbnail" 
                [ngClass]="{'active': i === activeImageIndex}"
                (click)="setActiveImage(i)">
-            <img [src]="image" alt="Property thumbnail">
+            <img [src]="image" [alt]="'Thumbnail ' + (i+1)" appDefaultImage loading="lazy">
           </div>
         </div>
       </div>
@@ -117,7 +117,7 @@
           </div>
 
           <div class="property-description">
-            <h3>Description</h3>
+            <h3 class="description-title">Description</h3>
             <p>{{property.description}}</p>
           </div>
 
@@ -131,19 +131,19 @@
             </div>
             <div class="agent-content">
               <div class="agent-image">
-                <img [src]="property.agent.photo" alt="Agent photo">
+                <img [src]="property.agent.photo" alt="Agent photo" appDefaultImage>
               </div>
               <div class="agent-details">
-                <h3 class="agent-name">{{property.agent.name}}</h3>
-                <p class="agent-title">{{property.agent.title || 'Real Estate Agent'}}</p>
+                <h3 class="agent-name">{{ property.agent.name }}</h3>
+                <p class="agent-title">{{ property.agent.title || 'Real Estate Agent' }}</p>
                 <div class="agent-contact-info">
                   <div class="contact-item">
                     <i class="fas fa-phone"></i>
-                    <span>{{property.agent.phone}}</span>
+                    <span>{{ property.agent.phone }}</span>
                   </div>
                   <div class="contact-item">
                     <i class="fas fa-envelope"></i>
-                    <span>{{property.agent.email}}</span>
+                    <span>{{ property.agent.email }}</span>
                   </div>
                   <div class="contact-item">
                     <i class="fas fa-check-circle"></i>
@@ -160,13 +160,13 @@
               <i [class]="isFavorite ? 'fas fa-heart' : 'far fa-heart'"></i> 
               {{ isFavorite ? 'Saved to Favorites' : 'Add to Favorites' }}
             </button>
-            <button class="action-button schedule-button" (click)="toggleScheduleForm()">
+            <button class="action-button schedule-button" (click)="toggleScheduleForm()" *ngIf="!isAgent">
               <i class="fas fa-calendar-check"></i> Schedule a Viewing
             </button>
           </div>
 
           <!-- Schedule viewing -->
-          <div class="schedule-viewing" *ngIf="showScheduleForm">
+          <div class="schedule-viewing" *ngIf="showScheduleForm && !isAgent">
             <div class="form-header">
               <h3>Schedule a Viewing</h3>
               <button class="close-form-btn" (click)="toggleScheduleForm()">
@@ -366,10 +366,7 @@
                         <i class="fas fa-phone-alt" style="margin-right: 8px;"></i>
                         <span>Contact Us</span>
                       </a>
-                      <a href="/login" class="premium-btn btn-outline" style="flex: 1; margin-left: 10px; padding: 12px; background-color: transparent; color: white; text-decoration: none; border: 2px solid white; border-radius: 6px; text-align: center; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="margin-right: 8px;"></i>
-                        <span>Login as Agent</span>
-                      </a>
+            
                     </div>
                   </div>
                 </div>
@@ -463,10 +460,6 @@
                       <a href="/contact" class="premium-btn btn-light" style="flex: 1; margin-right: 10px; padding: 12px; background-color: white; color: #2980b9; text-decoration: none; border-radius: 6px; text-align: center; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
                         <i class="fas fa-phone-alt" style="margin-right: 8px;"></i>
                         <span>Contact Us</span>
-                      </a>
-                      <a href="/login" class="premium-btn btn-outline" style="flex: 1; margin-left: 10px; padding: 12px; background-color: transparent; color: white; text-decoration: none; border: 2px solid white; border-radius: 6px; text-align: center; font-weight: 600; transition: all 0.3s ease; display: flex; align-items: center; justify-content: center;">
-                        <i class="fas fa-user" style="margin-right: 8px;"></i>
-                        <span>Login as Agent</span>
                       </a>
                     </div>
                   </div>

@@ -26,6 +26,8 @@ import { PaymentComponent } from './components/payments/payment.component';
 import { AdminLayoutComponent } from './components/admin/layout/admin-layout.component';
 import { AdminDashboardComponent } from './components/admin/dashboard/admin-dashboard.component';
 import { adminGuard } from './components/admin/shared/admin.guard';
+import { AdminListingsComponent } from './components/admin/listings/admin-listings.component';
+import { AdminListingEditComponent } from './components/admin/listings/edit/admin-listing-edit.component';
 
 // Agent Guard - only allows agents to access certain routes
 const agentGuard = () => {
@@ -141,6 +143,10 @@ export const routes: Routes = [
       { 
         path: 'listings', 
         loadComponent: () => import('./components/admin/listings/admin-listings.component').then(m => m.AdminListingsComponent) 
+      },
+      { 
+        path: 'listings/edit/:id', 
+        component: AdminListingEditComponent 
       },
       { 
         path: 'transactions', 

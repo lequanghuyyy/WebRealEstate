@@ -12,11 +12,12 @@ import { ListingType, ListingPropertyType } from '../../models/listing.model';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SavedSearchService } from '../../services/saved-search.service';
 import { SavedSearchRequest } from '../../models/user-experience.model';
+import { DefaultImageDirective } from '../../directives/default-image.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, DefaultImageDirective],
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })

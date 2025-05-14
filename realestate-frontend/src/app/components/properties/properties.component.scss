@@ -37,6 +37,66 @@
   }
 }
 
+// Toggle Filter Button
+.filters-toggle-container {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  padding: 0 5px;
+}
+
+.toggle-filter-btn {
+  background-color: white;
+  border: 1px solid #e1e1e1;
+  color: #555;
+  font-size: 15px;
+  padding: 10px 18px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+  font-weight: 500;
+  
+  &:hover {
+    background-color: #f0f0f0;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  i {
+    margin-right: 8px;
+    color: #ff5a5f;
+    font-size: 18px;
+  }
+  
+  // Mobile styles
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+.filter-toggle-btn {
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  color: #555;
+  font-size: 14px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background-color: #e9ecef;
+  }
+  
+  i {
+    margin-right: 5px;
+    color: #ff5a5f;
+  }
+}
+
 // Hero Section
 .hero-section {
   height: 400px;
@@ -148,6 +208,11 @@
 // Main Content
 .main-content {
   padding-bottom: 60px;
+  
+  // Add transition for smooth width changes
+  .row > div {
+    transition: all 0.3s ease-in-out;
+  }
 }
 
 // Filters Sidebar
@@ -596,11 +661,76 @@
   .properties-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 25px;
-    margin-bottom: 30px;
+    gap: 30px;
+    margin-top: 30px;
+    transition: all 0.3s ease-in-out;
+    
+    &.expanded-grid {
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      
+      @media (min-width: 1200px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      @media (min-width: 1400px) {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      @media (min-width: 1600px) {
+        grid-template-columns: repeat(4, 1fr);
+      }
+      
+      // Adjust property card sizes in expanded mode
+      .property-card {
+        // Make cards larger to display content better
+        .property-image {
+          height: 250px;
+        }
+        
+        .property-details {
+          padding: 25px;
+          
+          h3.property-title {
+            font-size: 22px;
+            margin-bottom: 15px;
+          }
+          
+          .property-address {
+            font-size: 15px;
+            margin-bottom: 15px;
+          }
+          
+          .property-features {
+            font-size: 15px;
+            gap: 20px;
+            margin-bottom: 20px;
+            
+            .feature i {
+              font-size: 16px;
+              margin-right: 8px;
+            }
+          }
+          
+          .property-meta {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+    
+    @media (max-width: 992px) {
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 20px;
+    }
+    
+    @media (max-width: 768px) {
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 15px;
+    }
     
     @media (max-width: 576px) {
       grid-template-columns: 1fr;
+      gap: 20px;
     }
   }
   
@@ -615,6 +745,10 @@
     &:hover {
       transform: translateY(-5px);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      
+      .property-image img {
+        transform: scale(1.05);
+      }
     }
     
     .property-image {
@@ -627,49 +761,61 @@
         height: 100%;
         object-fit: cover;
         transition: transform 0.5s;
+        
+        &.error {
+          object-fit: contain;
+          padding: 20px;
+          background-color: #f8f9fa;
+        }
       }
       
-      .property-badges {
+      .property-tags {
         position: absolute;
         top: 15px;
         left: 15px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
         
-        .property-status {
+        .tag-status {
           display: inline-block;
           padding: 5px 12px;
-          background-color: #ff5a5f;
           color: white;
           font-size: 12px;
           font-weight: 600;
           border-radius: 20px;
           text-transform: uppercase;
+          
+          &.sale {
+            background-color: #e74c3c;
+          }
+          
+          &.rent {
+            background-color: #3498db;
+          }
+        }
+        
+        .tag-featured {
+          display: inline-block;
+          padding: 5px 12px;
+          background-color: #f1c40f;
+          color: #2c3e50;
+          font-size: 12px;
+          font-weight: 600;
+          border-radius: 20px;
         }
       }
       
-      .property-action {
+      .property-price {
         position: absolute;
-        top: 15px;
-        right: 15px;
-        
-        .favorite-btn {
-          width: 36px;
-          height: 36px;
-          border-radius: 50%;
-          background-color: white;
-          border: none;
-          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #7f8c8d;
-          cursor: pointer;
-          transition: background-color 0.2s, color 0.2s;
-          
-          &:hover {
-            background-color: #ff5a5f;
-            color: white;
-          }
-        }
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 15px;
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+        color: white;
+        font-size: 18px;
+        font-weight: 700;
       }
     }
     

@@ -6,13 +6,15 @@ import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
 import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { TransactionService } from '../../../services/transaction.service';
+import { DefaultImageDirective } from '../../../directives/default-image.directive';
 import { 
   ListingResponse, 
   ListingType, 
   ListingStatus, 
   ListingStatusUpdateRequest,
   ListingPropertyType,
-  PageDto 
+  PageDto,
+  ListingImageResponse
 } from '../../../models/listing.model';
 import { 
   TransactionStatus,
@@ -25,7 +27,7 @@ import {
   templateUrl: './agent-buy.component.html',
   styleUrls: ['./agent-buy.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule]
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, DefaultImageDirective]
 })
 export class AgentBuyComponent implements OnInit {
   // Properties
@@ -55,6 +57,9 @@ export class AgentBuyComponent implements OnInit {
 
   // Sales transactions
   salesTransactions: SalesTransactionResponse[] = [];
+
+  // Default image path
+  defaultImage: string = 'assets/images/placeholder-property.jpg';
   
   constructor(
     private authService: AuthService,
@@ -101,6 +106,9 @@ export class AgentBuyComponent implements OnInit {
           this.listings = pageData.items.filter(item => item.ownerId === this.agentId);
           console.log(`Found ${this.listings.length} sale listings for agent ${this.agentId} out of ${pageData.items.length} total`);
           
+          // Fetch images for each listing
+          this.loadListingImages();
+          
           this.applyFilters();
           this.calculateStats();
           this.isLoading = false;
@@ -112,6 +120,39 @@ export class AgentBuyComponent implements OnInit {
         }
       });
     }
+  }
+
+  loadListingImages(): void {
+    // For each listing, try to get main image
+    this.listings.forEach(listing => {
+      // Nếu listing có sẵn mainURL thì sử dụng luôn
+      if (listing.mainURL) {
+        listing.image = listing.mainURL;
+      }
+      // Nếu không có mainURL nhưng có images array
+      else if (listing.images && listing.images.length > 0) {
+        // Kiểm tra xem images là mảng chuỗi hay mảng object
+        if (typeof listing.images[0] === 'string') {
+          listing.image = listing.images[0];
+        } else if (listing.images[0].hasOwnProperty('imageUrl')) {
+          listing.image = listing.images[0].imageUrl;
+        }
+      }
+      // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
+      else if (!listing.image && listing.id) {
+        this.listingService.getMainImageUrl(listing.id).subscribe({
+          next: (imageUrl: string) => {
+            if (imageUrl) {
+              listing.image = imageUrl;
+            }
+          },
+          error: (err) => {
+            console.error(`Error loading main image for listing ${listing.id}:`, err);
+            // Use default image in case of error - already handled by directive
+          }
+        });
+      }
+    });
   }
 
   loadSalesTransactions(): void {
@@ -135,7 +176,14 @@ export class AgentBuyComponent implements OnInit {
     // Apply status filter
     if (this.statusFilter !== 'all') {
       result = result.filter(listing => 
-        listing.status.toLowerCase() === this.statusFilter.toLowerCase()
+        listing.status?.toLowerCase() === this.statusFilter.toLowerCase() ||
+        listing.listingStatus?.toLowerCase() === this.statusFilter.toLowerCase()
+      );
+    } else {
+      // Nếu không có filter nào được chọn, mặc định chỉ hiển thị các listing có status AVAILABLE
+      result = result.filter(listing => 
+        listing.status === ListingStatus.AVAILABLE || 
+        listing.listingStatus === ListingStatus.AVAILABLE
       );
     }
     
@@ -173,9 +221,20 @@ export class AgentBuyComponent implements OnInit {
   }
   
   calculateStats(): void {
-    this.activeListings = this.listings.filter(l => l.status === ListingStatus.AVAILABLE).length;
-    this.pendingListings = this.listings.filter(l => l.status === ListingStatus.PENDING).length;
-    this.soldListings = this.listings.filter(l => l.status === ListingStatus.SOLD).length;
+    this.activeListings = this.listings.filter(l => 
+      l.status === ListingStatus.AVAILABLE || 
+      l.listingStatus === ListingStatus.AVAILABLE
+    ).length;
+    
+    this.pendingListings = this.listings.filter(l => 
+      l.status === ListingStatus.PENDING || 
+      l.listingStatus === ListingStatus.PENDING
+    ).length;
+    
+    this.soldListings = this.listings.filter(l => 
+      l.status === ListingStatus.SOLD || 
+      l.listingStatus === ListingStatus.SOLD
+    ).length;
   }
   
   updateStatusFilter(status: string): void {
@@ -215,6 +274,11 @@ export class AgentBuyComponent implements OnInit {
   }
   
   getStatusClass(status: string): string {
+    // Nếu status là null hoặc undefined, trả về rỗng
+    if (!status) {
+      return '';
+    }
+    
     switch (status) {
       case ListingStatus.AVAILABLE:
         return 'status-available';
