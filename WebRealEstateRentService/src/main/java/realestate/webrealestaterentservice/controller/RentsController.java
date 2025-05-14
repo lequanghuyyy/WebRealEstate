@@ -38,9 +38,10 @@ public class RentsController {
         return ResponseFactory.ok(response);
     }
 
-    @PostMapping("/find")
-    public ResponseEntity<BaseResponse<PageDto<RentalTransactionResponse>>> getAllTransactions(@RequestBody PageRentalTransactionRequest pageRentalTransactionRequest) {
-        PageDto<RentalTransactionResponse> response = rentalService.getPagedRentalTransactions(pageRentalTransactionRequest);
+    @GetMapping("/find/{page}/{size}")
+    public ResponseEntity<BaseResponse<PageDto<RentalTransactionResponse>>> getAllTransactions(@PathVariable int page,
+                                                                                               @PathVariable int size) {
+        PageDto<RentalTransactionResponse> response = rentalService.getPagedRentalTransactions(page,size);
         return ResponseFactory.ok(response);
     }
 

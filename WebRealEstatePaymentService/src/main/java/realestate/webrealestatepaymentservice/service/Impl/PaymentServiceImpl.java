@@ -8,6 +8,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import realestate.webrealestatepaymentservice.constant.PaymentMethod;
 import realestate.webrealestatepaymentservice.constant.PaymentStatus;
+import realestate.webrealestatepaymentservice.constant.TransactionStyle;
 import realestate.webrealestatepaymentservice.dto.request.PaymentRequest;
 import realestate.webrealestatepaymentservice.dto.response.PaymentResponse;
 import realestate.webrealestatepaymentservice.entity.PaymentEntity;
@@ -17,6 +18,7 @@ import realestate.webrealestatepaymentservice.repository.PaymentRepository;
 import realestate.webrealestatepaymentservice.service.PaymentService;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -59,9 +61,32 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public BigDecimal calculateCommissionFee(TransactionStyle transactionStyle) {
+        List<PaymentEntity> paymentEntities = paymentRepository.findByTransactionStyle(transactionStyle);
+        BigDecimal totalCommissionFee = BigDecimal.ZERO;
+        for (PaymentEntity paymentEntity : paymentEntities) {
+            totalCommissionFee = totalCommissionFee.add(paymentEntity.getCommissionFee());
+        }
+        return totalCommissionFee;
+    }
+
+    @Override
     public Page<PaymentResponse> getAllPayments(int page) {
         Pageable pageable = PageRequest.of(page, 10, Sort.by("createdAt").descending());
         Page<PaymentEntity> paymentEntities = paymentRepository.findAll(pageable);
         return paymentEntities.map(paymentMapper::convertToResponse);
+    }
+
+    @Override
+    public PaymentResponse updateStatus(String paymentId, PaymentStatus status) {
+        PaymentEntity paymentEntity = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new NotFoundException("Payment not found with id: " + paymentId));
+        paymentEntity.setPaymentStatus(status);
+        if (status == PaymentStatus.COMPLETED) {
+            paymentEntity.setPaymentDate(LocalDateTime.now());
+        }
+        paymentEntity.setUpdatedAt(LocalDateTime.now());
+        PaymentEntity updatedPaymentEntity = paymentRepository.save(paymentEntity);
+        return paymentMapper.convertToResponse(updatedPaymentEntity);
     }
 }

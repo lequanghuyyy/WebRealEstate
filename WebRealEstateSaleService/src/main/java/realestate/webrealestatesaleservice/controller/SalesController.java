@@ -34,9 +34,10 @@ public class SalesController {
         return ResponseFactory.ok(response);
     }
 
-    @GetMapping("/find")
-    public ResponseEntity<BaseResponse<PageDto<SalesTransactionResponse>>> getAllTransactions(@RequestBody PageSalesTransactionRequest pageSalesTransactionRequest) {
-        return ResponseFactory.ok(salesService.getAllTransactions(pageSalesTransactionRequest));
+    @GetMapping("/find/{page}/{size}")
+    public ResponseEntity<BaseResponse<PageDto<SalesTransactionResponse>>> getAllTransactions(@PathVariable int page,
+                                                                                              @PathVariable int size) {
+        return ResponseFactory.ok(salesService.getAllTransactions(page,size));
     }
 
     @GetMapping("/buyer/{buyerId}")

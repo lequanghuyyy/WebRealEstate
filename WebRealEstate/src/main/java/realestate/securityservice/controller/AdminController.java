@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import realestate.securityservice.constant.Role;
 import realestate.securityservice.dto.respone.BaseResponse;
 import realestate.securityservice.dto.respone.ResponseFactory;
 import realestate.securityservice.dto.respone.UserResponse;
@@ -11,6 +12,7 @@ import realestate.securityservice.service.AgentApprovalService;
 import realestate.securityservice.service.UserService;
 
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("api/v1/users")
@@ -38,5 +40,16 @@ public class AdminController {
     @GetMapping("/count")
     public ResponseEntity<BaseResponse<Integer>> getPendingAgentCount() {
         return ResponseFactory.ok(userService.countUsers());
+    }
+    @GetMapping("/count/{role}")
+    public ResponseEntity<BaseResponse<Integer>> getPendingAgentCountByRole(@PathVariable String role) {
+        try {
+            Role enumRole = Role.valueOf(role.toUpperCase());
+            Set<Role> roles = Set.of(enumRole);
+            return ResponseFactory.ok(userService.countUsersByRole(roles));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(new BaseResponse<>());
+        }
     }
 }

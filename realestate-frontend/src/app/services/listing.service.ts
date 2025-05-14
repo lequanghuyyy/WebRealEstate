@@ -17,7 +17,7 @@ import {
   providedIn: 'root'
 })
 export class ListingService {
-  private apiUrl = '/api/listings';
+  private apiUrl = 'api/listings';
 
   constructor(private http: HttpClient) { }
 
@@ -169,8 +169,12 @@ export class ListingService {
 
   // Get listings with pagination
   getListingsPaged(page: number = 1, size: number = 10): Observable<PageDto<ListingResponse>> {
-    const request = { page, size };
-    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(`${this.apiUrl}`, { params: { page: page.toString(), size: size.toString() } })
+    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(`${this.apiUrl}`, { 
+      params: { 
+        page: page.toString(), 
+        size: size.toString() 
+      } 
+    })
       .pipe(
         map(response => response.data),
         catchError(error => {

@@ -55,18 +55,30 @@ export class PaymentService {
   }
   
   // Get all payments for a specific agent with pagination
-  getAllPayments(agentId?: string, page: number = 0): Observable<any> {
-    // If no agentId is provided (admin use case), get current user's ID
+  getAgentPayments(agentId?: string, page: number = 0): Observable<any> {
+    // If no agentId is provided, get current user's ID
     if (!agentId) {
       const currentUser = this.authService.getCurrentUser();
       agentId = currentUser?.id || '';
     }
 
-    return this.http.get<any>(`${this.apiUrl}/find/${agentId}/${page}`).pipe(
+    return this.http.get<any>(`${this.apiUrl}/agent/${agentId}/${page}`).pipe(
       map(response => response.data),
-      tap(paymentsPage => console.log('Found payments:', paymentsPage)),
+      tap(paymentsPage => console.log('Found agent payments:', paymentsPage)),
       catchError(error => {
-        console.error('Error getting payments:', error);
+        console.error('Error getting agent payments:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  // Get all payments with pagination (for admin)
+  getAllPayments(page: number = 0): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${page}`).pipe(
+      map(response => response.data),
+      tap(paymentsPage => console.log('Found all payments:', paymentsPage)),
+      catchError(error => {
+        console.error('Error getting all payments:', error);
         return throwError(() => error);
       })
     );
@@ -145,7 +157,7 @@ export class PaymentService {
 
   // Get all payments for a user (agent)
   getUserPayments(userId: string): Observable<PaymentResponse[]> {
-    return this.getAllPayments(userId).pipe(
+    return this.getAgentPayments(userId).pipe(
       map(pageData => pageData.content),
       tap(payments => console.log(`Found ${payments.length} payments for user`)),
       catchError(error => {
@@ -157,7 +169,7 @@ export class PaymentService {
 
   // Update payment status
   updatePaymentStatus(paymentId: string, status: string): Observable<PaymentResponse> {
-    return this.http.put<any>(`${this.apiUrl}/${paymentId}/status`, { status }).pipe(
+    return this.http.put<any>(`${this.apiUrl}/update/${paymentId}/${status}`, {}).pipe(
       map(response => response.data),
       tap(payment => console.log('Updated payment status:', payment)),
       catchError(error => {

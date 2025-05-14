@@ -45,7 +45,7 @@ public class AgentApprovalServiceImpl implements AgentApprovalService {
     public UserResponse approveAgent(String agentId) {
         UserEntity agent = userRepository.findById(agentId)
                 .orElseThrow(() -> new NotFoundException("User", "UserId", agentId));
-
+    
         if (agent.getStatus() != UserStatus.PENDING_APPROVAL) {
             throw new IllegalStateException("User is not pending approval");
         }

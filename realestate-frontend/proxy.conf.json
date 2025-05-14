@@ -20,6 +20,30 @@
       "Connection": "keep-alive"
     }
   },
+  "/api/sales": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/sales": "/api/v1/sales"
+    },
+    "headers": {
+      "Connection": "keep-alive"
+    }
+  },
+  "/api/rentals": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/rentals": "/api/v1/rentals"
+    },
+    "headers": {
+      "Connection": "keep-alive"
+    }
+  },
   "/api/listings": {
     "target": "http://localhost:8080",
     "secure": false,
@@ -187,6 +211,21 @@
     "logLevel": "debug",
     "pathRewrite": {
       "^/api/payments": "/api/v1/payments"
+    },
+    "headers": {
+      "Connection": "keep-alive"
+    }
+  },
+  "/api/users/count": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/users/count": "/api/v1/users/count"
+    },
+    "headers": {
+      "Connection": "keep-alive"
     }
   }
 } 

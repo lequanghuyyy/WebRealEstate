@@ -1,23 +1,36 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormControl } from '@angular/forms';
+import { ReactiveFormsModule, FormControl, FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
-import { Transaction } from '../../../models/transaction.model';
-import { finalize } from 'rxjs/operators';
+import { Transaction, TransactionStatus, RentalStatus, 
+         SalesTransactionResponse, RentalTransactionResponse,
+         PageSalesTransactionRequest, PageRentalTransactionRequest, 
+         PageDto } from '../../../models/transaction.model';
+import { finalize, forkJoin } from 'rxjs';
+import { TransactionService } from '../../../services/transaction.service';
 
 @Component({
   selector: 'app-admin-transactions',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule],
   templateUrl: './admin-transactions.component.html',
   styleUrls: ['./admin-transactions.component.scss']
 })
 export class AdminTransactionsComponent implements OnInit {
   transactions: Transaction[] = [];
   filteredTransactions: Transaction[] = [];
+  salesTransactions: SalesTransactionResponse[] = [];
+  rentalTransactions: RentalTransactionResponse[] = [];
+  
   isLoading: boolean = true;
   error: string | null = null;
+  
+  // Pagination
+  currentPage: number = 1;
+  pageSize: number = 10;
+  totalItems: number = 0;
+  totalPages: number = 0;
   
   // Filter controls
   searchControl = new FormControl('');
@@ -26,9 +39,13 @@ export class AdminTransactionsComponent implements OnInit {
   
   // Modal state
   showTransactionModal: boolean = false;
-  selectedTransaction: Transaction | null = null;
+  selectedTransaction: any = null;
+  isRentalTransaction: boolean = false;
 
-  constructor(private adminService: AdminService) {}
+  constructor(
+    private adminService: AdminService,
+    private transactionService: TransactionService
+  ) {}
 
   ngOnInit(): void {
     this.loadTransactions();
@@ -49,10 +66,47 @@ export class AdminTransactionsComponent implements OnInit {
 
   loadTransactions(): void {
     this.isLoading = true;
-    this.adminService.getTransactions().subscribe({
-      next: (transactions) => {
-        this.transactions = transactions;
-        this.filteredTransactions = [...transactions];
+    this.error = null;
+    
+    // Create requests with pagination
+    const salesRequest: PageSalesTransactionRequest = {
+      page: this.currentPage,
+      size: this.pageSize
+    };
+    
+    const rentalRequest: PageRentalTransactionRequest = {
+      page: this.currentPage,
+      size: this.pageSize
+    };
+    
+    console.log('Loading transactions with page:', this.currentPage, 'size:', this.pageSize);
+    
+    // Use forkJoin to make parallel requests
+    forkJoin({
+      sales: this.transactionService.getAllSalesTransactions(salesRequest),
+      rentals: this.transactionService.getAllRentalTransactions(rentalRequest)
+    }).subscribe({
+      next: (results) => {
+        console.log('Received sales data:', results.sales);
+        console.log('Received rentals data:', results.rentals);
+        
+        // Store the original response data
+        this.salesTransactions = results.sales.items;
+        this.rentalTransactions = results.rentals.items;
+        
+        // Calculate total items from both sources
+        this.totalItems = results.sales.totalElements + results.rentals.totalElements;
+        this.totalPages = Math.max(results.sales.totalPages, results.rentals.totalPages);
+        
+        // Transform both types to a common Transaction format
+        const salesTransformed = this.salesTransactions.map(sale => this.mapSaleTransaction(sale));
+        const rentalsTransformed = this.rentalTransactions.map(rental => this.mapRentalTransaction(rental));
+        
+        // Combine and sort by date (newest first)
+        this.transactions = [...salesTransformed, ...rentalsTransformed]
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        this.filteredTransactions = [...this.transactions];
         this.isLoading = false;
       },
       error: (err) => {
@@ -61,6 +115,60 @@ export class AdminTransactionsComponent implements OnInit {
         console.error('Error loading transactions:', err);
       }
     });
+  }
+  
+  mapSaleTransaction(sale: SalesTransactionResponse): Transaction {
+    return {
+      id: sale.id,
+      type: 'sale',
+      transactionType: 'sale',
+      propertyId: sale.listingId,
+      propertyTitle: `Property ID: ${sale.listingId}`,
+      amount: Number(sale.amount),
+      status: sale.transactionStatus,
+      paymentStatus: sale.transactionStatus,
+      date: sale.createdAt,
+      buyerId: sale.buyerId,
+      buyerName: `Customer ID: ${sale.buyerId}`,
+      agentId: sale.agentId,
+      property: {
+        id: sale.listingId,
+        title: `Property ID: ${sale.listingId}`,
+        image: 'assets/images/property-placeholder.jpg'
+      },
+      client: {
+        name: `Customer ID: ${sale.buyerId}`,
+        email: ''
+      }
+    };
+  }
+  
+  mapRentalTransaction(rental: RentalTransactionResponse): Transaction {
+    return {
+      id: rental.id,
+      type: 'rent',
+      transactionType: 'rent',
+      propertyId: rental.listingId,
+      propertyTitle: `Property ID: ${rental.listingId}`,
+      amount: Number(rental.monthlyRent),
+      status: rental.status,
+      paymentStatus: rental.status,
+      date: rental.createdAt,
+      buyerId: rental.renterId,
+      buyerName: `Customer ID: ${rental.renterId}`,
+      agentId: rental.agentId,
+      startDate: rental.startDate,
+      endDate: rental.endDate,
+      property: {
+        id: rental.listingId,
+        title: `Property ID: ${rental.listingId}`,
+        image: 'assets/images/property-placeholder.jpg'
+      },
+      client: {
+        name: `Customer ID: ${rental.renterId}`,
+        email: ''
+      }
+    };
   }
   
   filterTransactions(): void {
@@ -72,7 +180,6 @@ export class AdminTransactionsComponent implements OnInit {
       filtered = filtered.filter(transaction => 
         (transaction.propertyTitle?.toLowerCase().includes(searchTerm) || false) || 
         (transaction.buyerName?.toLowerCase().includes(searchTerm) || false) ||
-        (transaction.sellerName?.toLowerCase().includes(searchTerm) || false) ||
         (String(transaction.id).toLowerCase().includes(searchTerm))
       );
     }
@@ -93,8 +200,40 @@ export class AdminTransactionsComponent implements OnInit {
   }
 
   openTransactionModal(transaction: Transaction): void {
-    this.selectedTransaction = transaction;
-    this.showTransactionModal = true;
+    this.isLoading = true;
+    this.selectedTransaction = null;
+    
+    // Determine if this is a rental or sales transaction
+    this.isRentalTransaction = transaction.type === 'rent' || transaction.transactionType === 'rent';
+    
+    // Fetch detailed transaction data
+    if (this.isRentalTransaction) {
+      this.transactionService.getRentalTransactionById(transaction.id!.toString())
+        .subscribe({
+          next: (rental) => {
+            this.selectedTransaction = rental;
+            this.showTransactionModal = true;
+            this.isLoading = false;
+          },
+          error: (err) => {
+            this.error = 'Failed to load transaction details';
+            this.isLoading = false;
+          }
+        });
+    } else {
+      this.transactionService.getSalesTransactionById(transaction.id!.toString())
+        .subscribe({
+          next: (sale) => {
+            this.selectedTransaction = sale;
+            this.showTransactionModal = true;
+            this.isLoading = false;
+          },
+          error: (err) => {
+            this.error = 'Failed to load transaction details';
+            this.isLoading = false;
+          }
+        });
+    }
   }
   
   closeTransactionModal(): void {
@@ -102,31 +241,52 @@ export class AdminTransactionsComponent implements OnInit {
     this.showTransactionModal = false;
   }
   
-  updateTransactionStatus(transaction: Transaction, status: 'pending' | 'completed' | 'cancelled' | 'refunded'): void {
+  updateTransactionStatus(transaction: Transaction, status: string): void {
     if (!transaction.id) {
       this.error = "Cannot update transaction without an ID";
       return;
     }
     
     this.isLoading = true;
-    this.adminService.updateTransactionStatus(transaction.id, status)
-      .pipe(
-        finalize(() => this.isLoading = false)
-      )
-      .subscribe({
-        next: (updatedTransaction) => {
-          // Update the transaction in the list
-          const index = this.transactions.findIndex(t => t.id === updatedTransaction.id);
-          if (index !== -1) {
-            this.transactions[index] = updatedTransaction;
-            this.filterTransactions(); // Re-apply filters to update the filtered list
+    
+    // Determine if this is a rental or sales transaction
+    const isRental = transaction.type === 'rent' || transaction.transactionType === 'rent';
+    
+    if (isRental) {
+      this.transactionService.updateRentalTransactionStatus(transaction.id.toString(), status)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => {
+            this.loadTransactions(); // Reload all transactions to get updated data
+            this.closeTransactionModal();
+          },
+          error: (error) => {
+            this.error = `Failed to update transaction status: ${error.message}`;
           }
-          this.closeTransactionModal();
-        },
-        error: (error) => {
-          this.error = `Failed to update transaction status: ${error.message}`;
-        }
-      });
+        });
+    } else {
+      this.transactionService.updateSalesTransactionStatus(transaction.id.toString(), status)
+        .pipe(finalize(() => this.isLoading = false))
+        .subscribe({
+          next: () => {
+            this.loadTransactions(); // Reload all transactions to get updated data
+            this.closeTransactionModal();
+          },
+          error: (error) => {
+            this.error = `Failed to update transaction status: ${error.message}`;
+          }
+        });
+    }
+  }
+  
+  onPageChange(page: number): void {
+    this.currentPage = page;
+    this.loadTransactions();
+  }
+  
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when changing page size
+    this.loadTransactions();
   }
   
   formatCurrency(amount: number): string {
@@ -150,18 +310,15 @@ export class AdminTransactionsComponent implements OnInit {
   getStatusBadgeClass(status: string | undefined): string {
     if (!status) return 'bg-secondary';
     
-    switch (status) {
-      case 'completed':
+    switch (status.toUpperCase()) {
       case 'COMPLETED':
+      case 'APPROVED':
         return 'bg-success';
-      case 'pending':
       case 'PENDING':
         return 'bg-warning';
-      case 'cancelled':
       case 'CANCELLED':
+      case 'REJECTED':
         return 'bg-danger';
-      case 'refunded':
-        return 'bg-info';
       default:
         return 'bg-secondary';
     }

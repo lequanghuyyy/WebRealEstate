@@ -2,7 +2,25 @@
   <!-- Test Content to verify rendering -->
   <div class="test-banner" style="background-color: #f0f9ff; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #3b82f6;">
     <h2 style="color: #3b82f6; margin: 0;">Admin Dashboard</h2>
-    <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">Connected to API: {{!error ? 'Yes' : 'No (using fallback data)'}}</p>
+    <p style="margin: 5px 0 0; color: #4b5563; font-size: 14px;">
+      API Status: {{apiStatus ? 'Connected' : error ? 'Connection Failed' : 'Connecting...'}}
+    </p>
+    <div *ngIf="endpointStatus && showEndpointDetails" style="margin-top: 8px; font-size: 12px;">
+      <p style="margin: 2px 0; color: #4b5563;" *ngFor="let endpoint of endpointStatus | keyvalue">
+        <span>{{endpoint.key}}: </span>
+        <span [style.color]="endpoint.value ? '#16a34a' : '#dc2626'">
+          {{endpoint.value ? 'Success' : 'Fallback'}}
+        </span>
+      </p>
+      <button class="btn btn-sm btn-outline-primary mt-2" (click)="toggleEndpointDetails()">
+        Hide Details
+      </button>
+    </div>
+    <div *ngIf="!showEndpointDetails && error">
+      <button class="btn btn-sm btn-outline-primary mt-2" (click)="toggleEndpointDetails()">
+        Show Connection Details
+      </button>
+    </div>
   </div>
 
   <!-- Loading State -->
@@ -37,12 +55,12 @@
               <div class="stats-number">{{ stats.users.total }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
-                  <span class="detail-label">Active:</span>
-                  <span class="detail-value">{{ stats.users.active }}</span>
-                </div>
-                <div class="detail-item">
                   <span class="detail-label">Agents:</span>
                   <span class="detail-value">{{ stats.users.agents }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">Buyers, Renter: </span>
+                  <span class="detail-value">{{ stats.users.total - stats.users.agents }}</span>
                 </div>
               </div>
             </div>
@@ -77,21 +95,21 @@
         <div class="col-md-6 col-lg-3">
           <div class="stats-card">
             <div class="stats-card-header">
-              <h3>Revenue</h3>
+              <h3>Commissions</h3>
               <div class="stats-icon bg-info">
                 <i class="fas fa-dollar-sign"></i>
               </div>
             </div>
             <div class="stats-card-body">
-              <div class="stats-number">{{ formatCurrency(stats.revenue.total) }}</div>
+              <div class="stats-number">{{ formatCurrency(stats.revenue.commissions) }}</div>
               <div class="stats-detail">
                 <div class="detail-item">
-                  <span class="detail-label">Commissions:</span>
-                  <span class="detail-value">{{ formatCurrency(stats.revenue.commissions) }}</span>
+                  <span class="detail-label">Sales commissions:</span>
+                  <span class="detail-value">{{ formatCurrency(stats.revenue.salesCommissions) }}</span>
                 </div>
                 <div class="detail-item">
-                  <span class="detail-label">This Month:</span>
-                  <span class="detail-value">{{ formatCurrency(stats.revenue.thisMonth) }}</span>
+                  <span class="detail-label">Rental commissions:</span>
+                  <span class="detail-value">{{ formatCurrency(stats.revenue.rentalCommissions) }}</span>
                 </div>
               </div>
             </div>

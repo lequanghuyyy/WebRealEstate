@@ -119,7 +119,10 @@ public class RentalServiceImpl implements RentalService {
     }
 
     @Override
-    public PageDto<RentalTransactionResponse> getPagedRentalTransactions(PageRentalTransactionRequest request) {
+    public PageDto<RentalTransactionResponse> getPagedRentalTransactions(int page, int size) {
+        PageRentalTransactionRequest request = new PageRentalTransactionRequest();
+        request.setPage(page);
+        request.setSize(size);
         Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize(), Sort.by("createdAt").descending());
         Page<RentalTransactionEntity> transactionsPage = rentalTransactionRepository.findAll(pageable);
 

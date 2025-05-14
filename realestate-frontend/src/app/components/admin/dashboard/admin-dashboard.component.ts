@@ -1,15 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { AdminService } from '../../../services/admin.service';
 import { AuthService } from '../../../services/auth.service';
 import { Transaction } from '../../../models/transaction.model';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
+import { TransactionStyle } from '../../../models/payment.model';
+import { forkJoin } from 'rxjs';
 
 interface DashboardStats {
   users: {
     total: number;
     active: number;
     agents: number;
+    buyers?: number;
+    renters?: number;
   };
   transactions: {
     total: number;
@@ -22,13 +28,50 @@ interface DashboardStats {
     total: number;
     commissions: number;
     thisMonth: number;
+    salesCommissions?: number;
+    rentalCommissions?: number;
   };
   properties: {
     total: number;
     forSale: number;
     forRent: number;
-    pending: number;
+    pending?: number;
   };
+  _endpointStatus?: {
+    users: boolean;
+    agents: boolean;
+    buyers: boolean;
+    renters: boolean;
+    sales: boolean;
+    rentals: boolean;
+    pending: boolean;
+    completed: boolean;
+    commission: boolean;
+    properties: boolean;
+    propertiesSale: boolean;
+    propertiesRent: boolean;
+    propertiesPending: boolean;
+    totalRevenue: boolean;
+    monthlyRevenue: boolean;
+  };
+}
+
+interface EndpointStatus {
+  users: boolean;
+  agents: boolean;
+  buyers: boolean;
+  renters: boolean;
+  sales: boolean;
+  rentals: boolean;
+  pending: boolean;
+  completed: boolean;
+  commission: boolean;
+  properties: boolean;
+  propertiesSale: boolean;
+  propertiesRent: boolean;
+  propertiesPending: boolean;
+  totalRevenue: boolean;
+  monthlyRevenue: boolean;
 }
 
 @Component({
@@ -40,29 +83,92 @@ interface DashboardStats {
 })
 export class AdminDashboardComponent implements OnInit {
   stats: DashboardStats = {
-    users: { total: 0, active: 0, agents: 0 },
+    users: { total: 0, active: 0, agents: 0, buyers: 0, renters: 0 },
     transactions: { total: 0, sales: 0, rentals: 0, pending: 0, completed: 0 },
-    revenue: { total: 0, commissions: 0, thisMonth: 0 },
+    revenue: { 
+      total: 0, 
+      commissions: 0, 
+      thisMonth: 0, 
+      salesCommissions: 0, 
+      rentalCommissions: 0 
+    },
     properties: { total: 0, forSale: 0, forRent: 0, pending: 0 }
   };
   recentTransactions: Transaction[] = [];
   isLoading: boolean = true;
   error: string | null = null;
   currentUser: any;
+  
+  apiStatus: boolean = false;
+  endpointStatus: EndpointStatus | null = null;
+  showEndpointDetails: boolean = false;
 
   constructor(
     private adminService: AdminService,
-    private authService: AuthService
+    private authService: AuthService,
+    private router: Router,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
     this.currentUser = this.authService.getCurrentUser();
+    
+    // Kiểm tra người dùng đã đăng nhập và có token chưa
+    if (!this.authService.isLoggedIn() || !this.authService.getToken()) {
+      this.error = 'Bạn cần đăng nhập để xem dashboard';
+      console.error('Token không tồn tại hoặc người dùng chưa đăng nhập');
+      this.isLoading = false;
+      // Điều hướng đến trang đăng nhập
+      this.router.navigate(['/login']);
+      return;
+    }
+    
+    // Kiểm tra token chi tiết
+    const tokenDetail = this.authService.getTokenDetail();
+    if (tokenDetail) {
+      console.log('TOKEN VALUE:', tokenDetail.value);
+      console.log('TOKEN DECODED:', tokenDetail.decoded);
+      
+      // Thử gọi API trực tiếp với token
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${tokenDetail.value}`
+      });
+      
+      console.log('Thử gọi API trực tiếp với token');
+      this.http.get(`${environment.apiUrl}/users/count`, { headers }).subscribe({
+        next: (response) => {
+          console.log('Kết quả API gọi trực tiếp:', response);
+        },
+        error: (err) => {
+          console.error('Lỗi khi gọi trực tiếp:', err);
+        }
+      });
+    }
+    
     this.loadDashboardData();
   }
 
   loadDashboardData(): void {
     this.isLoading = true;
     this.error = null;
+    this.apiStatus = false;
+    this.endpointStatus = {
+      users: false,
+      agents: false,
+      buyers: false,
+      renters: false,
+      sales: false,
+      rentals: false,
+      pending: false,
+      completed: false,
+      commission: false,
+      properties: false,
+      propertiesSale: false,
+      propertiesRent: false,
+      propertiesPending: false,
+      totalRevenue: false,
+      monthlyRevenue: false
+    };
     
     // Increase timeout for API calls
     const fallbackTimeout = setTimeout(() => {
@@ -72,12 +178,31 @@ export class AdminDashboardComponent implements OnInit {
       }
     }, 15000); // 15 second timeout
     
-    this.adminService.getDashboardStats().subscribe({
-      next: (data: DashboardStats) => {
+    // Load dashboard stats and commission data
+    forkJoin({
+      dashboardStats: this.adminService.getDashboardStats(),
+      salesCommission: this.adminService.getCommissionByTransactionStyle(TransactionStyle.SALE),
+      rentalCommission: this.adminService.getCommissionByTransactionStyle(TransactionStyle.RENT)
+    }).subscribe({
+      next: (results) => {
         clearTimeout(fallbackTimeout);
-        this.stats = data;
+        
+        // Set basic dashboard stats
+        this.stats = results.dashboardStats;
+        
+        // Add commission data
+        this.stats.revenue.salesCommissions = results.salesCommission;
+        this.stats.revenue.rentalCommissions = results.rentalCommission;
+        
         this.isLoading = false;
-        console.log('Dashboard data loaded successfully:', data);
+        this.apiStatus = true;
+        
+        // Record which endpoints successfully connected
+        if (results.dashboardStats._endpointStatus) {
+          this.endpointStatus = results.dashboardStats._endpointStatus;
+        }
+        
+        console.log('Dashboard data loaded successfully:', this.stats);
       },
       error: (err: Error) => {
         clearTimeout(fallbackTimeout);
@@ -105,11 +230,12 @@ export class AdminDashboardComponent implements OnInit {
 
   provideFallbackData(): void {
     this.isLoading = false;
+    this.apiStatus = false;
     this.stats = {
       users: {
         total: 250,
         active: 210,
-        agents: 25
+        agents: 25,
       },
       transactions: {
         total: 45,
@@ -121,7 +247,9 @@ export class AdminDashboardComponent implements OnInit {
       revenue: {
         total: 125000,
         commissions: 37500,
-        thisMonth: 12500
+        thisMonth: 12500,
+        salesCommissions: 26250, // 70% of total commissions
+        rentalCommissions: 11250  // 30% of total commissions
       },
       properties: {
         total: 120,
@@ -199,7 +327,10 @@ export class AdminDashboardComponent implements OnInit {
     ];
   }
 
-  formatCurrency(amount: number): string {
+  formatCurrency(amount: number | undefined): string {
+    if (amount === undefined) {
+      return '$0';
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -219,5 +350,9 @@ export class AdminDashboardComponent implements OnInit {
   retryLoading(): void {
     this.error = null;
     this.loadDashboardData();
+  }
+  
+  toggleEndpointDetails(): void {
+    this.showEndpointDetails = !this.showEndpointDetails;
   }
 } 

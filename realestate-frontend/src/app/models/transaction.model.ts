@@ -121,22 +121,16 @@ export interface StatusUpdateRequest {
 export interface PageRequest {
   page: number;
   size: number;
-  sortBy?: string;
-  sortDir?: string;
 }
 
-export interface PageSalesTransactionRequest extends PageRequest {
-  listingId?: string;
-  buyerId?: string;
-  agentId?: string;
-  status?: string;
+export interface PageSalesTransactionRequest {
+  page: number;
+  size: number;
 }
 
-export interface PageRentalTransactionRequest extends PageRequest {
-  listingId?: string;
-  renterId?: string;
-  agentId?: string;
-  status?: string;
+export interface PageRentalTransactionRequest {
+  page: number;
+  size: number;
 }
 
 export interface PageDto<T> {

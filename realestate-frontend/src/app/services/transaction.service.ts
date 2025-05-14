@@ -24,15 +24,20 @@ import { AuthService } from './auth.service';
   providedIn: 'root'
 })
 export class TransactionService {
-  private apiUrl = `${environment.apiUrl}`;
+  private apiUrl = environment.apiUrl;
   private salesApiUrl = `${this.apiUrl}/sales`;
   private rentalApiUrl = `${this.apiUrl}/rentals`;
 
   constructor(
-    private http: HttpClient,
-    private paymentService: PaymentService,
+    private http: HttpClient, 
+    private paymentService: PaymentService, 
     private authService: AuthService
-  ) {}
+  ) {
+    console.log('API URLs:');
+    console.log('Base API URL:', this.apiUrl);
+    console.log('Sales API URL:', this.salesApiUrl);
+    console.log('Rental API URL:', this.rentalApiUrl);
+  }
 
   // SALES TRANSACTION API METHODS
 
@@ -69,7 +74,7 @@ export class TransactionService {
 
   // Get a sales transaction by ID
   getSalesTransactionById(transactionId: string): Observable<SalesTransactionResponse> {
-    return this.http.get<any>(`${this.salesApiUrl}/find/${transactionId}`).pipe(
+    return this.http.get<any>(`${this.salesApiUrl}/${transactionId}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting sales transaction:', error);
@@ -80,7 +85,7 @@ export class TransactionService {
 
   // Get all sales transactions with pagination
   getAllSalesTransactions(request: PageSalesTransactionRequest): Observable<PageDto<SalesTransactionResponse>> {
-    return this.http.get<any>(`${this.salesApiUrl}/find`, { params: { ...request } }).pipe(
+    return this.http.get<any>(`${this.salesApiUrl}/find/${request.page}/${request.size}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting all sales transactions:', error);
@@ -120,6 +125,7 @@ export class TransactionService {
     );
   }
 
+  // Update sales transaction status
   updateSalesTransactionStatus(transactionId: string, status: string): Observable<SalesTransactionResponse> {
     const statusRequest: StatusUpdateRequest = { status };
     return this.http.put<any>(`${this.salesApiUrl}/updateStatus/${transactionId}`, statusRequest).pipe(
@@ -130,6 +136,7 @@ export class TransactionService {
       })
     );
   }
+
   createRentalTransaction(request: RentalTransactionRequest): Observable<RentalTransactionResponse> {
     const currentUser = this.authService.getCurrentUser();
     const agentId = currentUser?.id || '';
@@ -159,8 +166,9 @@ export class TransactionService {
     );
   }
 
+  // Get a rental transaction by ID
   getRentalTransactionById(transactionId: string): Observable<RentalTransactionResponse> {
-    return this.http.get<any>(`${this.rentalApiUrl}/find/${transactionId}`).pipe(
+    return this.http.get<any>(`${this.rentalApiUrl}/${transactionId}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting rental transaction:', error);
@@ -169,8 +177,9 @@ export class TransactionService {
     );
   }
 
+  // Get all rental transactions with pagination
   getAllRentalTransactions(request: PageRentalTransactionRequest): Observable<PageDto<RentalTransactionResponse>> {
-    return this.http.post<any>(`${this.rentalApiUrl}/find`, request).pipe(
+    return this.http.get<any>(`${this.rentalApiUrl}/find/${request.page}/${request.size}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting all rental transactions:', error);
@@ -228,7 +237,7 @@ export class TransactionService {
   // Get all transactions (using combined API calls)
   getTransactions(): Observable<Transaction[]> {
     const pageRequest: PageSalesTransactionRequest = {
-      page: 0,
+      page: 1,
       size: 50
     };
 
@@ -317,7 +326,7 @@ export class TransactionService {
   // Get buy transactions with new status
   getBuyTransactions(): Observable<Transaction[]> {
     const pageRequest: PageSalesTransactionRequest = {
-      page: 0,
+      page: 1,
       size: 50
     };
 
@@ -336,7 +345,7 @@ export class TransactionService {
   // Get rent transactions with new status
   getRentTransactions(): Observable<Transaction[]> {
     const pageRequest: PageRentalTransactionRequest = {
-      page: 0,
+      page: 1,
       size: 50
     };
 
@@ -378,9 +387,8 @@ export class TransactionService {
     
     // Create request for completed sales transactions in current month
     const salesRequest: PageSalesTransactionRequest = {
-      page: 0,
-      size: 50,
-      status: TransactionStatus.COMPLETED
+      page: 1,
+      size: 50
     };
 
     return this.getAllSalesTransactions(salesRequest).pipe(
@@ -391,7 +399,8 @@ export class TransactionService {
             const completedDate = sale.completedAt ? new Date(sale.completedAt) : null;
             return completedDate && 
                    completedDate >= startOfMonth && 
-                   completedDate <= endOfMonth;
+                   completedDate <= endOfMonth &&
+                   sale.transactionStatus === TransactionStatus.COMPLETED;
           })
           .map(sale => this.mapSalesToTransaction(sale));
       }),
@@ -475,5 +484,23 @@ export class TransactionService {
       startDate: rental.startDate,
       endDate: rental.endDate
     };
+  }
+
+  // Find transaction by ID and determine its type (SALE or RENT)
+  findTransactionTypeById(transactionId: string): Observable<string> {
+    // First try to find it as a sales transaction
+    return this.getSalesTransactionById(transactionId).pipe(
+      map(sale => 'SALE'),
+      catchError(saleError => {
+        // If not found as a sale, try as a rental
+        return this.getRentalTransactionById(transactionId).pipe(
+          map(rental => 'RENT'),
+          catchError(rentError => {
+            console.error('Transaction not found in either sales or rentals:', transactionId);
+            return of('UNKNOWN');
+          })
+        );
+      })
+    );
   }
 } 

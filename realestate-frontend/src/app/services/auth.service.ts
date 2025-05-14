@@ -185,7 +185,21 @@ export class AuthService {
                 this.fetchUserById(userFromToken.id).subscribe({
                   next: (user) => {
                     console.log('Complete user details fetched:', user);
-                    // Update user with complete details
+
+                    // Check if user is an agent with PENDING_APPROVAL status
+                    const isAgent = user.roles?.includes('AGENT');
+                    const isPending = user.status === UserStatus.PENDING_APPROVAL;
+                    
+                    if (isAgent && isPending) {
+                      // Log out the user immediately and throw error
+                      this.clearAuthData();
+                      this.currentUserSubject.next(null);
+                      
+                      // Force a login error to be caught by the catchError handler below
+                      throw new Error('Your agent account is pending approval. Please wait for an administrator to approve your account.');
+                    }
+                    
+                    // For non-agent or approved agents, update user with complete details
                     this.storeUser(user);
                     this.currentUserSubject.next(user);
                   },
@@ -217,6 +231,12 @@ export class AuthService {
         }),
         catchError(error => {
           console.error('Login failed:', error);
+          
+          // Check if this is our custom agent pending error
+          if (error && error.message && error.message.includes('pending approval')) {
+            return throwError(() => new Error('Your agent account is pending approval. Please wait for an administrator to approve your account.'));
+          }
+          
           return throwError(() => error);
         })
       );
@@ -364,7 +384,21 @@ export class AuthService {
 
   isAgent(): boolean {
     const user = this.getCurrentUser();
-    return !!user && user.roles.includes('AGENT');
+    if (!user || !user.roles) {
+      return false;
+    }
+    
+    // Chỉ xác nhận là agent nếu có role AGENT và không ở trạng thái PENDING_APPROVAL
+    if (user.roles.includes('AGENT')) {
+      // Kiểm tra nếu user có status và status là PENDING_APPROVAL
+      if (user.status === UserStatus.PENDING_APPROVAL) {
+        console.log('Agent account exists but is still pending approval');
+        return false;
+      }
+      return true;
+    }
+    
+    return false;
   }
 
   // Add method to decode JWT token and extract role info
@@ -532,30 +566,44 @@ export class AuthService {
   }
 
   public getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    const token = localStorage.getItem(this.tokenKey);
+    console.log('Getting token from localStorage:', token ? 'Token exists' : 'No token found');
+    return token;
   }
 
   public isLoggedIn(): boolean {
     const token = this.getToken();
-    if (!token) return false;
-    
+    const user = this.getCurrentUser();
+
+    if (!token) {
+      return false;
+    }
+
+    // Check for token expiration
     try {
-      // Kiểm tra token có hợp lệ không
       const decoded = this.decodeToken(token);
-      if (!decoded) return false;
-      
-      // Kiểm tra token đã hết hạn chưa
-      const currentTime = Date.now() / 1000;
-      if (decoded.exp && decoded.exp < currentTime) {
-        this.clearAuthData(); // Xóa token đã hết hạn
+      if (!decoded || !decoded.exp) {
         return false;
       }
       
-      // Kiểm tra user có tồn tại không
-      const user = this.getCurrentUser();
-      return !!user;
+      const expirationDate = new Date(0);
+      expirationDate.setUTCSeconds(decoded.exp);
+      
+      // If token is expired, clear auth data and return false
+      if (expirationDate.valueOf() <= new Date().valueOf()) {
+        this.clearAuthData();
+        return false;
+      }
+      
+      // Check if user is an agent with PENDING_APPROVAL status
+      if (user && user.roles && user.roles.includes('AGENT') && user.status === UserStatus.PENDING_APPROVAL) {
+        console.log('Agent with pending approval status attempted to login');
+        return false;
+      }
+      
+      return true;
     } catch (e) {
-      this.clearAuthData(); // Xóa token không hợp lệ
+      console.error('Error checking token validity', e);
       return false;
     }
   }
@@ -577,6 +625,22 @@ export class AuthService {
       // Lưu vào localStorage và BehaviorSubject
       this.storeUser(user);
       this.currentUserSubject.next(user);
+    }
+  }
+
+  // Phương thức mới để xem token mà không encoding
+  public getTokenDetail(): {value: string, decoded: any} | null {
+    const token = this.getToken();
+    if (!token) return null;
+    
+    try {
+      const decoded = this.decodeToken(token);
+      return { 
+        value: token,
+        decoded: decoded
+      };
+    } catch (e) {
+      return { value: token, decoded: null };
     }
   }
 }

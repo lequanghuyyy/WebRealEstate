@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay } from 'rxjs/operators';
+import { delay, map, catchError } from 'rxjs/operators';
 import { Agent } from '../models/agent.model';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
 
 export interface AgentApplication {
-  id: number;
+  id: number | string;
   email: string;
   fullName: string;
   phoneNumber: string;
@@ -126,7 +127,20 @@ export class AgentService {
     }
   ];
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private authService: AuthService) { }
+
+  // Create the auth headers for API requests
+  private createAuthHeaders(): { [header: string]: string } {
+    const token = this.authService.getToken();
+    if (!token) {
+      console.error('No authentication token found');
+      return {};
+    }
+    
+    return {
+      'Authorization': `Bearer ${token}`
+    };
+  }
 
   // Get all agents
   getAllAgents(): Observable<Agent[]> {
@@ -202,9 +216,34 @@ export class AgentService {
 
   // Get all agent applications
   getAllAgentApplications(): Observable<AgentApplication[]> {
-    // In a real app, replace with actual API call:
-    // return this.http.get<AgentApplication[]>(`${this.apiUrl}/applications`);
-    return of(this.mockAgentApplications).pipe(delay(800));
+    // Connect to the real backend API
+    return this.http.get<any>(`${environment.apiUrl}/users/pending-agents`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map((response: any) => {
+          // Transform the API response to our AgentApplication format
+          if (response && response.data) {
+            return response.data.map((user: any) => ({
+              id: user.id,
+              email: user.email,
+              fullName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username,
+              phoneNumber: user.phone || 'N/A',
+              agencyName: user.agentInfo?.agency || null,
+              applicationDate: user.createAt,
+              status: 'pending',
+              documents: [],
+              notes: user.bio || ''
+            }));
+          }
+          return [];
+        }),
+        catchError(error => {
+          console.error('Error fetching pending agents:', error);
+          // Fallback to mock data
+          return of(this.mockAgentApplications);
+        })
+      );
   }
 
   // Get agent application by ID
@@ -219,46 +258,88 @@ export class AgentService {
   }
 
   // Approve agent application
-  approveAgentApplication(id: number, notes?: string): Observable<AgentApplication> {
-    // In a real app, replace with actual API call:
-    // return this.http.patch<AgentApplication>(
-    //   `${this.apiUrl}/applications/${id}/approve`, 
-    //   { notes }
-    // );
-    
-    const index = this.mockAgentApplications.findIndex(app => app.id === id);
-    if (index === -1) {
-      throw new Error('Application not found');
-    }
-    
-    this.mockAgentApplications[index] = {
-      ...this.mockAgentApplications[index],
-      status: 'approved',
-      notes: notes || this.mockAgentApplications[index].notes
-    };
-    
-    return of(this.mockAgentApplications[index]).pipe(delay(800));
+  approveAgentApplication(id: number | string, notes?: string): Observable<AgentApplication> {
+    // Connect to the real backend API
+    return this.http.put<any>(`${environment.apiUrl}/users/${id}/approve`, {}, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map((response: any) => {
+          // Transform the API response to our AgentApplication format
+          if (response && response.data) {
+            const user = response.data;
+            return {
+              id: user.id,
+              email: user.email,
+              fullName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username,
+              phoneNumber: user.phone || 'N/A',
+              agencyName: user.agentInfo?.agency || null,
+              applicationDate: user.createAt,
+              status: 'approved' as 'pending' | 'approved' | 'rejected',
+              notes: notes || user.bio || ''
+            };
+          }
+          throw new Error('Invalid response format');
+        }),
+        catchError(error => {
+          console.error(`Error approving agent with ID ${id}:`, error);
+          // Fallback to mock data
+          const index = this.mockAgentApplications.findIndex(app => app.id === id);
+          if (index === -1) {
+            throw new Error('Application not found');
+          }
+          
+          this.mockAgentApplications[index] = {
+            ...this.mockAgentApplications[index],
+            status: 'approved',
+            notes: notes || this.mockAgentApplications[index].notes
+          };
+          
+          return of(this.mockAgentApplications[index]);
+        })
+      );
   }
 
   // Reject agent application
-  rejectAgentApplication(id: number, notes: string): Observable<AgentApplication> {
-    // In a real app, replace with actual API call:
-    // return this.http.patch<AgentApplication>(
-    //   `${this.apiUrl}/applications/${id}/reject`,
-    //   { notes }
-    // );
-    
-    const index = this.mockAgentApplications.findIndex(app => app.id === id);
-    if (index === -1) {
-      throw new Error('Application not found');
-    }
-    
-    this.mockAgentApplications[index] = {
-      ...this.mockAgentApplications[index],
-      status: 'rejected',
-      notes: notes
-    };
-    
-    return of(this.mockAgentApplications[index]).pipe(delay(800));
+  rejectAgentApplication(id: number | string, notes: string): Observable<AgentApplication> {
+    // Connect to the real backend API
+    return this.http.put<any>(`${environment.apiUrl}/users/${id}/reject`, {}, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map((response: any) => {
+          // Transform the API response to our AgentApplication format
+          if (response && response.data) {
+            const user = response.data;
+            return {
+              id: user.id,
+              email: user.email,
+              fullName: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username,
+              phoneNumber: user.phone || 'N/A',
+              agencyName: user.agentInfo?.agency || null,
+              applicationDate: user.createAt,
+              status: 'rejected' as 'pending' | 'approved' | 'rejected',
+              notes: notes
+            };
+          }
+          throw new Error('Invalid response format');
+        }),
+        catchError(error => {
+          console.error(`Error rejecting agent with ID ${id}:`, error);
+          // Fallback to mock data
+          const index = this.mockAgentApplications.findIndex(app => app.id === id);
+          if (index === -1) {
+            throw new Error('Application not found');
+          }
+          
+          this.mockAgentApplications[index] = {
+            ...this.mockAgentApplications[index],
+            status: 'rejected',
+            notes: notes
+          };
+          
+          return of(this.mockAgentApplications[index]);
+        })
+      );
   }
 }

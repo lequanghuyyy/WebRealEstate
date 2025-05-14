@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 public class PaymentResponse {
     private String id;
     private String transactionId;
+    private String agentId;
     private BigDecimal amount;
     private String paymentMethod;
     private String paymentStatus;

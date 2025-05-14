@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { AdminService } from '../../../services/admin.service';
+import { AdminService, UserStatus, Role } from '../../../services/admin.service';
 import { User } from '../../../models/user.model';
 
 @Component({
@@ -18,14 +18,21 @@ export class AdminUsersComponent implements OnInit {
   isLoading: boolean = true;
   error: string | null = null;
   
+  // Expose enums to template
+  UserStatus = UserStatus;
+  Role = Role;
+  
   // Filter controls
   searchControl = new FormControl('');
   roleFilter = new FormControl('all');
   statusFilter = new FormControl('all');
   
-  // Modal state
+  // Modal states
   showUserModal: boolean = false;
+  showDeleteConfirmModal: boolean = false;
   selectedUser: User | null = null;
+  userToDelete: User | null = null;
+  isDeleting: boolean = false;
   
   constructor(private adminService: AdminService) {}
 
@@ -50,8 +57,28 @@ export class AdminUsersComponent implements OnInit {
     this.isLoading = true;
     this.adminService.getUsers().subscribe({
       next: (users) => {
-        this.users = users;
-        this.filteredUsers = [...users];
+        // Process users to handle role format
+        this.users = users.map(user => {
+          // If user has roles array, use it to set the role property
+          if (user.roles && user.roles.length > 0) {
+            if (user.roles.includes(Role.AGENT)) {
+              user.role = Role.AGENT;
+            } else if (user.roles.includes(Role.ADMIN)) {
+              user.role = Role.ADMIN;
+            } else if (user.roles.includes(Role.BUYER) && user.roles.includes(Role.RENTER)) {
+              user.role = 'BUYER & RENTER';
+            } else if (user.roles.includes(Role.BUYER)) {
+              user.role = Role.BUYER;
+            } else if (user.roles.includes(Role.RENTER)) {
+              user.role = Role.RENTER;
+            } else {
+              user.role = Role.USER;
+            }
+          }
+          return user;
+        });
+        
+        this.filteredUsers = [...this.users];
         this.isLoading = false;
       },
       error: (err) => {
@@ -77,7 +104,13 @@ export class AdminUsersComponent implements OnInit {
     // Apply role filter
     const roleValue = this.roleFilter.value;
     if (roleValue && roleValue !== 'all') {
-      filtered = filtered.filter(user => user.role === roleValue);
+      filtered = filtered.filter(user => {
+        if (roleValue === 'BUYER & RENTER') {
+          return user.role === 'BUYER & RENTER' || 
+                 (user.roles && user.roles.includes(Role.BUYER) && user.roles.includes(Role.RENTER));
+        }
+        return user.role === roleValue || (user.roles && user.roles.includes(roleValue));
+      });
     }
     
     // Apply status filter
@@ -99,70 +132,87 @@ export class AdminUsersComponent implements OnInit {
     this.showUserModal = false;
   }
   
-  updateUserStatus(userId: string, status: 'active' | 'inactive' | 'suspended'): void {
-    this.adminService.updateUserStatus(userId, status).subscribe({
-      next: (updatedUser) => {
-        // Update user in the list
-        const index = this.users.findIndex(u => u.id === userId);
-        if (index !== -1) {
-          this.users[index] = updatedUser;
-          this.filterUsers(); // Refresh filtered list
-        }
-      },
-      error: (err) => {
-        console.error('Error updating user status:', err);
-        // Show error message to user
-      }
-    });
+  confirmDeleteUser(user: User): void {
+    this.userToDelete = user;
+    this.showDeleteConfirmModal = true;
+    // Hide the user modal if it's open
+    this.showUserModal = false;
   }
   
-  updateUserRole(userId: string, role: 'admin' | 'agent' | 'user'): void {
-    this.adminService.updateUserRole(userId, role).subscribe({
-      next: (updatedUser) => {
-        // Update user in the list
-        const index = this.users.findIndex(u => u.id === userId);
-        if (index !== -1) {
-          this.users[index] = updatedUser;
-          this.filterUsers(); // Refresh filtered list
-        }
+  closeDeleteConfirmModal(): void {
+    this.userToDelete = null;
+    this.showDeleteConfirmModal = false;
+  }
+  
+  deleteUser(): void {
+    if (!this.userToDelete) return;
+    
+    this.isDeleting = true;
+    
+    this.adminService.deleteUser(this.userToDelete.id).subscribe({
+      next: (response) => {
+        // Remove the deleted user from the lists
+        this.users = this.users.filter(u => u.id !== this.userToDelete?.id);
+        this.filterUsers(); // Refresh filtered list
+        
+        // Close the modal and reset state
+        this.userToDelete = null;
+        this.showDeleteConfirmModal = false;
+        this.isDeleting = false;
       },
       error: (err) => {
-        console.error('Error updating user role:', err);
-        // Show error message to user
+        console.error('Error deleting user:', err);
+        this.isDeleting = false;
+        // Show error message but keep modal open
+        this.error = 'Failed to delete user. Please try again.';
       }
     });
   }
   
   getRoleBadgeClass(role: string): string {
     switch (role) {
-      case 'admin':
+      case Role.ADMIN:
         return 'bg-danger';
-      case 'agent':
+      case Role.AGENT:
         return 'bg-warning';
-      default:
+      case Role.BUYER:
+        return 'bg-primary';
+      case Role.RENTER:
         return 'bg-info';
+      case 'BUYER & RENTER':
+        return 'bg-success';
+      default:
+        return 'bg-secondary';
     }
   }
   
   getStatusBadgeClass(status: string): string {
     switch (status) {
-      case 'active':
+      case UserStatus.ACTIVE:
         return 'bg-success';
-      case 'inactive':
-        return 'bg-secondary';
-      case 'suspended':
+      case UserStatus.PENDING_APPROVAL:
+        return 'bg-warning';
+      case UserStatus.REJECTED:
         return 'bg-danger';
       default:
-        return 'bg-warning';
+        return 'bg-secondary';
     }
   }
   
-  formatDate(date: string | Date): string {
+  formatDate(date: string | Date | undefined): string {
     if (!date) return 'N/A';
     return new Date(date).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
     });
+  }
+  
+  // Helper method to get combined roles for display
+  getUserRoles(user: User): string {
+    if (user.roles && user.roles.length > 0) {
+      return user.roles.join(', ');
+    }
+    return user.role || 'User';
   }
 } 

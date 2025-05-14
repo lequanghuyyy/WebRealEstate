@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { Observable, of, forkJoin, catchError, map } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, of, forkJoin, catchError, map, tap } from 'rxjs';
 import { User } from '../models/user.model';
 import { Transaction } from '../models/transaction.model';
 import { Payment, PaymentMethod, PaymentStatus, TransactionStyle } from '../models/payment.model';
@@ -8,18 +8,52 @@ import { Property } from '../models/property.model';
 // import { Review } from '../models/review.model';
 import { Contact } from '../models/contact.model';
 import { environment } from '../../environments/environment';
+import { AuthService } from './auth.service';
+import { BaseResponse as ApiBaseResponse, UserStatus as AuthUserStatus, UserUpdateRequest as AuthUserUpdateRequest } from '../models/auth.model';
 
 interface BaseResponse<T> {
   status: string;
-  message: string;
+  description: string;
   data: T;
+}
+
+// Add ListingType enum to match backend
+export enum ListingType {
+  SALE = 'SALE',
+  RENT = 'RENT'
+}
+
+// Add UserStatus enum to match backend
+export enum UserStatus {
+  ACTIVE = 'ACTIVE',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  REJECTED = 'REJECTED'
+}
+
+// Add Role enum for the user roles
+export enum Role {
+  ADMIN = 'ADMIN',
+  AGENT = 'AGENT',
+  BUYER = 'BUYER',
+  RENTER = 'RENTER',
+  USER = 'USER'
+}
+
+// User update interface
+export interface UserUpdateRequest {
+  userId?: string;
+  email?: string;
+  fullName?: string;
+  phone?: string;
+  status?: UserStatus;
+  role?: Role;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = `${environment.apiUrl}/admin`;
+  private apiUrl = `${environment.apiUrl}/`;
 
   // Mock data for demo purposes
   private mockTransactions: Transaction[] = [
@@ -229,22 +263,97 @@ export class AdminService {
     }
   ];
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService
+  ) { }
 
   // Dashboard data
-  getDashboardStats(): Observable<any> {
-    // Connect to the real backend API endpoints
-    // Create observables for each API call
-    const usersCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/users/count`)
+  getDashboardStats(): Observable<{
+    users: { 
+      total: number; 
+      active: number; 
+      agents: number;
+      buyers: number;
+      renters: number;
+    };
+    transactions: { total: number; sales: number; rentals: number; pending: number; completed: number };
+    revenue: { total: number; commissions: number; thisMonth: number };
+    properties: { total: number; forSale: number; forRent: number; pending: number };
+    _endpointStatus?: {
+      users: boolean;
+      agents: boolean;
+      buyers: boolean;
+      renters: boolean;
+      sales: boolean;
+      rentals: boolean;
+      pending: boolean;
+      completed: boolean;
+      commission: boolean;
+      properties: boolean;
+      propertiesSale: boolean;
+      propertiesRent: boolean;
+      propertiesPending: boolean;
+      totalRevenue: boolean;
+      monthlyRevenue: boolean;
+    };
+  }> {
+    // Kiểm tra cấu hình API URL
+    console.log('Environment API URL:', environment.apiUrl);
+    console.log('Full userCount endpoint:', `${environment.apiUrl}/users/count`);
+    
+    // Connect to the real backend API endpoints defined in the controllers
+    const usersCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/users/count`, {
+      headers: this.createAuthHeaders()
+    })
       .pipe(
+        tap(response => console.log('Phản hồi số lượng người dùng:', response)),
         map(response => response.data),
         catchError(error => {
-          console.error('Error fetching users count:', error);
+          console.error('Lỗi khi lấy số lượng người dùng:', error);
+          if (error.status === 401) {
+            console.error('Lỗi xác thực 401: Token không hợp lệ hoặc đã hết hạn');
+          }
           return of(this.mockUsers.length);
         })
       );
-
-    const salesCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/sales/count`)
+    // Add counts for specific user roles
+    const agentCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/users/count/AGENT`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching agent count:', error);
+          return of(this.mockUsers.filter(u => u.role === 'agent').length);
+        })
+      );
+      
+    const buyerCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/users/count/BUYER`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching buyer count:', error);
+          return of(Math.floor(this.mockUsers.length * 0.6)); // Mock estimation
+        })
+      );
+      
+    const renterCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/users/count/RENTER`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching renter count:', error);
+          return of(Math.floor(this.mockUsers.length * 0.3)); // Mock estimation
+        })
+      );
+    
+    const salesCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/sales/count`, {
+      headers: this.createAuthHeaders()
+    })
       .pipe(
         map(response => response.data),
         catchError(error => {
@@ -253,7 +362,9 @@ export class AdminService {
         })
       );
 
-    const rentalsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/rentals/count`)
+    const rentalsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/rentals/count`, {
+      headers: this.createAuthHeaders()
+    })
       .pipe(
         map(response => response.data),
         catchError(error => {
@@ -262,7 +373,33 @@ export class AdminService {
         })
       );
 
-    const commission$ = this.http.get<BaseResponse<string>>(`${environment.apiUrl}/api/v1/payments/commission`)
+    // Get count of pending transactions
+    const pendingTransactionsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/transactions/count/pending`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching pending transactions count:', error);
+          return of(this.mockTransactions.filter(t => t.status === 'pending' || t.status === 'PENDING').length);
+        })
+      );
+
+    // Get count of completed transactions
+    const completedTransactionsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/transactions/count/completed`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching completed transactions count:', error);
+          return of(this.mockTransactions.filter(t => t.status === 'completed' || t.status === 'COMPLETED').length);
+        })
+      );
+
+    const commission$ = this.http.get<BaseResponse<string>>(`${environment.apiUrl}/payments/commission`, {
+      headers: this.createAuthHeaders()
+    })
       .pipe(
         map(response => parseFloat(response.data) || 0),
         catchError(error => {
@@ -271,59 +408,136 @@ export class AdminService {
         })
       );
 
-    const listingsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/api/v1/listings/count`)
+    const totalListingsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/listings/count`, {
+      headers: this.createAuthHeaders()
+    })
       .pipe(
         map(response => response.data),
         catchError(error => {
-          console.error('Error fetching listings count:', error);
-          return of(0); // Fallback to 0 since we don't have mock data for properties
+          console.error('Error fetching total listings count:', error);
+          return of(0);
+        })
+      );
+
+    const saleListingsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/listings/countByType/${ListingType.SALE}`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching sale listings count:', error);
+          return of(0);
+        })
+      );
+
+    const rentListingsCount$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/listings/countByType/${ListingType.RENT}`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching rent listings count:', error);
+          return of(0);
+        })
+      );
+
+    // Get total revenue - this might need to be adjusted based on your backend API
+    const totalRevenue$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/payments/total`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching total revenue:', error);
+          return of(this.mockTransactions.reduce((sum, t) => sum + t.amount, 0));
+        })
+      );
+
+    // Get monthly revenue - this might need to be adjusted based on your backend API
+    const monthlyRevenue$ = this.http.get<BaseResponse<number>>(`${environment.apiUrl}/payments/monthly`, {
+      headers: this.createAuthHeaders()
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching monthly revenue:', error);
+          // Fallback to mock calculation
+          const thisMonth = this.mockTransactions
+            .filter(t => {
+              const transactionDate = new Date(t.date);
+              const now = new Date();
+              return transactionDate.getMonth() === now.getMonth() && 
+                    transactionDate.getFullYear() === now.getFullYear();
+            })
+            .reduce((sum, t) => sum + t.amount, 0);
+          return of(thisMonth);
         })
       );
 
     // Combine all observables to return a single object with all stats
     return forkJoin({
       usersCount: usersCount$,
+      agentCount: agentCount$,
+      buyerCount: buyerCount$,
+      renterCount: renterCount$,
       salesCount: salesCount$,
       rentalsCount: rentalsCount$,
+      pendingTransactionsCount: pendingTransactionsCount$,
+      completedTransactionsCount: completedTransactionsCount$,
       commission: commission$,
-      listingsCount: listingsCount$
+      totalListingsCount: totalListingsCount$,
+      saleListingsCount: saleListingsCount$,
+      rentListingsCount: rentListingsCount$,
+      totalRevenue: totalRevenue$,
+      monthlyRevenue: monthlyRevenue$
     }).pipe(
       map(results => {
-        // Calculate current month revenue (using mock data as fallback)
-        const thisMonth = this.mockTransactions
-          .filter(t => {
-            const transactionDate = new Date(t.date);
-            const now = new Date();
-            return transactionDate.getMonth() === now.getMonth() && 
-                  transactionDate.getFullYear() === now.getFullYear();
-          })
-          .reduce((sum, t) => sum + t.amount, 0);
-
+        // Track endpoint status
+        const endpointStatus = {
+          users: typeof results.usersCount === 'number' && results.usersCount > 0,
+          agents: typeof results.agentCount === 'number' && results.agentCount >= 0,
+          buyers: typeof results.buyerCount === 'number' && results.buyerCount >= 0,
+          renters: typeof results.renterCount === 'number' && results.renterCount >= 0,
+          sales: typeof results.salesCount === 'number' && results.salesCount >= 0,
+          rentals: typeof results.rentalsCount === 'number' && results.rentalsCount >= 0,
+          pending: typeof results.pendingTransactionsCount === 'number' && results.pendingTransactionsCount >= 0,
+          completed: typeof results.completedTransactionsCount === 'number' && results.completedTransactionsCount >= 0,
+          commission: typeof results.commission === 'number' && results.commission >= 0,
+          properties: typeof results.totalListingsCount === 'number' && results.totalListingsCount >= 0,
+          propertiesSale: typeof results.saleListingsCount === 'number' && results.saleListingsCount >= 0,
+          propertiesRent: typeof results.rentListingsCount === 'number' && results.rentListingsCount >= 0,
+          totalRevenue: typeof results.totalRevenue === 'number' && results.totalRevenue >= 0,
+          monthlyRevenue: typeof results.monthlyRevenue === 'number' && results.monthlyRevenue >= 0
+        };
+        
         // Format the response to match the expected dashboard stats structure
         return {
           users: {
             total: results.usersCount,
-            active: results.usersCount, // Assuming all users are active
-            agents: this.mockUsers.filter(u => u.role === 'agent').length // Using mock data as fallback
+            active: results.usersCount,
+            agents: results.agentCount,
+            buyers: results.buyerCount,
+            renters: results.renterCount
           },
           transactions: {
             total: results.salesCount + results.rentalsCount,
             sales: results.salesCount,
             rentals: results.rentalsCount,
-            pending: this.mockTransactions.filter(t => t.status === 'pending' || t.status === 'PENDING').length,
-            completed: this.mockTransactions.filter(t => t.status === 'completed' || t.status === 'COMPLETED').length
+            pending: results.pendingTransactionsCount,
+            completed: results.completedTransactionsCount
           },
           revenue: {
-            total: results.commission, // Using commission as total revenue for now
+            total: results.totalRevenue || results.commission, // Using available revenue data
             commissions: results.commission,
-            thisMonth: thisMonth
+            thisMonth: results.monthlyRevenue
           },
           properties: {
-            total: results.listingsCount,
-            forSale: Math.floor(results.listingsCount * 0.7), // Estimating 70% for sale
-            forRent: Math.floor(results.listingsCount * 0.3), // Estimating 30% for rent
-            pending: Math.floor(results.listingsCount * 0.1) // Estimating 10% pending
-          }
+            total: results.totalListingsCount,
+            forSale: results.saleListingsCount,
+            forRent: results.rentListingsCount,
+          },
+          // Include endpoint status in the response
+          _endpointStatus: endpointStatus
         };
       }),
       catchError(error => {
@@ -396,28 +610,147 @@ export class AdminService {
 
   // User management
   getUsers(): Observable<User[]> {
-    // In a real app: return this.http.get<User[]>(`${this.apiUrl}/users`);
-    return of(this.mockUsers);
+    return this.http.get<BaseResponse<User[]>>(`${environment.apiUrl}/users`, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching users:', error);
+        return of(this.mockUsers);
+      })
+    );
   }
 
-  updateUserStatus(userId: string, status: 'active' | 'inactive' | 'suspended'): Observable<User> {
-    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${userId}/status`, { status });
-    const user = this.mockUsers.find(u => u.id === userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    user.status = status;
-    return of({ ...user });
+  getUserById(userId: string): Observable<User> {
+    return this.http.get<BaseResponse<User>>(`${environment.apiUrl}/users/${userId}`, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error fetching user with ID ${userId}:`, error);
+        const user = this.mockUsers.find(u => u.id === userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        return of(user);
+      })
+    );
   }
 
-  updateUserRole(userId: string, role: 'user' | 'agent' | 'admin'): Observable<User> {
-    // In a real app: return this.http.patch<User>(`${this.apiUrl}/users/${userId}/role`, { role });
-    const user = this.mockUsers.find(u => u.id === userId);
-    if (!user) {
-      throw new Error('User not found');
-    }
-    user.role = role;
-    return of({ ...user });
+  updateUserStatus(userId: string, status: UserStatus): Observable<User> {
+    const updateRequest: UserUpdateRequest = {
+      userId: userId,
+      status: status
+    };
+    
+    return this.http.put<BaseResponse<User>>(`${environment.apiUrl}/users/update/${userId}`, updateRequest, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error updating user status for user ID ${userId}:`, error);
+        // Fallback to mock data
+        const user = this.mockUsers.find(u => u.id === userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        // Update the mock user status with string compatible with the original mock data structure
+        user.status = status === UserStatus.ACTIVE ? 'active' : 'pending';
+        return of({ ...user });
+      })
+    );
+  }
+
+  updateUserRole(userId: string, role: Role): Observable<User> {
+    const updateRequest: UserUpdateRequest = {
+      userId: userId,
+      role: role
+    };
+    
+    return this.http.put<BaseResponse<User>>(`${environment.apiUrl}/users/update/${userId}`, updateRequest, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error updating user role for user ID ${userId}:`, error);
+        // Fallback to mock data
+        const user = this.mockUsers.find(u => u.id === userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        // Convert enum to a string compatible with the original mock data structure
+        const roleMapping: Record<Role, 'admin' | 'agent' | 'user'> = {
+          [Role.ADMIN]: 'admin',
+          [Role.AGENT]: 'agent',
+          [Role.BUYER]: 'user',
+          [Role.RENTER]: 'user',
+          [Role.USER]: 'user'
+        };
+        user.role = roleMapping[role];
+        return of({ ...user });
+      })
+    );
+  }
+
+  deleteUser(userId: string): Observable<string> {
+    return this.http.delete<BaseResponse<string>>(`${environment.apiUrl}/users/delete/${userId}`, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error deleting user with ID ${userId}:`, error);
+        return of('User deletion failed');
+      })
+    );
+  }
+
+  getPendingAgents(): Observable<User[]> {
+    return this.http.get<BaseResponse<User[]>>(`${environment.apiUrl}/users/pending-agents`, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error('Error fetching pending agents:', error);
+        // Fallback to mock data - filter users with agent role and pending status
+        return of(this.mockUsers.filter(u => u.role === 'agent' && u.status === 'pending'));
+      })
+    );
+  }
+
+  approveAgent(userId: string): Observable<User> {
+    return this.http.put<BaseResponse<User>>(`${environment.apiUrl}/users/${userId}/approve`, {}, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error approving agent with ID ${userId}:`, error);
+        // Fallback to mock data
+        const user = this.mockUsers.find(u => u.id === userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        user.status = 'active';
+        return of({ ...user });
+      })
+    );
+  }
+
+  rejectAgent(userId: string): Observable<User> {
+    return this.http.put<BaseResponse<User>>(`${environment.apiUrl}/users/${userId}/reject`, {}, {
+      headers: this.createAuthHeaders()
+    }).pipe(
+      map(response => response.data),
+      catchError(error => {
+        console.error(`Error rejecting agent with ID ${userId}:`, error);
+        // Fallback to mock data
+        const user = this.mockUsers.find(u => u.id === userId);
+        if (!user) {
+          throw new Error('User not found');
+        }
+        user.status = 'pending'; // Use a valid status from the original model
+        return of({ ...user });
+      })
+    );
   }
 
   // Property management
@@ -491,5 +824,37 @@ export class AdminService {
       contact.resolvedAt = new Date();
     }
     return of(contact);
+  }
+
+  // Helper method to create auth headers
+  private createAuthHeaders(): HttpHeaders {
+    const token = this.authService.getToken();
+    if (!token) {
+      console.error('Không tìm thấy token xác thực từ authService');
+      return new HttpHeaders();
+    }
+    
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+  }
+
+  // Get commission fee for a specific transaction style
+  getCommissionByTransactionStyle(style: TransactionStyle): Observable<number> {
+    const headers = this.createAuthHeaders();
+    return this.http.get<BaseResponse<string>>(
+      `${this.apiUrl}/payments/commission/${style}`, 
+      { headers, observe: 'body' }
+    ).pipe(
+      map(response => {
+        // Parse the string value to a number
+        return parseFloat(response.data);
+      }),
+      catchError(error => {
+        console.error(`Error fetching ${style} commission:`, error);
+        // Return a default value based on transaction style
+        return of(style === TransactionStyle.SALE ? 7500 : 600);
+      })
+    );
   }
 } 

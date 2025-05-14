@@ -53,7 +53,7 @@ public class UserEntity {
     private UserStatus status = UserStatus.ACTIVE;
 
     @Column(name = "create_at")
-    private LocalDate createAt;
+    private LocalDate createAt; 
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(name = "user_role",

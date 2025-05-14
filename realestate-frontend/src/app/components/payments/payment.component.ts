@@ -78,7 +78,7 @@ export class PaymentComponent implements OnInit {
     this.isLoading = true;
     
     // Use the payment service to get data with pagination
-    this.paymentService.getAllPayments(this.currentUser.id, this.currentPage).subscribe({
+    this.paymentService.getAgentPayments(this.currentUser.id, this.currentPage).subscribe({
       next: (pageData) => {
         this.payments = pageData.content;
         this.totalItems = pageData.totalElements;

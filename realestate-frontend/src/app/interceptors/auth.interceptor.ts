@@ -47,6 +47,10 @@ export const authInterceptor: HttpInterceptorFn = (
   // Get the token from auth service
   const token = authService.getToken();
   
+  // Debug logging
+  console.log(`Request URL: ${request.url}`);
+  console.log(`Token exists: ${!!token}`);
+  
   // If token exists, add it to request header
   if (token) {
     request = addTokenToRequest(request, token);
@@ -76,9 +80,29 @@ export const authInterceptor: HttpInterceptorFn = (
 };
 
 function addTokenToRequest(request: HttpRequest<any>, token: string): HttpRequest<any> {
-  return request.clone({
+  console.log('Original token:', token);
+  console.log('Token length:', token.length);
+  
+  // Đảm bảo token có định dạng chính xác
+  let fullToken = token;
+  if (!token.startsWith('Bearer ')) {
+    console.log('Token không có prefix Bearer, sẽ thêm vào');
+    fullToken = `Bearer ${token}`;
+  }
+  
+  // Debug phần headers
+  console.log('Adding token to request:', request.url);
+  
+  const clonedRequest = request.clone({
     setHeaders: {
-      Authorization: `Bearer ${token}`
+      Authorization: fullToken
     }
   });
+  
+  console.log('Request sau khi thêm token:', {
+    url: clonedRequest.url,
+    headers: clonedRequest.headers.keys().map(key => `${key}: ${clonedRequest.headers.get(key)}`)
+  });
+  
+  return clonedRequest;
 }

@@ -42,6 +42,9 @@ public class PaymentEntity {
     @Column(nullable = false, length = 10)
     private PaymentStatus paymentStatus;
 
+    @Column(name = "payment_date")
+    private LocalDateTime paymentDate;
+
     @Column(name = "commission_fee", precision = 12, scale = 2)
     @DecimalMin(value = "0.0", inclusive = true, message = "Commission fee must be non-negative")
     private BigDecimal commissionFee;

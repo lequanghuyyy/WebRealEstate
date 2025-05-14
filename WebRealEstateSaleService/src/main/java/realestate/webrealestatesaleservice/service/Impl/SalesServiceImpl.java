@@ -40,7 +40,10 @@ public class SalesServiceImpl implements SalesService {
     }
 
     @Override
-    public PageDto<SalesTransactionResponse> getAllTransactions(PageSalesTransactionRequest pageSalesTransactionRequest) {
+    public PageDto<SalesTransactionResponse> getAllTransactions(int page, int size) {
+        PageSalesTransactionRequest pageSalesTransactionRequest = new PageSalesTransactionRequest();
+        pageSalesTransactionRequest.setPage(page);
+        pageSalesTransactionRequest.setSize(size);
         Pageable pageable = PageRequest.of(pageSalesTransactionRequest.getPage() - 1, pageSalesTransactionRequest.getSize(), Sort.by("createdAt").descending());
         Page<SalesTransactionEntity> pageResult = salesTransactionRepository.findAll(pageable);
         List<SalesTransactionResponse>list=pageResult.getContent().stream().map(salesTransactionMapper::convertToSalesTransactionResponse).toList();

@@ -13,7 +13,7 @@ import java.util.List;
 @Service
 public interface SalesService {
     SalesTransactionResponse createTransaction(SalesTransactionRequest request);
-    PageDto<SalesTransactionResponse> getAllTransactions(PageSalesTransactionRequest pageSalesTransactionRequest);
+    PageDto<SalesTransactionResponse> getAllTransactions(int page, int size);
     SalesTransactionResponse getTransactionById(String id);
     List<SalesTransactionResponse> getTransactionsByBuyer(String buyerId);
     List<SalesTransactionResponse> getTransactionsByAgent(String agentId);

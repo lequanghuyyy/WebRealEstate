@@ -112,6 +112,12 @@ export class LoginComponent implements OnInit {
             this.isLoading = false;
             console.error('Login error:', err);
             
+            // Special handling for pending agent approval error
+            if (err.message && err.message.includes('pending approval')) {
+              this.errorMessage = 'Your agent account is pending approval by an administrator. Please check back later.';
+              return;
+            }
+            
             // More detailed error handling
             if (err.status === 0) {
               this.errorMessage = 'Cannot connect to the server. Please ensure the backend is running and check CORS settings.';
@@ -141,6 +147,18 @@ export class LoginComponent implements OnInit {
     console.log('Redirecting with roles:', roles);
     
     try {
+      const currentUser = this.authService.getCurrentUser();
+      
+      // Nếu là agent và đang chờ xét duyệt, không cho phép vào trang agent
+      if (roles.includes('AGENT') && 
+          currentUser && 
+          currentUser.status === 'PENDING_APPROVAL') {
+        console.log('Agent account pending approval, displaying error message');
+        this.errorMessage = 'Your agent account is pending approval by an administrator. Please check back later.';
+        this.authService.logout(); // Logout để tránh cache trạng thái đăng nhập
+        return;
+      }
+      
       if (roles.includes('ADMIN')) {
         console.log('User has ADMIN role, redirecting to admin dashboard');
         this.router.navigate(['/admin/dashboard']);
@@ -167,7 +185,17 @@ export class LoginComponent implements OnInit {
     if (!user) {
       return;
     }
+    
     const roles = user.roles || [];
+    
+    // Kiểm tra nếu là agent và đang chờ xét duyệt
+    if (roles.includes('AGENT') && user.status === 'PENDING_APPROVAL') {
+      console.log('Agent account pending approval, displaying error message');
+      this.errorMessage = 'Your agent account is pending approval by an administrator. Please check back later.';
+      this.authService.logout(); // Logout để tránh cache trạng thái đăng nhập
+      return;
+    }
+    
     if (roles.includes('ADMIN')) {
       this.router.navigate(['/admin/dashboard']);
     } else if (roles.includes('AGENT')) {

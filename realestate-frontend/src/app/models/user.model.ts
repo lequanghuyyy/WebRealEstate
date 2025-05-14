@@ -1,13 +1,18 @@
 export interface User {
-  id: string | number;
+  id: string;
   email: string;
+  username?: string;
+  firstName?: string;
+  lastName?: string;
   name: string;
-  role: 'admin' | 'agent' | 'user';
+  role: string;
+  roles?: string[];
   phone?: string;
   bio?: string;
-  status: 'active' | 'inactive' | 'suspended' | 'pending';
+  status: string;
   createdAt: string | Date;
-  lastLogin?: string | Date;
+  createAt?: string;
+  photo?: string;
   profileImage?: string;
   address?: {
     street?: string;

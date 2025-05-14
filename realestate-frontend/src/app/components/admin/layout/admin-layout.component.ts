@@ -25,8 +25,6 @@ export class AdminLayoutComponent implements OnInit {
     { path: '/admin/listings', icon: 'fas fa-home', label: 'Listings' },
     { path: '/admin/transactions', icon: 'fas fa-exchange-alt', label: 'Transactions' },
     { path: '/admin/payments', icon: 'fas fa-dollar-sign', label: 'Payments' },
-    { path: '/admin/reviews', icon: 'fas fa-star', label: 'Reviews' },
-    { path: '/admin/contacts', icon: 'fas fa-envelope', label: 'Contacts' }
   ];
   
   constructor(private authService: AuthService, private router: Router) {}
