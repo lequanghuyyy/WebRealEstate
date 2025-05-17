@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
-import { delay, map, tap } from 'rxjs/operators';
+import { delay, map, tap, catchError } from 'rxjs/operators';
 import { Appointment } from '../models/appointment.model';
 import { environment } from '../../environments/environment';
 import { 
@@ -18,7 +18,6 @@ export class AppointmentService {
   private apiUrl = '/api/ux/appointments';
   // private apiUrl = `${environment.userExperienceServiceUrl}/appointments`;
   
-  // Mock data for appointments
   constructor(private http: HttpClient) { }
 
   // Get all appointments for a user
@@ -36,7 +35,11 @@ export class AppointmentService {
     console.log('Fetching appointments for agent ID:', agentId);
     return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/agent/${agentId}`).pipe(
       tap(response => console.log('API Response (Agent Appointments):', response)),
-      map(response => this.mapAppointmentResponsesToAppointments(response.data))
+      map(response => this.mapAppointmentResponsesToAppointments(response.data || [])),
+      catchError(error => {
+        console.error('Error fetching appointments:', error);
+        return of([]);
+      })
     );
   }
 
@@ -46,7 +49,11 @@ export class AppointmentService {
     status: AppointmentStatus
   ): Observable<Appointment[]> {
     return this.http.get<BaseResponse<AppointmentResponse[]>>(`${this.apiUrl}/agent/${agentId}/status/${status}`).pipe(
-      map(response => this.mapAppointmentResponsesToAppointments(response.data))
+      map(response => this.mapAppointmentResponsesToAppointments(response.data || [])),
+      catchError(error => {
+        console.error('Error fetching appointments by status:', error);
+        return of([]);
+      })
     );
   }
 
@@ -89,6 +96,10 @@ export class AppointmentService {
       map(response => {
         console.log('API response:', response);
         return this.mapAppointmentResponseToAppointment(response.data);
+      }),
+      catchError(error => {
+        console.error('Error creating appointment:', error);
+        throw error;
       })
     );
   }
@@ -108,7 +119,11 @@ export class AppointmentService {
     };
     
     return this.http.put<BaseResponse<AppointmentResponse>>(`${this.apiUrl}/${id}`, request).pipe(
-      map(response => this.mapAppointmentResponseToAppointment(response.data))
+      map(response => this.mapAppointmentResponseToAppointment(response.data)),
+      catchError(error => {
+        console.error('Error updating appointment:', error);
+        throw error;
+      })
     );
   }
 
@@ -141,44 +156,57 @@ export class AppointmentService {
     );
   }
 
-  // Helper method to map AppointmentResponse to Appointment
+  // Helper method to map a single API response to frontend model
   private mapAppointmentResponseToAppointment(response: AppointmentResponse): Appointment {
-    console.log('Mapping appointment response:', response);
-    
-    // Ensure the status is correctly handled
-    let status = response.status || AppointmentStatus.PENDING;
-    console.log('Original status:', status);
-    
-    // Fix any typos in status
-    if (status.toString() === 'COMFIRMED') {
-      status = AppointmentStatus.CONFIRMED;
-      console.log('Corrected misspelled status from COMFIRMED to CONFIRMED');
+    if (!response) {
+      console.warn('Invalid appointment response received:', response);
+      return {
+        id: '',
+        propertyId: '',
+        propertyTitle: 'No data',
+        buyerId: '',
+        buyerName: 'No data',
+        agentId: '',
+        agentName: 'No data',
+        appointmentDate: new Date(),
+        appointmentTime: '',
+        status: 'PENDING',
+        notes: '',
+        createdAt: new Date(),
+        meetingType: 'in-person'
+      };
     }
     
-    const appointment: Appointment = {
-      id: response.id,
-      propertyId: response.listingId,
-      propertyTitle: response.propertyTitle || 'Property',
-      buyerId: response.brId,
-      buyerName: response.buyerName || 'Client',
-      agentId: response.agentId,
-      agentName: response.agentName || 'Agent',
-      appointmentDate: response.day,
-      appointmentTime: response.time,
-      status: status, // Use the corrected status
+    return {
+      id: response.id || '',
+      propertyId: response.listingId || '',
+      propertyTitle: response.propertyTitle || 'Property details loading...',
+      buyerId: response.brId || '',
+      buyerName: response.buyerName || 'Client details loading...',
+      agentId: response.agentId || '',
+      agentName: response.agentName || '',
+      appointmentDate: response.day || new Date().toISOString(),
+      appointmentTime: response.time || '',
+      status: response.status || AppointmentStatus.PENDING,
       notes: response.brNote || '',
-      createdAt: response.createdAt,
+      createdAt: response.createdAt || new Date().toISOString(),
       updatedAt: response.updatedAt,
-      meetingType: 'in-person'
+      reason: response.cancelReason || '',
+      meetingType: response.meetingType || 'in-person',
+      meetingLocation: response.meetingLocation || '',
+      meetingLink: response.meetingLink || ''
     };
-    
-    console.log('Mapped appointment:', appointment);
-    return appointment;
   }
 
   // Helper method to map AppointmentResponse[] to Appointment[]
   private mapAppointmentResponsesToAppointments(responses: AppointmentResponse[]): Appointment[] {
     console.log('Mapping multiple appointment responses:', responses);
+    
+    if (!responses || !Array.isArray(responses)) {
+      console.warn('Invalid appointment responses received:', responses);
+      return [];
+    }
+    
     return responses.map(response => this.mapAppointmentResponseToAppointment(response));
   }
 } 

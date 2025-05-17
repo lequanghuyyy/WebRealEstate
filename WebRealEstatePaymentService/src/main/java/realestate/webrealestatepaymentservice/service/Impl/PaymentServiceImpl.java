@@ -15,7 +15,9 @@ import realestate.webrealestatepaymentservice.entity.PaymentEntity;
 import realestate.webrealestatepaymentservice.exception.NotFoundException;
 import realestate.webrealestatepaymentservice.mapper.PaymentMapper;
 import realestate.webrealestatepaymentservice.repository.PaymentRepository;
+import realestate.webrealestatepaymentservice.service.PaymentEventPublisher;
 import realestate.webrealestatepaymentservice.service.PaymentService;
+import spring.realestatecommon.common.event.PaymentCompletedEvent;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,13 +29,23 @@ import java.util.stream.Collectors;
 public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final PaymentMapper paymentMapper;
+    private final PaymentEventPublisher eventPublisher;
+
 
     @Override
     public PaymentResponse processPayment(PaymentRequest request) {
         PaymentEntity paymentEntity = paymentMapper.convertToEntity(request);
-        paymentEntity.setPaymentStatus(PaymentStatus.PENDING);
+        paymentEntity.setPaymentStatus(PaymentStatus.COMPLETED);
         paymentEntity.setPaymentMethod((PaymentMethod.valueOf(request.getPaymentMethod().toUpperCase())));
         PaymentEntity savedEntity = paymentRepository.save(paymentEntity);
+        
+        // Publish payment completed event to update transaction status
+        PaymentCompletedEvent event = new PaymentCompletedEvent();
+        event.setTransactionType(paymentEntity.getTransactionStyle().name());
+        event.setStatus("COMPLETED");
+        event.setTransactionId(paymentEntity.getTransactionId()); // Using transactionId as the ID for the listener
+        eventPublisher.publishPaymentCompleted(event);
+
         return paymentMapper.convertToResponse(savedEntity);
     }
 
@@ -84,6 +96,15 @@ public class PaymentServiceImpl implements PaymentService {
         paymentEntity.setPaymentStatus(status);
         if (status == PaymentStatus.COMPLETED) {
             paymentEntity.setPaymentDate(LocalDateTime.now());
+            
+            // Publish payment completed event to update transaction status
+            if (paymentEntity.getTransactionId() != null) {
+                PaymentCompletedEvent event = new PaymentCompletedEvent();
+                event.setTransactionType(paymentEntity.getTransactionStyle().name());
+                event.setStatus("COMPLETED");
+                event.setListingId(paymentEntity.getTransactionId());
+                eventPublisher.publishPaymentCompleted(event);
+            }
         }
         paymentEntity.setUpdatedAt(LocalDateTime.now());
         PaymentEntity updatedPaymentEntity = paymentRepository.save(paymentEntity);

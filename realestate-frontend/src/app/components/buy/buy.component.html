@@ -57,7 +57,7 @@
               <label for="status-filter">Status</label>
               <select id="status-filter" class="form-select" (change)="filterByStatus($event)">
                 <option value="all">All Statuses</option>
-                <option [value]="transactionStatusEnum.PENDING">Pending</option>
+                <option [value]="transactionStatusEnum.PENDING" selected>Pending</option>
                 <option [value]="transactionStatusEnum.COMPLETED">Completed</option>
                 <option [value]="transactionStatusEnum.CANCELLED">Cancelled</option>
               </select>
@@ -98,9 +98,14 @@
     <div class="card transaction-card mt-4">
       <div class="card-header">
         <h3>Purchase Transactions</h3>
-        <button class="btn btn-primary" routerLink="/checkout">
-          <i class="fas fa-plus"></i> New Purchase
-        </button>
+        <div>
+          <button class="btn btn-outline-primary me-2" routerLink="/payment-history">
+            <i class="fas fa-history"></i> Payment History
+          </button>
+          <button class="btn btn-primary" routerLink="/checkout">
+            <i class="fas fa-plus"></i> New Purchase
+          </button>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -131,12 +136,9 @@
               <tr *ngFor="let transaction of filteredTransactions">
                 <td>
                   <div class="property-info">
-                    <div class="property-image">
-                      <img [src]="transaction.property.image || 'assets/images/property-1.jpg'" alt="Property" appDefaultImage>
-                    </div>
                     <div class="property-details">
-                      <h5>{{ transaction.property.title || transaction.propertyTitle || 'Property' }}</h5>
-                      <p>Location information</p>
+                      <h5 [routerLink]="['/property', transaction.property.id]" style="cursor: pointer;">{{ getPropertyName(transaction) }}</h5>
+                      <p>ID: {{ transaction.property.id }}</p>
                     </div>
                   </div>
                 </td>
@@ -152,6 +154,9 @@
                   </button>
                   <button class="btn btn-icon cancel-button" (click)="cancelTransaction(transaction.id ? transaction.id.toString() : '')" *ngIf="transaction.status === transactionStatusEnum.PENDING">
                     <i class="fas fa-times"></i>
+                  </button>
+                  <button class="btn btn-icon payment-button" (click)="openPaymentDialog(transaction)" *ngIf="transaction.status === transactionStatusEnum.PENDING">
+                    <i class="fas fa-credit-card"></i>
                   </button>
                 </td>
               </tr>
@@ -189,7 +194,7 @@
             </div>
             <div class="timeline-content">
               <div class="timeline-date">{{ formatDate(transaction.date) }}</div>
-              <h4>{{ transaction.status === transactionStatusEnum.COMPLETED ? 'Transaction Completed' : transaction.status === transactionStatusEnum.CANCELLED ? 'Transaction Canceled' : 'Transaction Initiated' }}: {{ transaction.property.title || 'Property' }}</h4>
+              <h4>{{ transaction.status === transactionStatusEnum.COMPLETED ? 'Transaction Completed' : transaction.status === transactionStatusEnum.CANCELLED ? 'Transaction Canceled' : 'Transaction Initiated' }}: {{ getPropertyName(transaction) }}</h4>
               <p>{{ transaction.status === transactionStatusEnum.COMPLETED ? 'Congratulations! You\'ve completed the purchase of your new property.' : transaction.status === transactionStatusEnum.CANCELLED ? 'The transaction was canceled.' : 'You\'ve started the purchase process for this property.' }}</p>
             </div>
           </div>

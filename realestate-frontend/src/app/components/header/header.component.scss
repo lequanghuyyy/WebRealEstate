@@ -118,6 +118,18 @@
   }
 }
 
+/* Style for agent navigation links to ensure proper clickability */
+.agent-nav-link {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+  position: relative;
+  z-index: 1001;
+  
+  &:hover {
+    color: #ff5a5f !important;
+  }
+}
+
 .auth-buttons {
   display: flex;
   align-items: center;

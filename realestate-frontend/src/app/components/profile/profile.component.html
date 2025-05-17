@@ -51,7 +51,11 @@
                   <i class="fas fa-search me-2"></i> Saved Searches
                 </a>
               </li>
-        
+              <li class="nav-item" *ngIf="isBuyer || isRenter">
+                <a class="nav-link" [class.active]="activeTab === 'offers'" (click)="setActiveTab('offers')">
+                  <i class="fas fa-hand-holding-usd me-2"></i> My Offers
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -365,8 +369,11 @@
           </div>
         </div>
         
-        <!-- Recently Viewed Tab -->
-  
+        <!-- Offers Tab -->
+        <div class="tab-content" *ngIf="activeTab === 'offers'">
+          <app-user-offers [userId]="currentUser?.id"></app-user-offers>
+        </div>
+        
         <!-- Appointments Tab -->
         <div class="tab-content" *ngIf="activeTab === 'appointments'">
           <app-user-appointments></app-user-appointments>

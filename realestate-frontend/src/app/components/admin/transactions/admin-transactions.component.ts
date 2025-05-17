@@ -133,8 +133,7 @@ export class AdminTransactionsComponent implements OnInit {
       agentId: sale.agentId,
       property: {
         id: sale.listingId,
-        title: `Property ID: ${sale.listingId}`,
-        image: 'assets/images/property-placeholder.jpg'
+        title: `Property ID: ${sale.listingId}`
       },
       client: {
         name: `Customer ID: ${sale.buyerId}`,
@@ -161,8 +160,7 @@ export class AdminTransactionsComponent implements OnInit {
       endDate: rental.endDate,
       property: {
         id: rental.listingId,
-        title: `Property ID: ${rental.listingId}`,
-        image: 'assets/images/property-placeholder.jpg'
+        title: `Property ID: ${rental.listingId}`
       },
       client: {
         name: `Customer ID: ${rental.renterId}`,

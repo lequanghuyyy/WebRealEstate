@@ -92,8 +92,8 @@
     <div *ngIf="!featuredLoading && !featuredError && featuredProperties.length > 0" class="property-grid">
       <div class="property-card" *ngFor="let property of featuredProperties">
         <div class="property-image">
-          <img [src]="property.image || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
-          <div class="property-tag">{{ property.type }}</div>
+          <img [src]="property.mainURL || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
+          <div class="property-tag" [ngClass]="{'sale': property.type === 'SALE', 'rent': property.type === 'RENT'}">{{ property.type === 'SALE' ? 'Sale' : 'Rent' }}</div>
           <div class="view-count"><i class="fas fa-eye"></i> {{ property.view || 0 }} views</div>
         </div>
         <div class="property-details">
@@ -153,8 +153,8 @@
     <div *ngIf="!recommendationLoading && !recommendationError && recommendedProperties.length > 0" class="property-grid">
       <div class="property-card" *ngFor="let property of recommendedProperties">
         <div class="property-image">
-          <img [src]="property.image || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
-          <div class="property-tag">{{ property.type }}</div>
+          <img [src]="property.mainURL || 'assets/images/property-1.jpg'" [alt]="property.title" appDefaultImage>
+          <div class="property-tag" [ngClass]="{'sale': property.type === 'SALE', 'rent': property.type === 'RENT'}">{{ property.type === 'SALE' ? 'Sale' : 'Rent' }}</div>
         </div>
         <div class="property-details">
           <h3 class="property-price">{{ formatPrice(property.price) }}</h3>

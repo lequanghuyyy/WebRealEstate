@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AppointmentService } from '../../../services/appointment.service';
@@ -6,8 +6,8 @@ import { Appointment } from '../../../models/appointment.model';
 import { AuthService } from '../../../services/auth.service';
 import { UserService } from '../../../services/user.service';
 import { ListingService } from '../../../services/listing.service';
-import { forkJoin, of } from 'rxjs';
-import { catchError, switchMap } from 'rxjs/operators';
+import { forkJoin, of, Subscription } from 'rxjs';
+import { catchError, switchMap, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-agent-appointments',
@@ -16,12 +16,14 @@ import { catchError, switchMap } from 'rxjs/operators';
   templateUrl: './agent-appointments.component.html',
   styleUrls: ['./agent-appointments.component.scss']
 })
-export class AgentAppointmentsComponent implements OnInit {
+export class AgentAppointmentsComponent implements OnInit, OnDestroy {
   appointments: Appointment[] = [];
   filteredAppointments: Appointment[] = [];
   isLoading: boolean = true;
   error: string | null = null;
   currentUser: any;
+  private isLoadingData: boolean = false;
+  private subscription: Subscription = new Subscription();
   
   // Filter status
   filterStatus: 'ALL' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED' = 'ALL';
@@ -38,12 +40,23 @@ export class AgentAppointmentsComponent implements OnInit {
     this.loadAppointments();
   }
 
+  ngOnDestroy(): void {
+    this.subscription.unsubscribe();
+  }
+
   loadAppointments(): void {
+    // Prevent multiple simultaneous API calls
+    if (this.isLoadingData) {
+      return;
+    }
+
     this.isLoading = true;
     this.error = null;
+    this.isLoadingData = true;
     
     if (this.currentUser && this.currentUser.id) {
-      this.appointmentService.getAppointmentsByAgentId(this.currentUser.id).pipe(
+      const loadingSub = this.appointmentService.getAppointmentsByAgentId(this.currentUser.id).pipe(
+        take(1), // Ensure the observable completes after first emission
         switchMap(appointments => {
           // Store the appointments temporarily
           const appointmentsWithClientIds = appointments;
@@ -64,8 +77,8 @@ export class AgentAppointmentsComponent implements OnInit {
           // Execute all requests in parallel
           return forkJoin(
             of(appointmentsWithClientIds),
-            forkJoin(clientDetailsObservables),
-            forkJoin(listingDetailsObservables)
+            forkJoin(clientDetailsObservables.length > 0 ? clientDetailsObservables : [of([])]),
+            forkJoin(listingDetailsObservables.length > 0 ? listingDetailsObservables : [of([])])
           );
         })
       ).subscribe({
@@ -82,13 +95,15 @@ export class AgentAppointmentsComponent implements OnInit {
             let updatedAppointment = { ...appointment };
             
             // Update buyer name if client details are available
-            if (clientDetail) {
-              updatedAppointment.buyerName = `${clientDetail.firstName} ${clientDetail.lastName}`;
+            if (clientDetail && typeof clientDetail === 'object' && 'firstName' in clientDetail && 'lastName' in clientDetail) {
+              updatedAppointment.buyerName = `${clientDetail.firstName || ''} ${clientDetail.lastName || ''}`;
             }
             
             // Update property title if listing details are available
-            if (listingDetail) {
-              updatedAppointment.propertyTitle = listingDetail.title;
+            if (listingDetail && typeof listingDetail === 'object' && 'title' in listingDetail) {
+              updatedAppointment.propertyTitle = String(listingDetail.title || 'Untitled Property');
+            } else {
+              updatedAppointment.propertyTitle = 'Property details unavailable';
             }
             
             return updatedAppointment;
@@ -96,16 +111,21 @@ export class AgentAppointmentsComponent implements OnInit {
           
           this.applyFilter();
           this.isLoading = false;
+          this.isLoadingData = false;
         },
         error: (err) => {
           this.error = 'Unable to load appointment data. Please try again later.';
           this.isLoading = false;
+          this.isLoadingData = false;
           console.error('Error loading appointments:', err);
         }
       });
+
+      this.subscription.add(loadingSub);
     } else {
       this.error = 'User information not found.';
       this.isLoading = false;
+      this.isLoadingData = false;
     }
   }
 

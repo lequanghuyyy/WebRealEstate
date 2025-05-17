@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
@@ -65,7 +65,8 @@ export class AgentBuyComponent implements OnInit {
     private authService: AuthService,
     private listingService: ListingService,
     private transactionService: TransactionService,
-    private toastr: ToastrWrapperService
+    private toastr: ToastrWrapperService,
+    private router: Router
   ) {}
   
   ngOnInit(): void {
@@ -421,17 +422,24 @@ export class AgentBuyComponent implements OnInit {
     if (confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
       this.listingService.deleteListing(id).subscribe({
         next: () => {
-          // Remove from local list
+          this.toastr.success('Listing deleted successfully');
+          // Remove from local arrays
           this.listings = this.listings.filter(l => l.id !== id);
-          this.applyFilters();
+          this.filteredListings = this.filteredListings.filter(l => l.id !== id);
           this.calculateStats();
-          this.toastr.success('Listing has been deleted');
         },
-        error: (err: any) => {
+        error: (err) => {
           console.error('Error deleting listing:', err);
-          this.toastr.error('Failed to delete listing');
+          this.toastr.error('Failed to delete listing. Please try again.');
         }
       });
     }
+  }
+
+  viewOffers(listingId: string): void {
+    // Navigate to property offers component with query parameter
+    this.router.navigate(['/agent/property-offers'], { 
+      queryParams: { listingId: listingId } 
+    });
   }
 } 

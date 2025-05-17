@@ -1,0 +1,50 @@
+.payment-dialog {
+  min-width: 400px;
+  max-width: 500px;
+}
+
+.transaction-details {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.transaction-details h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #495057;
+  font-weight: 600;
+}
+
+.detail-row {
+  display: flex;
+  margin-bottom: 8px;
+}
+
+.detail-label {
+  font-weight: 500;
+  width: 120px;
+  color: #6c757d;
+}
+
+.detail-value {
+  flex: 1;
+  color: #212529;
+}
+
+.alert {
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 15px;
+}
+
+.alert-danger {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+mat-form-field {
+  width: 100%;
+} 

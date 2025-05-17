@@ -169,6 +169,7 @@ export class PropertyService {
       },
       amenities: [],
       images: propertyImages,
+      mainURL: listing.mainURL || (listing.images && listing.images.length > 0 ? listing.images[0].imageUrl : listing.image || 'assets/images/property-1.jpg'),
       agent: agentInfo,
       tags: [listing.propertyType],
       createdAt: listing.createdAt,

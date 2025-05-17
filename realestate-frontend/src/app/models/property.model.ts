@@ -1,4 +1,5 @@
 import { Agent } from './agent.model';
+import { ListingImageResponse } from './listing.model';
 
 export interface Property {
   id: string | number;
@@ -24,7 +25,8 @@ export interface Property {
     parkingSpaces?: number;
   };
   amenities: string[];
-  images: string[];
+  images: (string | ListingImageResponse)[];
+  mainURL?: string; // Main image URL for the property
   agent: Agent;
   tags: string[];
   createdAt: string | Date;

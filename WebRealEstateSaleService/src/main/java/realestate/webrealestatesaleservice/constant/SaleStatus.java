@@ -1,6 +1,6 @@
 package realestate.webrealestatesaleservice.constant;
 
-public enum TransactionStatus {
+public enum SaleStatus {
     PENDING,
     COMPLETED,
     CANCELLED

@@ -37,6 +37,12 @@ export interface AppointmentResponse {
   buyerName?: string;
   appointmentDate?: string;
   appointmentTime?: string;
+  
+  // Additional fields needed for the frontend
+  cancelReason?: string;
+  meetingType?: 'online' | 'in-person';
+  meetingLocation?: string;
+  meetingLink?: string;
 }
 
 export interface FavoriteRequest {

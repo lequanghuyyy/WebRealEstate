@@ -2,6 +2,7 @@ package spring.userexperienceservice.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,10 +17,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/ux/reviews")
-@RequiredArgsConstructor
+
 public class ReviewController {
 
+    @Autowired
     private final ReviewService reviewService;
+
+    public ReviewController(ReviewService reviewService) {
+        this.reviewService = reviewService;
+    }
 
     @PostMapping
     public ResponseEntity<BaseResponse<ReviewResponse>> createReview(@Valid @RequestBody ReviewRequest request) {

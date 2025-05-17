@@ -1,6 +1,7 @@
 package spring.userexperienceservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring.userexperienceservice.dto.request.RecentlyViewedRequest;
@@ -11,10 +12,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/ux/recently-viewed")
-@RequiredArgsConstructor
 public class RecentlyViewedController {
 
+    @Autowired
     private final RecentlyViewedService recentlyViewedService;
+
+    public RecentlyViewedController(RecentlyViewedService recentlyViewedService) {
+        this.recentlyViewedService = recentlyViewedService;
+    }
 
     @PostMapping
     public ResponseEntity<Void> recordView(@RequestBody RecentlyViewedRequest request) {

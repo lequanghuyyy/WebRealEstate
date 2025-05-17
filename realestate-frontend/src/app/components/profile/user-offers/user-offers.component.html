@@ -1,0 +1,131 @@
+<div class="user-offers-container">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">My Property Offers</h5>
+    </div>
+    <div class="card-body">
+      <!-- Loading state -->
+      <div *ngIf="isLoading" class="text-center py-4">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-2">Loading your offers...</p>
+      </div>
+      
+      <!-- Error message -->
+      <div *ngIf="errorMessage && !isLoading" class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle me-2"></i>
+        {{ errorMessage }}
+      </div>
+      
+      <!-- No offers message -->
+      <div *ngIf="!isLoading && !errorMessage && offers.length === 0" class="text-center py-4">
+        <div class="empty-state">
+          <i class="fas fa-file-invoice-dollar empty-icon"></i>
+          <h5>No Offers Yet</h5>
+          <p>You haven't made any offers on properties yet. Browse available properties and make an offer!</p>
+          <a routerLink="/properties" class="btn btn-primary mt-2">
+            <i class="fas fa-search me-2"></i>Browse Properties
+          </a>
+        </div>
+      </div>
+      
+      <!-- Offers content -->
+      <div *ngIf="!isLoading && !errorMessage && offers.length > 0">
+        <!-- Filter controls -->
+        <div class="filter-section mb-4">
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label for="statusFilter" class="form-label">Filter by Status</label>
+              <select id="statusFilter" class="form-select" (change)="onStatusChange($event)">
+                <option value="">All Statuses</option>
+                <option value="PENDING">Pending</option>
+                <option value="ACCEPTED">Accepted</option>
+                <option value="REJECTED">Rejected</option>
+                <option value="EXPIRED">Expired</option>
+              </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+              <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                <i class="fas fa-sync-alt me-2"></i>Reset Filters
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Offers list -->
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Property</th>
+                <th>Offer Price</th>
+                <th>Date Submitted</th>
+                <th>Expires</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let offer of filteredOffers">
+                <td>
+                  <div class="property-info">
+                    <img [src]="offer.propertyImage" class="property-thumbnail" alt="Property image">
+                    <div>
+                      <span class="property-title">{{ offer.propertyTitle }}</span>
+                      <span class="property-type">{{ offer.propertyType === 'SALE' ? 'For Sale' : 'For Rent' }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ formatPrice(offer.offerPrice) }}</td>
+                <td>{{ formatDate(offer.createdAt) }}</td>
+                <td>{{ formatDate(offer.expiresAt) }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(offer.status)">
+                    {{ offer.status }}
+                  </span>
+                </td>
+                <td class="action-column">
+                  <div class="action-buttons">
+                    <a [routerLink]="['/property', offer.listingId]" class="btn btn-sm btn-outline-primary action-btn" title="View Property">
+                      <i class="fas fa-eye"></i>
+                    </a>
+                    
+                    <button 
+                      *ngIf="offer.status === 'PENDING' || offer.status === 'ACCEPTED'"
+                      class="btn btn-sm btn-outline-danger action-btn" 
+                      title="Delete Offer"
+                      (click)="deleteOffer(offer.id)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Pagination -->
+        <div class="pagination-container d-flex justify-content-center mt-4" *ngIf="totalPages > 1">
+          <nav aria-label="Offers navigation">
+            <ul class="pagination">
+              <li class="page-item" [class.disabled]="currentPage === 0">
+                <a class="page-link" (click)="changePage(currentPage - 1)" aria-label="Previous">
+                  <span aria-hidden="true">&laquo;</span>
+                </a>
+              </li>
+              <li class="page-item" *ngFor="let i of [].constructor(totalPages); let idx = index" [class.active]="currentPage === idx">
+                <a class="page-link" (click)="changePage(idx)">{{ idx + 1 }}</a>
+              </li>
+              <li class="page-item" [class.disabled]="currentPage === totalPages - 1">
+                <a class="page-link" (click)="changePage(currentPage + 1)" aria-label="Next">
+                  <span aria-hidden="true">&raquo;</span>
+                </a>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -163,6 +163,84 @@
             <button class="action-button schedule-button" (click)="toggleScheduleForm()" *ngIf="!isAgent">
               <i class="fas fa-calendar-check"></i> Schedule a Viewing
             </button>
+            <!-- Add Offer button -->
+            <button class="action-button offer-button" (click)="toggleOfferForm()" *ngIf="!isAgent">
+              <i class="fas fa-hand-holding-usd"></i> 
+              {{ property.type === 'buy' ? 'Make an Offer' : 'Apply to Rent' }}
+            </button>
+          </div>
+
+          <!-- Offer form -->
+          <div class="offer-form" *ngIf="showOfferForm && !isAgent">
+            <div class="form-header">
+              <h3>{{ property.type === 'buy' ? 'Make an Offer' : 'Apply to Rent' }}</h3>
+              <button class="close-form-btn" (click)="toggleOfferForm()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="offer-intro">
+              <p><i class="fas fa-info-circle"></i> 
+                {{ property.type === 'buy' ? 'Submit your purchase offer for this property' : 'Submit your rental application for this property' }}
+              </p>
+            </div>
+            
+            <form [formGroup]="offerForm" (ngSubmit)="submitOffer()">
+              <div class="form-floating mb-3">
+                <input type="number" id="offerPrice" formControlName="offerPrice" class="form-control"
+                       [ngClass]="{'is-invalid': isFieldInvalid(offerForm, 'offerPrice')}">
+                <label for="offerPrice"><i class="fas fa-dollar-sign"></i> 
+                  {{ property.type === 'buy' ? 'Your Offer Price' : 'Your Rental Offer' }}
+                </label>
+                <div *ngIf="offerSubmitted && offerForm.get('offerPrice')?.invalid" class="invalid-feedback">
+                  Please enter a valid offer amount
+                </div>
+              </div>
+              
+              <div class="form-floating mb-3">
+                <input type="date" id="expiresAt" formControlName="expiresAt" class="form-control"
+                       [min]="today" [ngClass]="{'is-invalid': isFieldInvalid(offerForm, 'expiresAt')}">
+                <label for="expiresAt"><i class="fas fa-calendar"></i> Offer Valid Until</label>
+                <div *ngIf="offerSubmitted && offerForm.get('expiresAt')?.invalid" class="invalid-feedback">
+                  Please select a valid expiration date
+                </div>
+              </div>
+
+              <div class="form-floating mb-3">
+                <textarea id="offerMessage" formControlName="message" class="form-control" 
+                         placeholder="Any additional information about your offer" rows="3"></textarea>
+                <label for="offerMessage"><i class="fas fa-comment"></i> Additional Notes (optional)</label>
+              </div>
+              
+              <!-- Rental period fields for rental properties -->
+              <ng-container *ngIf="property.type === 'rent'">
+                <div class="form-group mb-3">
+                  <h5 class="mb-3">Rental Period</h5>
+                  
+                  <div class="form-floating mb-3">
+                    <input type="date" id="startDate" formControlName="startDate" class="form-control"
+                          [min]="today" [ngClass]="{'is-invalid': isFieldInvalid(offerForm, 'startDate')}">
+                    <label for="startDate"><i class="fas fa-calendar-alt"></i> Start Date</label>
+                    <div *ngIf="offerSubmitted && offerForm.get('startDate')?.invalid" class="invalid-feedback">
+                      Please select a valid start date
+                    </div>
+                  </div>
+                  
+                  <div class="form-floating mb-3">
+                    <input type="date" id="endDate" formControlName="endDate" class="form-control"
+                          [min]="offerForm.get('startDate')?.value" [ngClass]="{'is-invalid': isFieldInvalid(offerForm, 'endDate')}">
+                    <label for="endDate"><i class="fas fa-calendar-check"></i> End Date</label>
+                    <div *ngIf="offerSubmitted && offerForm.get('endDate')?.invalid" class="invalid-feedback">
+                      Please select a valid end date
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+              
+              <button type="submit" class="btn btn-primary w-100" [disabled]="offerSubmitted">
+                <i class="fas fa-paper-plane"></i> 
+                {{ offerSubmitted ? 'Submitting...' : (property.type === 'buy' ? 'Submit Offer' : 'Submit Application') }}
+              </button>
+            </form>
           </div>
 
           <!-- Schedule viewing -->

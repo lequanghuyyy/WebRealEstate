@@ -44,7 +44,8 @@ export interface Transaction {
   property: {
     id: string | number;
     title: string;
-    image: string;
+    image?: string;
+    mainURL?: string;
   };
   client: {
     name: string;

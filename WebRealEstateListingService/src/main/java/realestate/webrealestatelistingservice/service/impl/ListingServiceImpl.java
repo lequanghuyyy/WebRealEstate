@@ -50,7 +50,7 @@ public class ListingServiceImpl implements ListingService {
         }
         Optional<Position> posOpt = geocodingService.geocode(listingRequest.getAddress());
         if (posOpt.isEmpty()) {
-            throw new RuntimeException("Địa chỉ không hợp lệ");
+            throw new RuntimeException("Address " + listingRequest.getAddress() + " invalid");
         }
         Position pos = posOpt.get();
         listingEntity.setLatitude(BigDecimal.valueOf(pos.getLat()));
@@ -128,9 +128,10 @@ public class ListingServiceImpl implements ListingService {
     @Override
     public PageDto<ListingResponse> getListingsPaged(int page, int size) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
-        Page<ListingEntity> pageResult = listingRepository.findAll(pageable);
-        List<ListingResponse> items = pageResult.getContent()
-                .stream()
+        List<ListingStatus> excludedStatuses = List.of(ListingStatus.RENTED, ListingStatus.SOLD);
+        Page<ListingEntity> pageResult = listingRepository.findByStatusNotIn(excludedStatuses, pageable);
+
+        List<ListingResponse> items = pageResult.getContent().stream()
                 .map(listingMapper::convertToListingResponse)
                 .collect(Collectors.toList());
 
@@ -142,6 +143,7 @@ public class ListingServiceImpl implements ListingService {
                 .totalPages(pageResult.getTotalPages())
                 .build();
     }
+
 
     @Override
     public List<ListingResponse> getListingsBySaleType() {

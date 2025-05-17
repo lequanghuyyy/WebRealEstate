@@ -1,7 +1,7 @@
 package realestate.webrealestatesaleservice.service;
 
 import org.springframework.stereotype.Service;
-import realestate.webrealestatesaleservice.constant.TransactionStatus;
+import realestate.webrealestatesaleservice.constant.SaleStatus;
 import realestate.webrealestatesaleservice.dto.paging.PageDto;
 import realestate.webrealestatesaleservice.dto.request.PageSalesTransactionRequest;
 import realestate.webrealestatesaleservice.dto.request.SalesTransactionRequest;
@@ -18,6 +18,6 @@ public interface SalesService {
     List<SalesTransactionResponse> getTransactionsByBuyer(String buyerId);
     List<SalesTransactionResponse> getTransactionsByAgent(String agentId);
     List<SalesTransactionResponse> getTransactionsByListing(String listingId);
-    SalesTransactionResponse updateTransactionStatus(String id, TransactionStatus status);
+    SalesTransactionResponse updateTransactionStatus(String id, SaleStatus status);
     Integer count();
 }

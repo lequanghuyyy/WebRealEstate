@@ -2,7 +2,8 @@ package realestate.webrealestatesaleservice.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import realestate.webrealestatesaleservice.constant.TransactionStatus;
+import realestate.webrealestatesaleservice.constant.SaleStatus;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -21,7 +22,7 @@ public class SalesTransactionEntity {
     private String id;
 
     // Liên kết đến Listing (ID của bất động sản)
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String listingId;
 
     // ID người mua
@@ -39,7 +40,7 @@ public class SalesTransactionEntity {
     // Trạng thái giao dịch: PENDING, COMPLETED, CANCELLED
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
-    private TransactionStatus transactionStatus;
+    private SaleStatus transactionStatus;
 
     // Thời điểm giao dịch được hoàn thành (nếu thành công)
     private LocalDateTime completedAt;

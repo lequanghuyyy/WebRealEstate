@@ -9,6 +9,8 @@ import realestate.webrealestatepaymentservice.dto.request.PaymentRequest;
 import realestate.webrealestatepaymentservice.dto.response.PaymentResponse;
 import realestate.webrealestatepaymentservice.entity.PaymentEntity;
 
+import java.math.BigDecimal;
+
 @Component
 
 public class PaymentMapper {
@@ -20,6 +22,7 @@ public class PaymentMapper {
     public PaymentEntity convertToEntity(PaymentRequest paymentRequest) {
         PaymentEntity paymentEntity = modelMapper.map(paymentRequest, PaymentEntity.class);
         paymentEntity.setPaymentMethod(PaymentMethod.valueOf(paymentRequest.getPaymentMethod()));
+        paymentEntity.setCommissionFee(paymentEntity.getAmount().multiply(BigDecimal.valueOf(0.05)));
         return paymentEntity;
     }
     public PaymentResponse convertToResponse(PaymentEntity paymentEntity) {

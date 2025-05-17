@@ -3,7 +3,8 @@ package realestate.webrealestatesaleservice.controller;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import realestate.webrealestatesaleservice.constant.TransactionStatus;
+import realestate.webrealestatesaleservice.constant.SaleStatus;
+import realestate.webrealestatesaleservice.constant.SaleStatus;
 import realestate.webrealestatesaleservice.dto.paging.PageDto;
 import realestate.webrealestatesaleservice.dto.request.PageSalesTransactionRequest;
 import realestate.webrealestatesaleservice.dto.request.SalesTransactionRequest;
@@ -63,7 +64,7 @@ public class SalesController {
             @PathVariable("transactionId") String transactionId,
             @RequestBody StatusUpdateRequest status) {
 
-        TransactionStatus transactionStatus = TransactionStatus.valueOf(status.getStatus().toUpperCase());
+        SaleStatus transactionStatus = SaleStatus.valueOf(status.getStatus().toUpperCase());
         SalesTransactionResponse response = salesService.updateTransactionStatus(transactionId, transactionStatus);
         return ResponseFactory.ok(response);
     }

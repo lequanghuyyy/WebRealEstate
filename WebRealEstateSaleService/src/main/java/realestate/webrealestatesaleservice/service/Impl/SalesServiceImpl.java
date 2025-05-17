@@ -9,7 +9,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
-import realestate.webrealestatesaleservice.constant.TransactionStatus;
+import realestate.webrealestatesaleservice.constant.SaleStatus;
 import realestate.webrealestatesaleservice.dto.paging.PageDto;
 import realestate.webrealestatesaleservice.dto.request.PageSalesTransactionRequest;
 import realestate.webrealestatesaleservice.dto.request.SalesTransactionRequest;
@@ -36,6 +36,10 @@ public class SalesServiceImpl implements SalesService {
     @Override
     public SalesTransactionResponse createTransaction(SalesTransactionRequest request) {
         SalesTransactionEntity salesTransactionEntity = salesTransactionMapper.convertToSalesTransactionEntity(request);
+        List<SalesTransactionEntity> existing = salesTransactionRepository.findByListingId(request.getListingId());
+        if (!existing.isEmpty()) {
+            throw new RuntimeException("Transaction already exists for this listing");
+        }
         return salesTransactionMapper.convertToSalesTransactionResponse(salesTransactionRepository.save(salesTransactionEntity));
     }
 
@@ -77,13 +81,13 @@ public class SalesServiceImpl implements SalesService {
     }
 
     @Override
-    public SalesTransactionResponse updateTransactionStatus(String id, TransactionStatus status) {
+    public SalesTransactionResponse updateTransactionStatus(String id, SaleStatus status) {
         SalesTransactionEntity salesTransactionEntity = salesTransactionRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("SalesTransaction not found with id " + id));
         salesTransactionEntity.setTransactionStatus(status);
         LocalDateTime time = LocalDateTime.now();
         salesTransactionEntity.setUpdatedAt(time);
-        if (status == TransactionStatus.COMPLETED) {
+        if (status == SaleStatus.COMPLETED) {
             salesTransactionEntity.setCompletedAt(time);
         }
         SalesTransactionEntity updatedSalesTransactionEntity = salesTransactionRepository.save(salesTransactionEntity);

@@ -227,5 +227,44 @@
     "headers": {
       "Connection": "keep-alive"
     }
+  },
+  "/api/offers": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/offers": "/api/v1/offers"
+    },
+    "headers": {
+      "Connection": "keep-alive",
+      "Content-Type": "application/json"
+    }
+  },
+  "/api/offers/*/accept": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/offers/(.+)/accept": "/api/v1/offers/$1/accept"
+    },
+    "headers": {
+      "Connection": "keep-alive",
+      "Content-Type": "application/json"
+    }
+  },
+  "/api/offers/*/reject": {
+    "target": "http://localhost:8080",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug",
+    "pathRewrite": {
+      "^/api/offers/(.+)/reject": "/api/v1/offers/$1/reject"
+    },
+    "headers": {
+      "Connection": "keep-alive",
+      "Content-Type": "application/json"
+    }
   }
 } 

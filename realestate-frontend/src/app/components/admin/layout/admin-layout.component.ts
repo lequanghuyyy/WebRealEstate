@@ -15,7 +15,6 @@ export class AdminLayoutComponent implements OnInit {
   user: any;
   mobileMenuOpen: boolean = false;
   userDropdownOpen: boolean = false;
-  sidebarCollapsed: boolean = false;
   
   // Navigation menu items
   menuItems = [
@@ -53,12 +52,6 @@ export class AdminLayoutComponent implements OnInit {
       return;
     }
     
-    // Check if sidebar state is saved in localStorage
-    const savedState = localStorage.getItem('admin_sidebar_collapsed');
-    if (savedState) {
-      this.sidebarCollapsed = savedState === 'true';
-    }
-    
     // Force navigation to dashboard if on the root /admin path
     if (this.router.url === '/admin') {
       this.router.navigate(['/admin/dashboard']);
@@ -84,11 +77,6 @@ export class AdminLayoutComponent implements OnInit {
   
   toggleUserDropdown(): void {
     this.userDropdownOpen = !this.userDropdownOpen;
-  }
-  
-  toggleSidebar(): void {
-    this.sidebarCollapsed = !this.sidebarCollapsed;
-    localStorage.setItem('admin_sidebar_collapsed', this.sidebarCollapsed.toString());
   }
   
   logout(): void {

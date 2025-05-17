@@ -62,6 +62,7 @@ public class PaymentEntity {
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
+        paymentDate = createdAt;
         updatedAt = createdAt;
     }
 

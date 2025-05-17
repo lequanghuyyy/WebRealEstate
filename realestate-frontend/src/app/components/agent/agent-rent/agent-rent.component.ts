@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
@@ -82,7 +82,8 @@ export class AgentRentComponent implements OnInit {
     private authService: AuthService,
     private listingService: ListingService,
     private transactionService: TransactionService,
-    private toastr: ToastrWrapperService
+    private toastr: ToastrWrapperService,
+    private router: Router
   ) {}
   
   ngOnInit(): void {
@@ -642,6 +643,13 @@ export class AgentRentComponent implements OnInit {
           });
         }
       }
+    });
+  }
+
+  viewOffers(listingId: string): void {
+    // Navigate to property offers component with query parameter
+    this.router.navigate(['/agent/property-offers'], { 
+      queryParams: { listingId: listingId } 
     });
   }
 } 

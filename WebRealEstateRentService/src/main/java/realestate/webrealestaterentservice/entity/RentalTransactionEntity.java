@@ -24,7 +24,7 @@ public class RentalTransactionEntity {
     private String id;
 
     // Liên kết đến Listing (ID từ Listing Service)
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     private String listingId;
 
     // ID của người thuê

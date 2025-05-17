@@ -92,6 +92,7 @@ export const routes: Routes = [
   { path: 'reviews', component: ReviewsComponent },
   { path: 'api-test', component: ApiTestComponent },
   { path: 'payments', component: PaymentComponent, canActivate: [authGuard] },
+  { path: 'payment-history', loadComponent: () => import('./components/payments/payment-history/payment-history.component').then(m => m.PaymentHistoryComponent), canActivate: [authGuard] },
   { 
     path: 'profile', 
     component: ProfileComponent,
@@ -99,6 +100,7 @@ export const routes: Routes = [
       { path: 'favorites', component: ProfileComponent },
       { path: 'saved-searches', component: ProfileComponent },
       { path: 'appointments', component: ProfileComponent },
+      { path: 'offers', component: ProfileComponent },
       { path: 'reviews', component: ReviewsComponent },
       { path: '', redirectTo: 'profile', pathMatch: 'full' }
     ]
@@ -114,6 +116,7 @@ export const routes: Routes = [
       { path: 'buy', loadComponent: () => import('./components/agent/agent-buy/agent-buy.component').then(m => m.AgentBuyComponent) },
       { path: 'rent', loadComponent: () => import('./components/agent/agent-rent/agent-rent.component').then(m => m.AgentRentComponent) },
       { path: 'appointments', loadComponent: () => import('./components/agent/appointments/agent-appointments.component').then(m => m.AgentAppointmentsComponent) },
+      { path: 'property-offers', loadComponent: () => import('./components/agent/property-offers/property-offers.component').then(m => m.PropertyOffersComponent) },
       { path: '', redirectTo: 'transactions', pathMatch: 'full' }
     ]
   },

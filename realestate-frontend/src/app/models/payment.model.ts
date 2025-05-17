@@ -1,3 +1,5 @@
+import { Transaction } from './transaction.model';
+
 export enum PaymentMethod {
   CREDIT_CARD = 'CREDIT_CARD',
   BANK_TRANSFER = 'BANK_TRANSFER',
@@ -18,7 +20,7 @@ export enum TransactionStyle {
 export interface PaymentRequest {
   transactionId: string;
   amount: number;
-  paymentMethod: string;
+  paymentMethod: string; // Will be one of PaymentMethod
   commissionFee: number;
   notes: string;
   transactionStyle: TransactionStyle;
@@ -28,6 +30,7 @@ export interface PaymentRequest {
 export interface PaymentResponse {
   id: string;
   transactionId: string;
+  agentId: string;
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -35,6 +38,11 @@ export interface PaymentResponse {
   commissionFee: number;
   notes: string;
   createdAt: string;
+  transactionStyle: TransactionStyle;
+}
+
+export interface PaymentDialogData {
+  transaction: Transaction;
   transactionStyle: TransactionStyle;
 }
 

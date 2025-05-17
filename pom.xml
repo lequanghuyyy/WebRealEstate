@@ -1,0 +1,75 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>Spring</groupId>
+    <artifactId>realestate</artifactId>
+    <version>1.0.0</version>
+    <packaging>pom</packaging>
+    <name>RealEstate Multi-Module Project</name>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.1.8</version> <!-- ✅ Giảm xuống phiên bản tương thích -->
+        <relativePath/> <!-- vì nó là gốc -->
+    </parent>
+
+    <modules>
+        <module>realestate-common</module>
+        <module>WebRealEstateListingService</module>
+        <module>WebRealEstateOfferService</module>
+        <module>WebRealEstateSaleService</module>
+        <module>WebRealEstateRentService</module>
+        <module>WebRealEstatePaymentService</module>
+        <module>WebRealEstate_IdentityService</module>
+        <module>realestate-gateway</module>
+        <module>UserExperienceService</module>
+    </modules>
+
+    <properties>
+        <java.version>17</java.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Boot -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>3.1.8</version> <!-- ✅ Khớp với version ở trên -->
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring Cloud -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>2022.0.4</version> <!-- ✅ Tương thích với Boot 3.1.x -->
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <!-- Plugin Maven Compiler -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.10.1</version>
+                    <configuration>
+                        <source>${java.version}</source>
+                        <target>${java.version}</target>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+</project>

@@ -255,7 +255,15 @@ export class PaymentComponent implements OnInit {
     this.isLoading = true;
     this.paymentService.getPaymentByTransactionId(payment.transactionId).subscribe({
       next: (paymentDetails) => {
-        console.log('Payment details:', paymentDetails);
+        console.log('Payment details received:', paymentDetails);
+        console.log('Notes field:', paymentDetails.notes);
+        // Check if all expected fields are present
+        const expectedFields = ['id', 'transactionId', 'amount', 'paymentMethod', 'paymentStatus', 'notes'];
+        const missingFields = expectedFields.filter(field => !Object.prototype.hasOwnProperty.call(paymentDetails, field));
+        if (missingFields.length > 0) {
+          console.warn('Missing expected fields in payment response:', missingFields);
+        }
+        
         this.isLoading = false;
         this.selectedPayment = paymentDetails;
         

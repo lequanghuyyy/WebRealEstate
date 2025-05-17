@@ -10,20 +10,26 @@
 
   <!-- Loading and Error States -->
   <div class="container mt-5" *ngIf="isLoading">
-    <div class="loading-state text-center p-5">
+    <div class="loading-state text-center p-5 bg-light rounded">
       <div class="spinner-border text-primary" role="status">
         <span class="visually-hidden">Loading...</span>
       </div>
       <p class="mt-3">Loading your rental data...</p>
+      <small class="text-muted">This may take a few moments. If it takes too long, you can <a href="#" (click)="$event.preventDefault(); loadTransactions()">refresh</a> or <a routerLink="/properties">browse properties</a>.</small>
     </div>
   </div>
 
   <div class="container mt-5" *ngIf="!isLoading && errorMessage">
     <div class="error-state text-center p-5 bg-light rounded">
-      <i class="fas fa-exclamation-circle text-danger fa-3x mb-3"></i>
-      <h4>Error Loading Data</h4>
+      <i class="fas fa-exclamation-circle text-warning fa-3x mb-3"></i>
+      <h4>{{ errorMessage.includes('No rental') ? 'No Rentals Available' : 'Error Loading Data' }}</h4>
       <p>{{ errorMessage }}</p>
-      <button class="btn btn-primary mt-3" (click)="loadTransactions()">Try Again</button>
+      <div class="mt-4">
+      
+        <button class="btn btn-outline-primary" routerLink="/properties">
+          <i class="fas fa-search me-2"></i>Browse Properties
+        </button>
+      </div>
     </div>
   </div>
 
@@ -78,7 +84,7 @@
                 <label for="statusFilter">Status</label>
                 <select id="statusFilter" class="form-select" formControlName="status">
                   <option value="all">All Statuses</option>
-                  <option [value]="rentalStatusEnum.PENDING">Pending</option>
+                  <option [value]="rentalStatusEnum.PENDING" selected>Pending</option>
                   <option [value]="rentalStatusEnum.APPROVED">Approved</option>
                   <option [value]="rentalStatusEnum.REJECTED">Rejected</option>
                   <option [value]="rentalStatusEnum.COMPLETED">Completed</option>
@@ -122,9 +128,14 @@
     <div class="card mt-4">
       <div class="card-header d-flex justify-content-between align-items-center">
         <h3 class="mb-0">Rental Agreements</h3>
-        <button class="btn btn-primary" routerLink="/properties">
-          <i class="fas fa-plus me-2"></i> New Rental
-        </button>
+        <div>
+          <button class="btn btn-outline-primary me-2" routerLink="/payment-history">
+            <i class="fas fa-history"></i> Payment History
+          </button>
+          <button class="btn btn-primary" routerLink="/properties">
+            <i class="fas fa-plus me-2"></i> New Rental
+          </button>
+        </div>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -160,7 +171,7 @@
                       <img [src]="transaction.property.image || 'assets/images/property-1.jpg'" alt="Property" appDefaultImage>
                     </div>
                     <div class="property-details">
-                      <h5>{{ transaction.property.title }}</h5>
+                      <h5>{{ getPropertyName(transaction) }}</h5>
                       <p class="client-name">Tenant: {{ transaction.client.name }}</p>
                     </div>
                   </div>
@@ -190,6 +201,11 @@
                       class="btn btn-sm btn-outline-info me-1" title="Renew lease" 
                       (click)="renewRental(transaction.id?.toString() || '')">
                       <i class="fas fa-sync-alt"></i>
+                    </button>
+                    <button *ngIf="transaction.status === rentalStatusEnum.PENDING || transaction.status === rentalStatusEnum.APPROVED"
+                      class="btn btn-sm btn-outline-primary me-1" title="Make Payment" 
+                      (click)="openPaymentDialog(transaction)">
+                      <i class="fas fa-credit-card"></i>
                     </button>
                   </div>
                 </td>

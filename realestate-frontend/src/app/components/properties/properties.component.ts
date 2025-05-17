@@ -178,7 +178,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
             console.log(`ID: ${listing.id}, Type: ${listing.type}, PropertyType: ${listing.propertyType}, Title: ${listing.title}`);
           });
           
-          this.allPropertiesCache = listings;
+          // Filter to only include AVAILABLE properties
+          this.allPropertiesCache = listings.filter(listing => listing.status === ListingStatus.AVAILABLE);
+          console.log('Filtered to AVAILABLE properties:', this.allPropertiesCache.length);
         } else {
           console.error('Received non-array data from getListings:', listings);
           this.allPropertiesCache = [];
@@ -190,7 +192,7 @@ export class PropertiesComponent implements OnInit, OnDestroy {
         if (this.hasActiveFilters()) {
           this.applyFilters(true); // Force refresh of filters from current URL params
         } else {
-          // Just show all properties without filters
+          // Just show all AVAILABLE properties without filters
           this.properties = [...this.allPropertiesCache];
           this.totalItems = this.allPropertiesCache.length;
           this.totalPages = Math.ceil(this.totalItems / this.itemsPerPage);
@@ -274,7 +276,9 @@ export class PropertiesComponent implements OnInit, OnDestroy {
     console.log('Filtering with criteria:', formValues);
     
     let filtered = [...this.allPropertiesCache];
-    console.log('Initial properties count:', filtered.length);
+    // Only show AVAILABLE properties
+    filtered = filtered.filter(p => p.status === ListingStatus.AVAILABLE);
+    console.log('Initial AVAILABLE properties count:', filtered.length);
     
     // Debug log for Villa and SALE properties
     console.log('Villa properties:', filtered.filter(p => p.propertyType === 'Villa').length);
@@ -474,7 +478,8 @@ export class PropertiesComponent implements OnInit, OnDestroy {
     const formValues = this.filterForm.getRawValue(); // Use getRawValue() to ensure we get all values including disabled controls
     const searchRequest: ListingSearchRequest = {
       page: this.currentPage, // Server will subtract 1 already in: PageRequest.of(searchRequest.getPage() - 1, ...)
-      size: this.itemsPerPage
+      size: this.itemsPerPage,
+      status: ListingStatus.AVAILABLE // Only show AVAILABLE properties
     };
     
     if (formValues.keyword) searchRequest.keyword = formValues.keyword.trim();
@@ -642,12 +647,20 @@ export class PropertiesComponent implements OnInit, OnDestroy {
 
   // Last resort method
   useFinalFallbackMethod(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+    
     console.log('Using final fallback method');
     
     this.propertyApiService.getListingsWithFallback().subscribe({
       next: (listings: ListingResponse[]) => {
         console.log('Fallback listings:', listings);
-        this.allPropertiesCache = listings || [];
+        
+        // Filter to only include AVAILABLE properties
+        const availableListings = listings ? listings.filter(listing => listing.status === ListingStatus.AVAILABLE) : [];
+        this.allPropertiesCache = availableListings;
+        
+        console.log('Filtered to AVAILABLE properties:', this.allPropertiesCache.length);
         
         // Apply any active filters to the results
         if (this.hasActiveFilters()) {
@@ -655,15 +668,15 @@ export class PropertiesComponent implements OnInit, OnDestroy {
           this.filterPropertiesLocally();
         } else {
           // Use all listings if no filters are active
-          this.properties = listings || [];
-          this.filteredProperties = listings || [];
-          this.totalItems = listings.length;
-          this.totalPages = Math.ceil(listings.length / this.itemsPerPage);
+          this.properties = availableListings || [];
+          this.filteredProperties = availableListings || [];
+          this.totalItems = availableListings.length;
+          this.totalPages = Math.ceil(availableListings.length / this.itemsPerPage);
           
           // Apply pagination
           const startIndex = (this.currentPage - 1) * this.itemsPerPage;
           const endIndex = startIndex + this.itemsPerPage;
-          this.filteredProperties = listings.slice(startIndex, endIndex);
+          this.filteredProperties = availableListings.slice(startIndex, endIndex);
           
           // Process main images
           this.processMainImages(this.filteredProperties);
@@ -672,8 +685,8 @@ export class PropertiesComponent implements OnInit, OnDestroy {
           this.applyLocalSorting();
         }
         
-        if (listings.length === 0 && !this.hasActiveFilters()) {
-          this.errorMessage = 'No properties found. Please try again later.';
+        if (availableListings.length === 0 && !this.hasActiveFilters()) {
+          this.errorMessage = 'No available properties found. Please try again later.';
         }
       },
       error: (error) => {
@@ -704,7 +717,14 @@ export class PropertiesComponent implements OnInit, OnDestroy {
     // Use a smaller page size for faster initial load
     const initialPageSize = 6;
     
-    this.propertyApiService.getAllListingsPaged(this.currentPage, initialPageSize).subscribe({
+    // Create search request with only AVAILABLE status
+    const searchRequest: ListingSearchRequest = {
+      page: this.currentPage,
+      size: initialPageSize,
+      status: ListingStatus.AVAILABLE
+    };
+    
+    this.propertyApiService.searchListings(searchRequest).subscribe({
       next: (response: PageDto<ListingResponse>) => {
         if (response && response.items && response.items.length > 0) {
           this.properties = response.items;
@@ -740,7 +760,14 @@ export class PropertiesComponent implements OnInit, OnDestroy {
   
   // Helper method to load the complete page data after initial quick loading
   loadCompletePageData(): void {
-    this.propertyApiService.getAllListingsPaged(this.currentPage, this.itemsPerPage).subscribe({
+    // Create search request with only AVAILABLE status and full page size
+    const searchRequest: ListingSearchRequest = {
+      page: this.currentPage,
+      size: this.itemsPerPage,
+      status: ListingStatus.AVAILABLE
+    };
+    
+    this.propertyApiService.searchListings(searchRequest).subscribe({
       next: (response: PageDto<ListingResponse>) => {
         if (response && response.items && response.items.length > 0) {
           this.properties = response.items;

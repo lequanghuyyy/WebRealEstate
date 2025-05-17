@@ -1558,4 +1558,70 @@
       color: #e74c3c;
     }
   }
+}
+
+/* Offer Form Styling */
+.offer-form {
+  margin-top: 20px;
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  
+  .form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+    
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      margin: 0;
+      color: #343a40;
+    }
+    
+    .close-form-btn {
+      background: none;
+      border: none;
+      color: #6c757d;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      transition: color 0.2s;
+      
+      &:hover {
+        color: #dc3545;
+      }
+    }
+  }
+  
+  .offer-intro {
+    margin-bottom: 20px;
+    color: #6c757d;
+    
+    p {
+      margin: 0;
+      font-size: 14px;
+      
+      i {
+        color: #3498db;
+        margin-right: 6px;
+      }
+    }
+  }
+}
+
+.action-button.offer-button {
+  background-color: #28a745;
+  
+  &:hover {
+    background-color: #218838;
+  }
+  
+  i {
+    color: white;
+  }
 } 

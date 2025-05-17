@@ -1,6 +1,7 @@
 package spring.userexperienceservice.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import spring.userexperienceservice.constant.AppointmentStatus;
@@ -14,9 +15,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/ux/appointments")
-@RequiredArgsConstructor
 public class AppointmentController {
+
+    @Autowired
     private final AppointmentService appointmentService;
+
+    public AppointmentController(AppointmentService appointmentService) {
+        this.appointmentService = appointmentService;
+    }
 
     @PostMapping
     public ResponseEntity<BaseResponse<AppointmentResponse>> createAppointment(@RequestBody AppointmentRequest request) {

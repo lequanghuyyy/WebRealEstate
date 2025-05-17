@@ -141,6 +141,8 @@ export class HomeComponent implements OnInit {
         next: (listings) => {
           console.log('Recommended properties loaded:', listings);
           this.recommendedProperties = listings;
+          // Process the mainURL for each property if available
+          this.processMainImages(this.recommendedProperties);
           this.recommendationLoading = false;
         },
         error: (error) => {
@@ -176,6 +178,8 @@ export class HomeComponent implements OnInit {
                     if (retryListings && retryListings.length > 0) {
                       console.log('Retry succeeded, listings:', retryListings.length);
                       this.featuredProperties = retryListings;
+                      // Process the mainURL for each property if available
+                      this.processMainImages(this.featuredProperties);
                     } else {
                       console.warn('Retry failed, still no properties');
                     }
@@ -189,6 +193,8 @@ export class HomeComponent implements OnInit {
             }, 1000);
           } else {
             this.featuredProperties = listings;
+            // Process the mainURL for each property if available
+            this.processMainImages(this.featuredProperties);
             this.featuredLoading = false;
           }
         },
@@ -198,6 +204,24 @@ export class HomeComponent implements OnInit {
           this.featuredLoading = false;
         }
       });
+  }
+  
+  // Process main images for properties
+  private processMainImages(properties: ListingResponse[]): void {
+    if (!properties || properties.length === 0) return;
+    
+    // For each property, if mainURL is undefined but property has images, 
+    // set the first image as the main URL
+    properties.forEach(property => {
+      if (!property.mainURL && property.images && property.images.length > 0) {
+        // Check if the image is a string or an object with imageUrl
+        if (typeof property.images[0] === 'string') {
+          property.mainURL = property.images[0];
+        } else if (property.images[0].hasOwnProperty('imageUrl')) {
+          property.mainURL = property.images[0].imageUrl;
+        }
+      }
+    });
   }
   
   // Phương thức xử lý tìm kiếm và chuyển hướng

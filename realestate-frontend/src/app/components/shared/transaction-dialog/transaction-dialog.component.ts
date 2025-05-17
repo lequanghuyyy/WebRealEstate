@@ -22,7 +22,6 @@ export interface ExtendedTransaction extends Transaction {
 interface PropertyItem {
   id: string | number;
   title: string;
-  image: string;
 }
 
 @Component({
@@ -117,8 +116,7 @@ export class TransactionDialogComponent implements OnInit {
         // Map to the format we need
         this.properties = properties.map((p: Property) => ({
           id: p.id,
-          title: p.title,
-          image: p.images && p.images.length > 0 ? p.images[0] : 'assets/images/properties/default.jpg'
+          title: p.title
         }));
         this.isLoading = false;
       },
@@ -169,8 +167,7 @@ export class TransactionDialogComponent implements OnInit {
     const transactionData: Partial<ExtendedTransaction> = {
       property: {
         id: property.id,
-        title: property.title,
-        image: property.image
+        title: property.title
       },
       client: {
         name: formValue.clientName,

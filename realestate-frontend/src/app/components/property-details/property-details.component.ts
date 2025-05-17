@@ -18,6 +18,8 @@ import { catchError, switchMap } from 'rxjs/operators';
 import { DefaultImageDirective } from '../../directives/default-image.directive';
 import { UserService } from '../../services/user.service';
 import { UserResponse } from '../../models/auth.model';
+import { OfferService } from '../../services/offer.service';
+import { OfferRequest } from '../../models/offer.model';
 
 @Component({
   selector: 'app-property-details',
@@ -38,6 +40,7 @@ export class PropertyDetailsComponent implements OnInit {
   private fb = inject(FormBuilder);
   private listingService = inject(ListingService);
   private userService = inject(UserService);
+  private offerService = inject(OfferService);
   
   // Component properties
   propertyId: string | null = null;
@@ -47,8 +50,10 @@ export class PropertyDetailsComponent implements OnInit {
   activeImageIndex: number = 0;
   contactForm: FormGroup;
   scheduleForm: FormGroup;
+  offerForm: FormGroup;
   formSubmitted: boolean = false;
   scheduleSubmitted: boolean = false;
+  offerSubmitted: boolean = false;
   similarProperties: Property[] = [];
   searchType: 'buy' | 'rent' | 'sell' = 'buy';
   today: string = new Date().toISOString().split('T')[0];
@@ -56,6 +61,7 @@ export class PropertyDetailsComponent implements OnInit {
   // Form visibility states
   showContactForm: boolean = false;
   showScheduleForm: boolean = false;
+  showOfferForm: boolean = false;
 
   // User authentication
   isAuthenticated: boolean = false;
@@ -82,6 +88,14 @@ export class PropertyDetailsComponent implements OnInit {
       time: ['', [Validators.required]],
       notes: ['']
     });
+
+    this.offerForm = this.fb.group({
+      offerPrice: ['', [Validators.required, Validators.min(1)]],
+      message: [''],
+      expiresAt: ['', [Validators.required]],
+      startDate: [''],
+      endDate: ['']
+    });
   }
 
   ngOnInit(): void {
@@ -99,6 +113,11 @@ export class PropertyDetailsComponent implements OnInit {
     // Set today's date as the minimum date for appointment
     this.scheduleForm.get('date')?.setValue(this.today);
     
+    // Set default expiration date for offer (30 days from now)
+    const expiryDate = new Date();
+    expiryDate.setDate(expiryDate.getDate() + 30);
+    this.offerForm.get('expiresAt')?.setValue(expiryDate.toISOString().split('T')[0]);
+    
     // Monitor route changes to reload property data
     this.route.params.subscribe(params => {
       const newPropertyId = params['id'];
@@ -110,14 +129,19 @@ export class PropertyDetailsComponent implements OnInit {
   }
   
   // Thêm hàm tiền tải ảnh để cải thiện trải nghiệm người dùng
-  private preloadImages(imageUrls: string[]): void {
-    if (!imageUrls || imageUrls.length === 0) return;
+  private preloadImages(imageUrls: (string | ListingImageResponse)[]): void {
+    // Convert complex image objects to URLs if needed
+    const urls = imageUrls.map(img => {
+      if (typeof img === 'string') {
+        return img;
+      } else if (img && 'imageUrl' in img) {
+        return img.imageUrl;
+      }
+      return '';
+    }).filter(url => url); // Filter out empty strings
     
-    // Chỉ tiền tải tối đa 5 ảnh để tránh tải quá nhiều
-    const imagesToPreload = imageUrls.slice(0, 5);
-    
-    // Tiền tải các ảnh
-    imagesToPreload.forEach(url => {
+    // Preload images
+    urls.forEach(url => {
       const img = new Image();
       img.src = url;
     });
@@ -532,5 +556,96 @@ export class PropertyDetailsComponent implements OnInit {
         }
       }, 100);
     }
+  }
+
+  // Toggle offer form visibility
+  toggleOfferForm(): void {
+    if (!this.isAuthenticated) {
+      this.toastr.info('Please log in to submit an offer');
+      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      return;
+    }
+    
+    if (this.isAgent) {
+      this.toastr.info('As an agent, you cannot submit offers on properties');
+      return;
+    }
+    
+    this.showOfferForm = !this.showOfferForm;
+    
+    // Reset form when opening
+    if (this.showOfferForm && this.property) {
+      // Set today as the default startDate value
+      const today = new Date();
+      const formattedToday = today.toISOString().split('T')[0];
+      
+      // Set default endDate as 1 year from today
+      const nextYear = new Date();
+      nextYear.setFullYear(nextYear.getFullYear() + 1);
+      const formattedNextYear = nextYear.toISOString().split('T')[0];
+      
+      this.offerForm.patchValue({
+        offerPrice: this.property.price,
+        message: '',
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        startDate: formattedToday,
+        endDate: formattedNextYear
+      });
+      
+      // Set validators based on property type (for rent/lease properties)
+      if (this.property.type === 'rent') {
+        this.offerForm.get('startDate')?.setValidators([Validators.required]);
+        this.offerForm.get('endDate')?.setValidators([Validators.required]);
+      } else {
+        this.offerForm.get('startDate')?.clearValidators();
+        this.offerForm.get('endDate')?.clearValidators();
+      }
+      
+      this.offerForm.get('startDate')?.updateValueAndValidity();
+      this.offerForm.get('endDate')?.updateValueAndValidity();
+    }
+  }
+  
+  // Submit offer
+  submitOffer(): void {
+    if (!this.isAuthenticated || !this.userId || !this.propertyId || !this.property) {
+      this.toastr.error('You must be logged in to submit an offer');
+      return;
+    }
+    
+    this.offerForm.markAllAsTouched();
+    if (this.offerForm.invalid) {
+      return;
+    }
+    
+    this.offerSubmitted = true;
+    
+    const offerRequest: OfferRequest = {
+      listingId: this.propertyId,
+      userId: this.userId,
+      offerPrice: this.offerForm.value.offerPrice,
+      expiresAt: new Date(this.offerForm.value.expiresAt).toISOString(),
+      message: this.offerForm.value.message || undefined
+    };
+    
+    // Add rental period if property is for rent
+    if (this.property.type === 'rent') {
+      offerRequest.startRentAt = this.offerForm.value.startDate;
+      offerRequest.endRentAt = this.offerForm.value.endDate;
+    }
+    
+    this.offerService.createOffer(offerRequest).subscribe({
+      next: (response) => {
+        this.toastr.success('Your offer has been submitted successfully');
+        this.showOfferForm = false;
+        this.offerSubmitted = false;
+        this.offerForm.reset();
+      },
+      error: (error) => {
+        console.error('Error submitting offer:', error);
+        this.toastr.error('There was an error submitting your offer. Please try again.');
+        this.offerSubmitted = false;
+      }
+    });
   }
 } 

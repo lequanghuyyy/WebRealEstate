@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -8,7 +8,7 @@ import { UserResponse, UserStatus } from '../../models/auth.model';
 import { UserAppointmentsComponent } from './appointments/user-appointments.component';
 import { ListingService } from '../../services/listing.service';
 import { ListingResponse } from '../../models/listing.model';
-import { forkJoin, of } from 'rxjs';
+import { forkJoin, of, Subscription } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { SavedSearchService } from '../../services/saved-search.service';
 import { SavedSearchResponse } from '../../models/user-experience.model';
@@ -18,16 +18,23 @@ import { environment } from '../../../environments/environment';
 import { FavoriteService } from '../../services/favorite.service';
 import { PropertyService } from '../../services/property.service';
 import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
+import { UserOffersComponent } from './user-offers/user-offers.component';
 
+interface ProfileForm {
+  name: string;
+  email: string;
+  phone: string;
+  bio: string;
+}
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, UserAppointmentsComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, UserAppointmentsComponent, UserOffersComponent],
   templateUrl: './profile.component.html',
   styleUrls: ['./profile.component.scss']
 })
-export class ProfileComponent implements OnInit {
+export class ProfileComponent implements OnInit, OnDestroy {
   // Services
   private route = inject(ActivatedRoute);
   private authService = inject(AuthService);
@@ -40,7 +47,7 @@ export class ProfileComponent implements OnInit {
   isEditing = false;
   isLoading = true;
   errorMessage: string | null = null;
-  profileForm = {
+  profileForm: ProfileForm = {
     name: '',
     email: '',
     phone: '',
@@ -51,6 +58,8 @@ export class ProfileComponent implements OnInit {
   isLoggedIn: boolean = false;
   isAgent: boolean = false;
   isAdmin: boolean = false;
+  isBuyer: boolean = false;
+  isRenter: boolean = false;
   currentUser: any = null;
   
   // Make UserStatus enum available to template
@@ -80,6 +89,9 @@ export class ProfileComponent implements OnInit {
   favoriteTotalPages: number = 0;
   favoriteTotalElements: number = 0;
   
+  // Component state
+  private subscriptions: Subscription[] = [];
+  
   constructor(
     private userService: UserService,
     private router: Router,
@@ -90,27 +102,29 @@ export class ProfileComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    // Check auth status
     this.checkAuthStatus();
+
+    // If not logged in, redirect to login
+    if (!this.isLoggedIn) {
+      this.router.navigate(['/login']);
+      return;
+    }
+
+    // Load user profile data
     this.loadUserProfileFromBackend();
     
-    // Đặt tab hoạt động dựa trên URL hiện tại
-    this.setActiveTabFromUrl();
-    
-    // Load data based on active tab
-    if (this.activeTab === 'favorites') {
-      this.loadFavoriteProperties();
-    } else if (this.activeTab === 'saved-searches') {
-      this.loadSavedSearches();
-    } else if (this.activeTab === 'reviews') {
-      this.loadUserReviews();
+    // Check URL for active tab
+    const url = this.router.url;
+    if (url.includes('appointments')) {
+      this.activeTab = 'appointments';
+    } else if (url.includes('favorites')) {
+      this.activeTab = 'favorites';
+    } else if (url.includes('saved-searches')) {
+      this.activeTab = 'saved-searches';
+    } else if (url.includes('offers')) {
+      this.activeTab = 'offers';
     }
-    
-    // Check for tab parameter in URL
-    this.route.queryParams.subscribe(params => {
-      if (params['tab']) {
-        this.setActiveTab(params['tab']);
-      }
-    });
   }
   
   // Load user profile from the backend API
@@ -519,24 +533,12 @@ export class ProfileComponent implements OnInit {
     });
   }
   
-  setActiveTab(tab: string): void {
-    this.activeTab = tab;
+  setActiveTab(tabName: string): void {
+    this.activeTab = tabName;
     
-    // Load data based on selected tab if not already loaded
-    if (tab === 'favorites' && this.favoriteProperties.length === 0) {
-      this.loadFavoriteProperties();
-    } else if (tab === 'saved-searches' && this.savedSearches.length === 0) {
-      this.loadSavedSearches();
-    } else if (tab === 'reviews' && this.userReviews.length === 0) {
-      this.loadUserReviews();
-    }
-    
-    // Update URL without navigating
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { tab },
-      queryParamsHandling: 'merge'
-    });
+    // Update URL to reflect the active tab without reloading
+    const url = this.activeTab === 'profile' ? '/profile' : `/profile/${this.activeTab}`;
+    this.router.navigate([url], { replaceUrl: true });
   }
   
   
@@ -572,10 +574,14 @@ export class ProfileComponent implements OnInit {
       this.currentUser = this.authService.getCurrentUser();
       this.isAgent = this.authService.isAgent();
       this.isAdmin = this.authService.isAdmin();
+      this.isBuyer = this.authService.isBuyer();
+      this.isRenter = this.authService.isRenter();
     } else {
       this.currentUser = null;
       this.isAgent = false;
       this.isAdmin = false;
+      this.isBuyer = false;
+      this.isRenter = false;
     }
   }
   
@@ -658,5 +664,9 @@ export class ProfileComponent implements OnInit {
     if (page >= 0 && page < this.favoriteTotalPages) {
       this.loadFavoriteProperties(page);
     }
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(subscription => subscription.unsubscribe());
   }
 } 

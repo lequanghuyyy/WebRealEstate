@@ -11,4 +11,5 @@ public interface SalesTransactionRepository extends JpaRepository<SalesTransacti
     List<SalesTransactionEntity> findByBuyerId(String buyerId);
     List<SalesTransactionEntity> findByListingId(String listingId);
     List<SalesTransactionEntity> findByAgentId(String agentId);
+
 }

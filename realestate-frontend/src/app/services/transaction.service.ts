@@ -442,8 +442,9 @@ export class TransactionService {
       date: new Date(sale.createdAt).toISOString(),
       property: {
         id: sale.listingId,
-        title: 'Property', // We would need to fetch this from listings
-        image: '' // We would need to fetch this from listings
+        title: 'Property', // Will be fetched from listings
+        image: '', // Will be fetched from listings
+        mainURL: '' // Will be fetched from listings
       },
       client: {
         name: 'Client', // We would need to fetch this from users
@@ -469,8 +470,9 @@ export class TransactionService {
       date: new Date(rental.createdAt).toISOString(),
       property: {
         id: rental.listingId,
-        title: 'Property', // We would need to fetch this from listings
-        image: '' // We would need to fetch this from listings
+        title: 'Property', // Will be fetched from listings
+        image: '', // Will be fetched from listings
+        mainURL: '' // Will be fetched from listings
       },
       client: {
         name: 'Client', // We would need to fetch this from users

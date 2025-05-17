@@ -118,7 +118,7 @@ export class CreateListingComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading property:', error);
-        this.errorMessage = 'Failed to load property details. Please try again.';
+        this.errorMessage = error.message || 'Failed to load property details. Please try again.';
         this.isLoading = false;
       }
     });
@@ -185,7 +185,7 @@ export class CreateListingComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error updating property:', error);
-            this.errorMessage = 'Failed to update property. Please try again.';
+            this.errorMessage = error.message || 'Failed to update property. Please try again.';
             this.isSubmitting = false;
           }
         });
@@ -212,7 +212,7 @@ export class CreateListingComponent implements OnInit {
           },
           error: (error) => {
             console.error('Error creating property:', error);
-            this.errorMessage = 'Failed to create property. Please try again.';
+            this.errorMessage = error.message || 'Failed to create property. Please try again.';
             this.isSubmitting = false;
           }
         });
@@ -235,12 +235,14 @@ export class CreateListingComponent implements OnInit {
               .pipe(
                 catchError(error => {
                   console.error('Error updating listing with image URL:', error);
+                  this.errorMessage = error.message || 'Error updating image URL';
                   return of({ id: listingId });
                 })
               );
           }),
           catchError(error => {
             console.error('Error uploading image:', error);
+            this.errorMessage = error.message || 'Error uploading image';
             return of({ id: listingId });
           })
         );
@@ -256,6 +258,7 @@ export class CreateListingComponent implements OnInit {
               .pipe(
                 catchError(error => {
                   console.error('Error updating listing with image URL:', error);
+                  this.errorMessage = error.message || 'Error updating image URL';
                   return of({ id: listingId });
                 })
               );
@@ -264,6 +267,7 @@ export class CreateListingComponent implements OnInit {
         }),
         catchError(error => {
           console.error('Error uploading multiple images:', error);
+          this.errorMessage = error.message || 'Error uploading images';
           return of({ id: listingId });
         })
       );

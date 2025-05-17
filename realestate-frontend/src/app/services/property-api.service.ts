@@ -25,18 +25,31 @@ export class PropertyApiService {
   // Update API URL to use listings endpoint through API gateway
   private apiUrl = '/api/listings';
 
-  constructor(private http: HttpClient) { }
+  constructor(
+    private http: HttpClient
+  ) { }
 
   private handleError(error: HttpErrorResponse) {
     console.error('API Error:', error);
     
     let errorMessage = 'Unknown error occurred';
+    
     if (error.error instanceof ErrorEvent) {
       // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
       // Server-side error
-      errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+      // Check if we have a structured error response from the backend
+      if (error.error && error.error.details) {
+        // Use the specific error details from the backend
+        errorMessage = error.error.details;
+      } else if (error.error && error.error.message) {
+        // Use the error message from the backend
+        errorMessage = error.error.message;
+      } else {
+        // Fallback to status code and message
+        errorMessage = `Error Code: ${error.status}\nMessage: ${error.message}`;
+      }
     }
     
     console.error(errorMessage);
@@ -254,8 +267,15 @@ export class PropertyApiService {
     return this.http.get<BaseResponse<ListingResponse>>(`${this.apiUrl}/findById/${id}`)
       .pipe(
         retry(1),
-        map(response => response.data),
-        catchError(this.handleError)
+        map(response => {
+          console.log('Listing details API Response:', response);
+          return response.data;
+        }),
+        catchError(error => {
+          console.error(`Error fetching listing with ID ${id}:`, error);
+          // Return a default listing with the ID preserved for UI display
+          return throwError(() => new Error(`Failed to load property #${id}`));
+        })
       );
   }
 
@@ -264,7 +284,6 @@ export class PropertyApiService {
     console.log('Calling createListing API: POST', `${this.apiUrl}/create`, listing);
     return this.http.post<BaseResponse<ListingResponse>>(`${this.apiUrl}/create`, listing)
       .pipe(
-        retry(1),
         map(response => response.data),
         catchError(this.handleError)
       );
@@ -275,7 +294,6 @@ export class PropertyApiService {
     console.log('Calling updateListing API: PUT', `${this.apiUrl}/update/${id}`, listing);
     return this.http.put<BaseResponse<ListingResponse>>(`${this.apiUrl}/update/${id}`, listing)
       .pipe(
-        retry(1),
         map(response => response.data),
         catchError(this.handleError)
       );
