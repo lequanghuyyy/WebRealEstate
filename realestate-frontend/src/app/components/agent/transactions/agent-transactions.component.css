@@ -280,34 +280,42 @@
     }
   
     .property-cell {
-      min-width: 200px;
+      max-width: 250px;
+      overflow: hidden;
     }
   
     .property-info {
       display: flex;
       align-items: center;
+      max-width: 100%;
     }
   
-    .property-thumbnail {
-      width: 50px;
-      height: 40px;
-      object-fit: cover;
-      border-radius: 4px;
-      margin-right: 10px;
+    .property-info span {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
-    
+  
     .client-info {
-      display: flex;
-      flex-direction: column;
+      max-width: 200px;
+      overflow: hidden;
     }
   
     .client-name {
-      font-weight: 500;
+      display: block;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: bold;
     }
   
     .client-email {
+      display: block;
       font-size: 0.85rem;
-      color: #6c757d;
+      color: #666;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   
     .transaction-type {
@@ -449,6 +457,14 @@
     .stats-container {
       grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
     }
+    
+    .property-cell, .client-info {
+      max-width: 150px;
+    }
+    
+    td.text-end {
+      min-width: 100px;
+    }
   }
   
   @media (max-width: 768px) {
@@ -479,3 +495,75 @@
       grid-template-columns: 1fr;
     }
   }
+
+.btn-group {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-group button {
+  display: flex;
+  align-items: center;
+}
+
+/* Amount column styling */
+td.text-end {
+  text-align: right !important;
+  min-width: 120px;
+  font-weight: 600;
+}
+
+/* Status styling with distinct colors */
+.badge.rounded-pill {
+  padding: 0.5em 0.75em;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.badge.bg-success {
+  background-color: #28a745 !important;
+}
+
+.badge.bg-warning.text-dark {
+  background-color: #ffc107 !important;
+  color: #212529 !important;
+}
+
+.badge.bg-danger {
+  background-color: #dc3545 !important;
+}
+
+/* Custom colors for statuses */
+.badge.status-completed {
+  background-color: #198754 !important;
+}
+
+.badge.status-pending {
+  background-color: #fd7e14 !important;
+  color: #fff !important;
+}
+
+.badge.status-cancelled {
+  background-color: #d63384 !important;
+}
+
+/* Property image thumbnail */
+.property-image-container {
+  width: 50px;
+  height: 50px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.property-thumbnail {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+.property-info {
+  display: flex;
+  align-items: center;
+}

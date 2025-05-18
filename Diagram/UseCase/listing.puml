@@ -1,0 +1,36 @@
+@startuml ListingService_UseCase
+left to right direction
+actor Buyer_Renter
+actor Agent
+actor Admin
+
+package "Listing Service" {
+  usecase ViewListings        as "Xem danh sách"
+  usecase SearchFilter        as "Tìm & lọc"
+  usecase ViewDetails         as "Xem chi tiết"
+  usecase CreateListing       as "Tạo listing"
+  usecase EditListing         as "Chỉnh sửa listing"
+  usecase DeleteListing       as "Xóa listing"
+  usecase UploadImages        as "Upload ảnh"
+}
+
+Buyer_Renter -- ViewListings
+Buyer_Renter -- SearchFilter
+Buyer_Renter -- ViewDetails
+
+Agent - ViewListings
+Agent - SearchFilter
+Agent - ViewDetails
+Agent - CreateListing
+Agent - EditListing
+Agent - DeleteListing
+Agent - UploadImages
+
+Admin --- ViewListings
+Admin --- SearchFilter
+Admin --- ViewDetails
+Admin --- CreateListing
+Admin --- EditListing
+Admin --- DeleteListing
+Admin --- UploadImages
+@enduml

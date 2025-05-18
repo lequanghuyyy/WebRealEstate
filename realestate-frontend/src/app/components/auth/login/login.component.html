@@ -1,14 +1,6 @@
 <div class="zillow-login-container">
-  <div class="background-image-container">
-    <div class="slideshow">
-      <div class="slide active" style="background-image: url('/assets/images/homeInLogin.png')"></div>
-      <!-- <div class="slide" style="background-image: url('/assets/images/homeInLogin1.jpg')"></div>
-      <div class="slide" style="background-image: url('/assets/images/homeInLogin2.jpg')"></div>
-      <div class="slide" style="background-image: url('/assets/images/homeInLogin3.jpg')"></div> -->
-    </div>
-    <div class="bg-overlay"></div>
-  </div>
-  
+  <div class="background-image-container">    <div class="slideshow">      <div class="slide" style="background-image: url('/assets/homeimage/pexels-alex-staudinger-829197-1732414.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-pixasquare-1115804.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-expect-best-79873-323776.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-binyaminmellish-186077.jpg')"></div>    </div>    <div class="bg-overlay"></div>  </div>
+
   <div class="login-wrapper">
     <!-- Logo section -->
     <div class="logo-section">
@@ -37,28 +29,28 @@
       <div *ngIf="registrationSuccess" class="alert alert-success mb-4">
         Registration successful! Please log in with your credentials.
       </div>
-      
+
       <form (ngSubmit)="onSubmit()" #loginForm="ngForm">
         <div class="form-group">
           <label for="username">Username</label>
-          <input 
-            type="text" 
-            class="form-control" 
-            id="username" 
+          <input
+            type="text"
+            class="form-control"
+            id="username"
             name="username"
             [(ngModel)]="loginData.username"
             placeholder="Enter your username"
             required
           >
-          
+
         </div>
-        
+
         <div class="form-group">
           <label for="password">Password</label>
-          <input 
-            type="password" 
-            class="form-control" 
-            id="password" 
+          <input
+            type="password"
+            class="form-control"
+            id="password"
             name="password"
             [(ngModel)]="loginData.password"
             placeholder="Enter your password"
@@ -67,25 +59,24 @@
           <div class="input-helper-text">
             <div class="d-flex justify-content-between">
               <span>Enter your password to login</span>
-              <a routerLink="/auth/forgot-password" class="forgot-link">Forgot password?</a>
             </div>
           </div>
         </div>
-        
+
         <div class="form-check mb-4">
-          <input 
-            type="checkbox" 
-            class="form-check-input" 
+          <input
+            type="checkbox"
+            class="form-check-input"
             id="remember"
             name="rememberMe"
             [(ngModel)]="loginData.rememberMe"
           >
           <label class="form-check-label" for="remember">Remember me</label>
         </div>
-        
-        <button 
-          type="submit" 
-          class="btn btn-primary btn-continue"
+
+        <button
+          type="submit"
+          class="btn btn-primary btn-continue w-100"
           [disabled]="isLoading || !loginForm.form.valid"
         >
           <span *ngIf="!isLoading">Login</span>
@@ -93,31 +84,15 @@
             <i class="fas fa-spinner fa-spin me-2"></i> Logging in...
           </span>
         </button>
-        
-        <div class="divider">
-          <span>or</span>
-        </div>
-        
-        <div class="alternate-login-options">
-          <button type="button" class="btn btn-outline-secondary btn-google" (click)="loginWithGoogle()">
-            <img src="/assets/images/gg.jpg" alt="Google" class="provider-icon">
-            Continue with Google
-          </button>
-          
-          <button type="button" class="btn btn-outline-secondary btn-facebook" (click)="loginWithFacebook()">
-            <img src="/assets/images/facebook.png" alt="Facebook" class="provider-icon">
-            Continue with Facebook
-          </button>
-        </div>
       </form>
-      
-      <div class="account-options">
+
+      <div class="account-options mt-4">
         <p>Don't have a RealEstatePro account? <a routerLink="/auth/register">Create an account</a></p>
       </div>
-      
+
       <div class="login-footer">
-        <p>By submitting this form, I agree to RealEstatePro's <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.</p>
+        <p>By submitting this form, I agree to RealEstatePro's <a routerLink="/terms">Terms of Use</a> and <a routerLink="/privacy">Privacy Policy</a>.</p>
       </div>
     </div>
   </div>
-</div> 
+</div>

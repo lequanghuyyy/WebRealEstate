@@ -6,24 +6,26 @@ import { TransactionService } from '../../services/transaction.service';
 import { PropertyService } from '../../services/property.service';
 import { Transaction } from '../../models/transaction.model';
 import { RentalStatus } from '../../models/transaction.model';
-import { DefaultImageDirective } from '../../directives/default-image.directive';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { PaymentService } from '../../services/payment.service';
 import { TransactionStyle } from '../../models/payment.model';
+import { AuthService } from '../../services/auth.service';
+import { ListingStatus } from '../../models/listing.model';
 
 @Component({
   selector: 'app-rent',
   templateUrl: './rent.component.html',
   styleUrls: ['./rent.component.scss'],
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule, DefaultImageDirective]
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterModule]
 })
 export class RentComponent implements OnInit {
   transactions: Transaction[] = [];
   filteredTransactions: Transaction[] = [];
   isLoading: boolean = true;
   errorMessage: string = '';
+  isLoggedIn: boolean = false;
   
   // Stats
   totalRentals: number = 0;
@@ -35,6 +37,9 @@ export class RentComponent implements OnInit {
   // Expose enum to the template
   rentalStatusEnum = RentalStatus;
   
+  // Add ListingStatus for template usage
+  ListingStatus = ListingStatus;
+  
   // Filter form
   filterForm: FormGroup;
   
@@ -42,6 +47,7 @@ export class RentComponent implements OnInit {
     private transactionService: TransactionService,
     private propertyService: PropertyService,
     private paymentService: PaymentService,
+    private authService: AuthService,
     private fb: FormBuilder,
     private router: Router
   ) {
@@ -53,15 +59,23 @@ export class RentComponent implements OnInit {
   }
   
   ngOnInit(): void {
-    this.loadTransactions();
+    // Check if user is logged in
+    this.isLoggedIn = this.authService.isLoggedIn();
     
-    // Subscribe to form value changes for filtering
-    this.filterForm.valueChanges.subscribe(() => {
-      this.applyFilters();
-    });
-    
-    // Set an interval to check for expired transactions every hour
-    setInterval(() => this.checkExpiredTransactions(), 60 * 60 * 1000);
+    if (this.isLoggedIn) {
+      this.loadTransactions();
+      
+      // Subscribe to form value changes for filtering
+      this.filterForm.valueChanges.subscribe(() => {
+        this.applyFilters();
+      });
+      
+      // Set an interval to check for expired transactions every hour
+      setInterval(() => this.checkExpiredTransactions(), 60 * 60 * 1000);
+    } else {
+      this.isLoading = false;
+      this.errorMessage = 'Please log in to view your rental transactions.';
+    }
   }
   
   loadTransactions(): void {
@@ -171,7 +185,7 @@ export class RentComponent implements OnInit {
   
   calculateStats(): void {
     this.totalRentals = this.transactions.length;
-    this.activeRentals = this.transactions.filter(t => t.status === RentalStatus.APPROVED).length;
+    this.activeRentals = this.transactions.filter(t => t.status === ListingStatus.RENTED).length;
     this.pendingApprovals = this.transactions.filter(t => t.status === RentalStatus.PENDING).length;
     this.completedTransactions = this.transactions.filter(t => t.status === RentalStatus.COMPLETED).length;
     this.pendingTransactions = this.transactions.filter(t => t.status === RentalStatus.PENDING).length;
@@ -384,11 +398,9 @@ export class RentComponent implements OnInit {
       
       this.paymentService.processPayment(paymentRequest).subscribe({
         next: (response) => {
-          // Update transaction status to COMPLETED or APPROVED based on current status
           if (transaction.id) {
-            // For rentals, if it's PENDING we move to APPROVED, if already APPROVED we can set to COMPLETED
             const newStatus = transaction.status === RentalStatus.PENDING ? 
-              RentalStatus.APPROVED : RentalStatus.COMPLETED;
+              ListingStatus.RENTED : RentalStatus.COMPLETED;
             
             this.transactionService.updateRentalTransactionStatus(transaction.id.toString(), newStatus).subscribe({
               next: () => {

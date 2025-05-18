@@ -326,6 +326,18 @@ export class PaymentComponent implements OnInit {
   }
 
   getCurrentPageEnd(): number {
-    return Math.min((this.currentPage + 1) * this.pageSize, this.totalItems);
+    const end = this.getCurrentPageStart() + this.pageSize - 1;
+    return Math.min(end, this.totalItems - 1);
+  }
+  
+  // Export payments to file
+  exportPaymentsToFile(fileType: 'csv' | 'pdf'): void {
+    if (this.filteredPayments.length === 0) {
+      this.toastr.info('No payments to export.');
+      return;
+    }
+    
+    this.paymentService.exportPaymentsToFile(this.filteredPayments, fileType);
+    this.toastr.success(`Payments exported as ${fileType.toUpperCase()} successfully.`);
   }
 } 

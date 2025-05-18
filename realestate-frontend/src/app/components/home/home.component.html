@@ -1,5 +1,22 @@
 <div class="home-container">
-  <!-- Hero Section -->
+  <!-- Image Carousel Section - Background -->
+  <div class="carousel-section">
+    <div class="carousel-container">
+      <div class="carousel-slide" *ngFor="let image of carouselImages; let i = index" [ngClass]="{'active': i === currentCarouselIndex}">
+        <img [src]="image" alt="Real Estate Property Image" class="carousel-image">
+      </div>
+      
+      <div class="carousel-indicators">
+        <span *ngFor="let image of carouselImages; let i = index" 
+              class="indicator" 
+              [ngClass]="{'active': i === currentCarouselIndex}"
+              (click)="goToCarouselSlide(i)">
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Hero Section - Overlaying the carousel -->
   <section class="hero-section">
     <div class="hero-content">
       <h1>Find Your Dream Home</h1>
@@ -23,32 +40,40 @@
           </div>
           
           <div class="search-filters">
-            <select class="filter-select" formControlName="propertyType">
-              <option value="">Property Type</option>
-              <option value="Apartment">Apartment</option>
-              <option value="House">House</option>
-              <option value="Villa">Villa</option>
-            </select>
+            <div class="filter-item">
+              <select class="filter-select" formControlName="propertyType">
+                <option value="">Property Type</option>
+                <option value="Apartment">Apartment</option>
+                <option value="House">House</option>
+                <option value="Villa">Villa</option>
+              </select>
+            </div>
             
-            <select class="filter-select" formControlName="priceRange">
-              <option value="">Price Range</option>
-              <option value="range1">Under 500 Million</option>
-              <option value="range2">500M - 1B</option>
-              <option value="range3">1B - 3B</option>
-              <option value="range4">Above 3B</option>
-            </select>
+            <div class="filter-item">
+              <select class="filter-select" formControlName="priceRange">
+                <option value="">Price Range</option>
+                <option value="range1">Under 500 Million</option>
+                <option value="range2">500M - 1B</option>
+                <option value="range3">1B - 3B</option>
+                <option value="range4">Above 3B</option>
+              </select>
+            </div>
             
-            <select class="filter-select" formControlName="bedrooms">
-              <option value="">Bedrooms</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4+</option>
-            </select>
+            <div class="filter-item">
+              <select class="filter-select" formControlName="bedrooms">
+                <option value="">Bedrooms</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4+</option>
+              </select>
+            </div>
           </div>
           
           <div class="search-buttons">
-            <button type="submit" class="search-btn">Search Properties</button>
+            <button type="submit" class="search-btn">
+              <i class="fas fa-search"></i> Search Properties
+            </button>
             <button type="button" class="save-search-btn" (click)="saveSearch()">
               <i class="fas fa-bookmark"></i> Save Search
             </button>

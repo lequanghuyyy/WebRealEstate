@@ -39,8 +39,10 @@ public class RecommendationServiceImpl implements RecommendationService {
             return Optional.empty();
         }
         SavedSearchEntity latestSearch = savedSearches.stream()
+                .filter(search -> search.getCreatedAt() != null)
                 .max(Comparator.comparing(SavedSearchEntity::getCreatedAt))
                 .orElse(null);
+
         Set<String> cities = savedSearches.stream()
                 .map(SavedSearchEntity::getCity)
                 .filter(Objects::nonNull)

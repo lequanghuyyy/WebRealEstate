@@ -12,19 +12,29 @@ import { ListingType, ListingPropertyType } from '../../models/listing.model';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { SavedSearchService } from '../../services/saved-search.service';
 import { SavedSearchRequest } from '../../models/user-experience.model';
-import { DefaultImageDirective } from '../../directives/default-image.directive';
+import { DefaultImageDirective } from '../../utils/default-image.directive';
 
 @Component({
   selector: 'app-home',
   standalone: true,
   imports: [CommonModule, RouterModule, ReactiveFormsModule, DefaultImageDirective],
   templateUrl: './home.component.html',
-  styleUrls: ['./home.component.css']
+  styleUrls: ['./home.component.css', './home.component.scss']
 })
 export class HomeComponent implements OnInit {
   searchType: string = 'buy';
   isLoggedIn: boolean = false;
   user: any = null;
+  
+  // Carousel images array
+  carouselImages: string[] = [
+    'assets/homeimage/pexels-alex-staudinger-829197-1732414.jpg',
+    'assets/homeimage/pexels-pixasquare-1115804.jpg',
+    'assets/homeimage/pexels-expect-best-79873-323776.jpg',
+    'assets/homeimage/pexels-expect-best-79873-323780.jpg',
+    'assets/homeimage/pexels-binyaminmellish-186077.jpg'
+  ];
+  currentCarouselIndex: number = 0;
   
   // Search form
   searchForm: FormGroup;
@@ -90,6 +100,29 @@ export class HomeComponent implements OnInit {
     }
     
     this.loadFeaturedProperties();
+    this.startCarouselInterval();
+  }
+  
+  // Start the carousel automatic sliding
+  startCarouselInterval(): void {
+    setInterval(() => {
+      this.nextCarouselSlide();
+    }, 5000); // Change slide every 5 seconds
+  }
+  
+  // Move to the next carousel slide
+  nextCarouselSlide(): void {
+    this.currentCarouselIndex = (this.currentCarouselIndex + 1) % this.carouselImages.length;
+  }
+  
+  // Move to the previous carousel slide
+  prevCarouselSlide(): void {
+    this.currentCarouselIndex = (this.currentCarouselIndex - 1 + this.carouselImages.length) % this.carouselImages.length;
+  }
+  
+  // Go to a specific carousel slide
+  goToCarouselSlide(index: number): void {
+    this.currentCarouselIndex = index;
   }
   
   // Lấy dữ liệu bất động sản đề xuất dựa trên sở thích của người dùng

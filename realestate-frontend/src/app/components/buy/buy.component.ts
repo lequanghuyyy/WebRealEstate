@@ -6,24 +6,24 @@ import { TransactionService } from '../../services/transaction.service';
 import { PropertyService } from '../../services/property.service';
 import { Transaction } from '../../models/transaction.model';
 import { TransactionStatus } from '../../models/transaction.model';
-import { DefaultImageDirective } from '../../directives/default-image.directive';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
-import { PaymentService } from '../../services/payment.service';
-import { TransactionStyle } from '../../models/payment.model';
+import { PaymentService } from '../../services/payment.service';import { TransactionStyle, PaymentMethod } from '../../models/payment.model';import { createPaymentRequest } from '../../utils/payment-utils';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-buy',
   templateUrl: './buy.component.html',
   styleUrls: ['./buy.component.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, DefaultImageDirective]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule]
 })
 export class BuyComponent implements OnInit {
   transactions: Transaction[] = [];
   filteredTransactions: Transaction[] = [];
   isLoading: boolean = true;
   errorMessage: string = '';
+  isLoggedIn: boolean = false;
   
   // Stats
   totalTransactions: number = 0;
@@ -37,14 +37,23 @@ export class BuyComponent implements OnInit {
     private transactionService: TransactionService,
     private propertyService: PropertyService,
     private paymentService: PaymentService,
+    private authService: AuthService,
     private fb: FormBuilder,
     private router: Router
   ) {}
   
   ngOnInit(): void {
-    this.loadTransactions();
-    // Set an interval to check for expired transactions every hour
-    setInterval(() => this.checkExpiredTransactions(), 60 * 60 * 1000);
+    // Check if user is logged in
+    this.isLoggedIn = this.authService.isLoggedIn();
+    
+    if (this.isLoggedIn) {
+      this.loadTransactions();
+      // Set an interval to check for expired transactions every hour
+      setInterval(() => this.checkExpiredTransactions(), 60 * 60 * 1000);
+    } else {
+      this.isLoading = false;
+      this.errorMessage = 'Please log in to view your purchase transactions.';
+    }
   }
   
   loadTransactions(): void {
@@ -84,8 +93,16 @@ export class BuyComponent implements OnInit {
         forkJoin(requests).subscribe({
           next: (updatedTransactions) => {
             this.transactions = updatedTransactions;
-            // Only show PENDING transactions by default
-            this.filteredTransactions = updatedTransactions.filter(t => t.status === TransactionStatus.PENDING);
+            
+            // Log transaction status values for debugging
+            console.log('Transaction statuses:', this.transactions.map(t => t.status));
+            console.log('TransactionStatus.PENDING value:', TransactionStatus.PENDING);
+            
+            // Filter transactions with case-insensitive comparison
+            this.filteredTransactions = updatedTransactions.filter(t => 
+              t.status.toUpperCase() === TransactionStatus.PENDING
+            );
+            
             this.calculateStats();
             this.isLoading = false;
             
@@ -151,7 +168,15 @@ export class BuyComponent implements OnInit {
     if (status === 'all') {
       this.filteredTransactions = [...this.transactions];
     } else {
-      this.filteredTransactions = this.transactions.filter(t => t.status === status);
+      // Log the status values for debugging
+      console.log('Filtering by status:', status);
+      console.log('TransactionStatus.PENDING value:', TransactionStatus.PENDING);
+      
+      // Make the comparison case-insensitive
+      this.filteredTransactions = this.transactions.filter(t => {
+        console.log('Transaction status:', t.status, 'Comparing with:', status);
+        return t.status.toUpperCase() === status.toUpperCase();
+      });
     }
   }
   
@@ -181,8 +206,8 @@ export class BuyComponent implements OnInit {
   }
   
   resetFilters(): void {
-    // Reset filters and show only PENDING transactions
-    this.filteredTransactions = this.transactions.filter(t => t.status === TransactionStatus.PENDING);
+    // Reset filters and show only PENDING transactions with case-insensitive comparison
+    this.filteredTransactions = this.transactions.filter(t => t.status.toUpperCase() === TransactionStatus.PENDING);
     
     // Reset filter dropdowns to default
     const statusSelect = document.getElementById('status-filter') as HTMLSelectElement;
@@ -369,7 +394,8 @@ export class BuyComponent implements OnInit {
         commissionFee: transaction.amount * 0.03, // 3% for sales
         notes: notes,
         transactionStyle: TransactionStyle.SALE,
-        agentId: ''
+        agentId: '',
+        buyerId: transaction.buyerId?.toString() || ''
       };
       
       this.paymentService.processPayment(paymentRequest).subscribe({

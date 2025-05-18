@@ -5,6 +5,7 @@ import { AppointmentService } from '../../../services/appointment.service';
 import { Appointment } from '../../../models/appointment.model';
 import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
+import { UserService } from '../../../services/user.service';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
 
@@ -28,7 +29,8 @@ export class UserAppointmentsComponent implements OnInit {
   constructor(
     private appointmentService: AppointmentService,
     private authService: AuthService,
-    private listingService: ListingService
+    private listingService: ListingService,
+    private userService: UserService
   ) { }
 
   ngOnInit(): void {
@@ -43,6 +45,11 @@ export class UserAppointmentsComponent implements OnInit {
     if (this.currentUser && this.currentUser.id) {
       this.appointmentService.getAppointmentsByUserId(this.currentUser.id).pipe(
         switchMap(appointments => {
+          // If no appointments found, return empty arrays to skip further API calls
+          if (!appointments || appointments.length === 0) {
+            return of([[], [], []]);
+          }
+          
           // Store the appointments temporarily
           const appointmentsWithListingIds = appointments;
           
@@ -53,26 +60,50 @@ export class UserAppointmentsComponent implements OnInit {
             )
           );
           
+          // Create arrays of observables for fetching agent details
+          const agentDetailsObservables = appointmentsWithListingIds.map(appointment => 
+            this.userService.getUserById(appointment.agentId.toString()).pipe(
+              catchError(() => of(null))
+            )
+          );
+          
           // Execute all requests in parallel
           return forkJoin(
             of(appointmentsWithListingIds),
-            forkJoin(listingDetailsObservables)
+            forkJoin(listingDetailsObservables),
+            forkJoin(agentDetailsObservables)
           );
         })
       ).subscribe({
-        next: ([appointments, listingDetails]) => {
+        next: ([appointments, listingDetails, agentDetails]) => {
           console.log('Fetched appointments:', appointments);
-          console.log('Fetched listing details:', listingDetails);
           
-          // Merge listing details with appointments
+          // Handle the case when no appointments are found
+          if (!appointments || appointments.length === 0) {
+            this.appointments = [];
+            this.applyFilter();
+            this.isLoading = false;
+            return;
+          }
+          
+          console.log('Fetched listing details:', listingDetails);
+          console.log('Fetched agent details:', agentDetails);
+          
+          // Merge listing and agent details with appointments
           this.appointments = appointments.map((appointment, index) => {
             const listingDetail = listingDetails[index];
+            const agentDetail = agentDetails[index];
             
             let updatedAppointment = { ...appointment };
             
             // Update property title if listing details are available
             if (listingDetail) {
               updatedAppointment.propertyTitle = listingDetail.title;
+            }
+            
+            // Update agent name if agent details are available
+            if (agentDetail) {
+              updatedAppointment.agentName = agentDetail.firstName + ' ' + agentDetail.lastName || agentDetail.username || 'Agent';
             }
             
             return updatedAppointment;
@@ -85,6 +116,10 @@ export class UserAppointmentsComponent implements OnInit {
           this.error = 'Unable to load appointment data. Please try again later.';
           this.isLoading = false;
           console.error('Error loading appointments:', err);
+        },
+        complete: () => {
+          // Ensure loading is set to false when the observable completes
+          this.isLoading = false;
         }
       });
     } else {
@@ -125,6 +160,7 @@ export class UserAppointmentsComponent implements OnInit {
       case 'PENDING':
         return 'bg-warning';
       case 'CONFIRMED':
+      case 'COMFIRMED':
         return 'bg-success';
       case 'CANCELLED':
         return 'bg-danger';
@@ -140,6 +176,7 @@ export class UserAppointmentsComponent implements OnInit {
       case 'PENDING':
         return 'Pending';
       case 'CONFIRMED':
+      case 'COMFIRMED':
         return 'Confirmed';
       case 'CANCELLED':
         return 'Cancelled';
@@ -148,6 +185,14 @@ export class UserAppointmentsComponent implements OnInit {
       default:
         return status;
     }
+  }
+
+  canDelete(status: string): boolean {
+    return status === 'COMPLETED' || status === 'CANCELLED' || status === 'CONFIRMED' || status === 'COMFIRMED';
+  }
+  
+  isPending(status: string): boolean {
+    return status === 'PENDING';
   }
 
   cancelAppointment(id: string | number): void {
@@ -166,6 +211,22 @@ export class UserAppointmentsComponent implements OnInit {
         error: (err) => {
           console.error('Error cancelling appointment:', err);
           alert('Unable to cancel the appointment. Please try again later.');
+        }
+      });
+    }
+  }
+
+  deleteAppointment(id: string): void {
+    if (confirm('Are you sure you want to permanently delete this appointment?')) {
+      this.appointmentService.deleteAppointment(id).subscribe({
+        next: () => {
+          // Remove the deleted appointment from the arrays
+          this.appointments = this.appointments.filter(app => app.id !== id);
+          this.applyFilter(); // Update filtered appointments
+        },
+        error: (err) => {
+          console.error('Error deleting appointment:', err);
+          alert('Unable to delete the appointment. Please try again later.');
         }
       });
     }

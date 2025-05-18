@@ -1,0 +1,17 @@
+@startuml UXService_UseCase
+left to right direction
+actor Buyer_Agent_Admin
+
+package "User Experience Service" {
+  usecase AddFavorite        as "Thêm vào yêu thích"
+  usecase ViewFavorites      as "Xem yêu thích"
+  usecase SaveSearch         as "Lưu tìm kiếm"
+  usecase ViewSavedSearches  as "Xem tìm kiếm đã lưu"
+}
+
+Buyer_Agent_Admin -- AddFavorite
+Buyer_Agent_Admin -- ViewFavorites
+Buyer_Agent_Admin -- SaveSearch
+Buyer_Agent_Admin -- ViewSavedSearches
+
+@enduml

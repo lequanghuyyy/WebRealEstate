@@ -25,12 +25,14 @@ export interface PaymentRequest {
   notes: string;
   transactionStyle: TransactionStyle;
   agentId: string;
+  buyerId?: string; // ID of the buyer/renter who makes the payment
 }
 
 export interface PaymentResponse {
   id: string;
   transactionId: string;
   agentId: string;
+  buyerId?: string;
   amount: number;
   paymentMethod: string;
   paymentStatus: string;
@@ -57,6 +59,8 @@ export interface Payment {
   notes?: string;
   createdAt: string;
   transactionStyle: TransactionStyle;
+  buyerId?: string;
+  agentId?: string;
   
   // Legacy fields for compatibility with existing components
   status?: string;

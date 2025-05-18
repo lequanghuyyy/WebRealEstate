@@ -22,9 +22,17 @@ export class UserService {
   private getAuthHeaders(): HttpHeaders {
     const token = localStorage.getItem('auth_token');
     if (!token) {
-      console.error('No authentication token available');
+      console.log('Getting token from localStorage: No token found');
     }
     
+    return new HttpHeaders({
+      'Authorization': `Bearer ${token || ''}`
+    });
+  }
+  
+  // Helper method to get auth headers with content type
+  private getJsonAuthHeaders(): HttpHeaders {
+    const token = localStorage.getItem('auth_token');
     return new HttpHeaders({
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${token || ''}`
@@ -37,20 +45,25 @@ export class UserService {
     let errorMsg = '';
     
     if (error.status === 401 || error.status === 403) {
-      errorMsg = 'Authentication error - please log in again';
+      errorMsg = 'Authentication error - unauthorized access';
     } else if (error.error instanceof ErrorEvent) {
       // Client-side error
       errorMsg = `Error: ${error.error.message}`;
     } else {
       // Server-side error
       errorMsg = `Error Code: ${error.status}, Message: ${error.message}`;
+      
+      // Check for specific error message in response
+      if (error.error && error.error.description) {
+        errorMsg += ` - ${error.error.description}`;
+      }
     }
     
     return throwError(() => new Error(errorMsg));
   }
   
   getUserById(userId: string): Observable<UserResponse> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.get<BaseResponse<UserResponse>>(`${this.apiUrl}/users/${userId}`, options)
       .pipe(
         map(response => response.data),
@@ -59,7 +72,7 @@ export class UserService {
   }
   
   getAllUsers(): Observable<UserResponse[]> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.get<BaseResponse<UserResponse[]>>(`${this.apiUrl}/users`, options)
       .pipe(
         map(response => response.data),
@@ -70,7 +83,7 @@ export class UserService {
   updateUser(updateRequest: UserUpdateRequest): Observable<UserResponse> {
     console.log('Updating user with data:', updateRequest);
     
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.put<BaseResponse<UserResponse>>(`${this.apiUrl}/users/update`, updateRequest, options)
       .pipe(
         map(response => {
@@ -83,7 +96,7 @@ export class UserService {
   
   // Admin operations
   getPendingAgents(): Observable<UserResponse[]> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.get<BaseResponse<UserResponse[]>>(`${this.apiUrl}/admin/users/pending-agents`, options)
       .pipe(
         map(response => response.data),
@@ -92,7 +105,7 @@ export class UserService {
   }
   
   approveAgent(userId: string): Observable<UserResponse> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.put<BaseResponse<UserResponse>>(`${this.apiUrl}/admin/users/${userId}/approve`, {}, options)
       .pipe(
         map(response => response.data),
@@ -101,7 +114,7 @@ export class UserService {
   }
   
   rejectAgent(userId: string): Observable<UserResponse> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.put<BaseResponse<UserResponse>>(`${this.apiUrl}/admin/users/${userId}/reject`, {}, options)
       .pipe(
         map(response => response.data),
@@ -110,11 +123,32 @@ export class UserService {
   }
   
   deleteUser(userId: string): Observable<string> {
-    const options = { headers: this.getAuthHeaders() };
+    const options = { headers: this.getJsonAuthHeaders() };
     return this.http.delete<BaseResponse<string>>(`${this.apiUrl}/users/${userId}`, options)
       .pipe(
         map(response => response.data),
         catchError(error => this.handleError(error, 'deleteUser'))
+      );
+  }
+  
+  uploadAvatar(userId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    console.log(`Uploading avatar for user ${userId}, file size: ${file.size} bytes, type: ${file.type}`);
+    
+    // Don't set content-type header, let browser set it with boundary for multipart/form-data
+    const token = localStorage.getItem('auth_token');
+    const options = { 
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${token || ''}`
+      })
+    };
+    
+    return this.http.post<BaseResponse<any>>(`${this.apiUrl}/users/${userId}/avatar`, formData, options)
+      .pipe(
+        map(response => response.data),
+        catchError(error => this.handleError(error, 'uploadAvatar'))
       );
   }
   

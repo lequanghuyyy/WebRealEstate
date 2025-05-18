@@ -3,7 +3,6 @@ import { HomeComponent } from './components/home/home.component';
 import { LoginComponent } from './components/auth/login/login.component';
 import { RegisterComponent } from './components/auth/register/register.component';
 import { ContactComponent } from './components/contact/contact.component';
-import { ForgotPasswordComponent } from './components/auth/forgot-password/forgot-password.component';
 import { ProfileComponent } from './components/profile/profile.component';
 import { inject } from '@angular/core';
 import { AuthService } from './services/auth.service';
@@ -29,7 +28,6 @@ import { adminGuard } from './components/admin/shared/admin.guard';
 import { AdminListingsComponent } from './components/admin/listings/admin-listings.component';
 import { AdminListingEditComponent } from './components/admin/listings/edit/admin-listing-edit.component';
 
-// Agent Guard - only allows agents to access certain routes
 const agentGuard = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
@@ -47,13 +45,14 @@ const agentGuard = () => {
   return true;
 };
 
-// Auth Guard - only allows logged in users to access certain routes
 const authGuard = () => {
   const authService = inject(AuthService);
   const router = inject(Router);
   
   if (!authService.isLoggedIn()) {
-    router.navigate(['/login']);
+    router.navigate(['/login'], { 
+      queryParams: { redirect: router.url } 
+    });
     return false;
   }
   
@@ -67,9 +66,7 @@ export const routes: Routes = [
     canActivate: [() => {
       const authService = inject(AuthService);
       const router = inject(Router);
-      
-      // Nếu người dùng đã đăng nhập và có quyền admin, chuyển hướng đến trang admin
-      if (authService.isLoggedIn() && authService.isAdmin()) {
+            if (authService.isLoggedIn() && authService.isAdmin()) {
         router.navigate(['/admin/dashboard']);
         return false;
       }
@@ -80,15 +77,14 @@ export const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'register', component: RegisterComponent },
   { path: 'contact', component: ContactComponent },
-  { path: 'forgot-password', component: ForgotPasswordComponent },
   { path: 'property/:id', component: PropertyDetailsComponent },
-  { path: 'buy', component: BuyComponent },
+  { path: 'buy', component: BuyComponent, canActivate: [authGuard] },
   { path: 'properties', component: PropertiesComponent },
   { path: 'terms', component: TermsComponent },
   { path: 'about', component: AboutComponent },
   { path: 'privacy', component: PrivacyComponent },
   { path: 'sitemap', component: SitemapComponent },
-  { path: 'rent', component: RentComponent },
+  { path: 'rent', component: RentComponent, canActivate: [authGuard] },
   { path: 'reviews', component: ReviewsComponent },
   { path: 'api-test', component: ApiTestComponent },
   { path: 'payments', component: PaymentComponent, canActivate: [authGuard] },
@@ -126,10 +122,10 @@ export const routes: Routes = [
     component: AdminDashboardComponent,
     canActivate: [() => {
       const authService = inject(AuthService);
-      return true; // Allow access for testing
+      return true;
     }]
   },
-  // Admin routes
+
   {
     path: 'admin',
     component: AdminLayoutComponent,
@@ -179,6 +175,5 @@ export const routes: Routes = [
   },
   { path: 'auth/login', component: LoginComponent },
   { path: 'auth/register', component: RegisterComponent },
-  { path: 'auth/forgot-password', component: ForgotPasswordComponent },
   { path: '**', redirectTo: '' }
 ];

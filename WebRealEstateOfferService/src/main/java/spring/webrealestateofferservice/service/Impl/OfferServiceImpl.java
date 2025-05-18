@@ -39,9 +39,9 @@ public class OfferServiceImpl implements OfferService {
                 .status(OfferStatus.PENDING)
                 .startRentAt(req.getStartRentAt())
                 .endRentAt(req.getEndRentAt())
+                .agentId(req.getAgentId())
                 .build();
         OfferEntity saved = repo.save(e);
-        // Optionally publish event “OfferCreated”
         return toDto(saved);
     }
 
@@ -99,6 +99,12 @@ public class OfferServiceImpl implements OfferService {
     public Page<OfferResponse> getAllOffers(int page) {
         Pageable pg = PageRequest.of(page, 10, Sort.by("createdAt").descending());
         return repo.findAll(pg).map(this::toDto);
+    }
+
+    @Override
+    public Page<OfferResponse> getOfferByAgentId(String agentId, int page) {
+        Pageable pg = PageRequest.of(0, 10, Sort.by("createdAt").descending());
+        return repo.findOfferEntityByAgentId(agentId, pg).map(this::toDto);
     }
 
     @Override

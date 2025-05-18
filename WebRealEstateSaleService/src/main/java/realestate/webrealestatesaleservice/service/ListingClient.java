@@ -32,7 +32,6 @@ public class ListingClient {
         if (dto == null) {
             throw new RuntimeException("Listing not found");
         }
-        System.out.println(dto);
         return dto;
     }
 

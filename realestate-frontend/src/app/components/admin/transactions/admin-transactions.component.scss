@@ -90,6 +90,21 @@
       vertical-align: middle;
       padding: 0.75rem 1rem;
     }
+    
+    // Column for amounts - right-aligned
+    td:nth-child(4) {
+      text-align: right;
+      font-weight: 600;
+      min-width: 120px;
+    }
+    
+    // Property and Customer columns - limit width
+    td:nth-child(2), td:nth-child(6) {
+      max-width: 180px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
   }
 }
 
@@ -109,36 +124,92 @@
 
 // Badge styling
 .badge {
-  padding: 0.4em 0.6em;
+  padding: 0.5em 0.7em;
   font-weight: 500;
   text-transform: capitalize;
+  font-size: 0.85rem;
+  letter-spacing: 0.3px;
+}
+
+// Custom badge colors for different statuses
+.badge[class*="bg-status-"] {
+  color: white;
+}
+
+.badge.bg-status-completed {
+  background-color: #198754 !important;
+}
+
+.badge.bg-status-pending {
+  background-color: #fd7e14 !important;
+}
+
+.badge.bg-status-cancelled {
+  background-color: #d63384 !important;
+}
+
+// Type badges
+.badge.bg-primary {
+  background-color: #0d6efd !important;
+}
+
+.badge.bg-success {
+  background-color: #20c997 !important;
 }
 
 // Transaction Modal
 .transaction-detail {
+  .alert {
+    border-left: 4px solid;
+    
+    &.alert-primary-subtle {
+      border-color: #0d6efd;
+    }
+    
+    &.alert-success-subtle {
+      border-color: #198754;
+    }
+    
+    i {
+      color: #6c757d;
+    }
+  }
+
   .detail-group {
     margin-bottom: 1.5rem;
+    transition: all 0.2s;
+    
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
     
     .detail-header {
       font-weight: 600;
-      margin-bottom: 0.75rem;
-      color: #2c3e50;
-      border-bottom: 1px solid #eee;
-      padding-bottom: 0.5rem;
+      margin-bottom: 0;
+      font-size: 1rem;
+      
+      i {
+        opacity: 0.8;
+      }
     }
     
     .detail-item {
       display: flex;
-      margin-bottom: 0.5rem;
+      width: 100%;
       
       .detail-label {
-        font-weight: 600;
-        color: #495057;
+        font-size: 0.9rem;
         width: 140px;
       }
       
       .detail-value {
         flex: 1;
+        font-weight: 500;
+        
+        &.notes-content {
+          font-weight: normal;
+          white-space: pre-line;
+        }
       }
     }
   }
@@ -165,6 +236,28 @@
   .btn-group {
     .btn {
       font-size: 0.875rem;
+    }
+  }
+}
+
+// Modal backdrop
+.modal-backdrop {
+  opacity: 0.5;
+}
+
+// Modal styling
+.modal-content {
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: none;
+  
+  .modal-header {
+    .modal-title {
+      display: flex;
+      align-items: center;
+      
+      i {
+        font-size: 1.1rem;
+      }
     }
   }
 } 

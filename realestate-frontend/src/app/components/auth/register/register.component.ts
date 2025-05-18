@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -12,12 +12,16 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors, 
   templateUrl: './register.component.html',
   styleUrls: ['./register.component.scss']
 })
-export class RegisterComponent implements OnInit {
+export class RegisterComponent implements OnInit, OnDestroy {
   registerForm: FormGroup;
   isLoading = false;
   serverError: string | null = null;
   registrationSuccess = false;
   verificationSent = false;
+  
+  // Slideshow properties
+  currentSlide = 0;
+  slideshowInterval: any;
 
   constructor(
     private authService: AuthService,
@@ -40,6 +44,9 @@ export class RegisterComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // Start the slideshow
+    this.startSlideshow();
+    
     // Add conditional validators when role changes
     this.registerForm.get('role')?.valueChanges.subscribe(role => {
       const phoneControl = this.registerForm.get('phone');
@@ -59,6 +66,38 @@ export class RegisterComponent implements OnInit {
         // Use email as the default username (without the domain part)
         const username = email.split('@')[0];
         this.registerForm.get('username')?.setValue(username);
+      }
+    });
+  }
+  
+  ngOnDestroy() {
+    // Clear the interval when component is destroyed
+    if (this.slideshowInterval) {
+      clearInterval(this.slideshowInterval);
+    }
+  }
+  
+  startSlideshow() {
+    // Set the first slide as active
+    setTimeout(() => {
+      this.setActiveSlide(0);
+    }, 0);
+    
+    // Change slides every 5 seconds
+    this.slideshowInterval = setInterval(() => {
+      const slides = document.querySelectorAll('.slide');
+      this.currentSlide = (this.currentSlide + 1) % slides.length;
+      this.setActiveSlide(this.currentSlide);
+    }, 5000);
+  }
+  
+  setActiveSlide(index: number) {
+    const slides = document.querySelectorAll('.slide');
+    slides.forEach((slide, i) => {
+      if (i === index) {
+        slide.classList.add('active');
+      } else {
+        slide.classList.remove('active');
       }
     });
   }

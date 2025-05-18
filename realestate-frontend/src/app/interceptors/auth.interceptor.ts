@@ -32,8 +32,17 @@ export const authInterceptor: HttpInterceptorFn = (
       '/api/health',
       '/api/v1/health',
       '/api/users', 
-      '/api/me',
-      '/api/user'
+      '/api/user',
+      // Allow property details endpoints
+      '/api/listings/findById/',
+      '/api/v1/listings/findById/',
+      // Allow all listing endpoints for public viewing
+      '/api/listings/',
+      '/api/listings/sale',
+      '/api/listings/rent',
+      '/api/listings/find',
+      '/api/listings/search',
+      '/api/users'
     ];
     
     return publicEndpoints.some(endpoint => url.includes(endpoint));
@@ -46,11 +55,6 @@ export const authInterceptor: HttpInterceptorFn = (
 
   // Get the token from auth service
   const token = authService.getToken();
-  
-  // Debug logging
-  console.log(`Request URL: ${request.url}`);
-  console.log(`Token exists: ${!!token}`);
-  
   // If token exists, add it to request header
   if (token) {
     request = addTokenToRequest(request, token);

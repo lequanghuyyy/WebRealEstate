@@ -8,13 +8,14 @@ import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { OfferResponse, OfferStatus, OfferWithDetails } from '../../../models/offer.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
+import { DefaultImageDirective } from '../../../utils/default-image.directive';
 
 @Component({
   selector: 'app-user-offers',
   templateUrl: './user-offers.component.html',
   styleUrls: ['./user-offers.component.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule]
+  imports: [CommonModule, RouterModule, FormsModule, DefaultImageDirective]
 })
 export class UserOffersComponent implements OnInit {
   @Input() userId: string = '';
@@ -83,14 +84,34 @@ export class UserOffersComponent implements OnInit {
         this.offers = offerData.map((offer, index) => {
           const listing = listings[index];
           
+          // Create basic offer with details
           const offerWithDetails: OfferWithDetails = {
             ...offer,
             propertyTitle: listing ? listing.title : 'Unknown Property',
-            propertyImage: listing && listing.images && listing.images.length > 0 
-              ? (listing.images[0].imageUrl || 'assets/images/property-placeholder.jpg')
-              : 'assets/images/property-placeholder.jpg',
+            propertyImage: 'assets/images/property-placeholder.jpg', // Default image placeholder
             propertyType: listing ? listing.type : 'Unknown'
           };
+          
+          // If we have a valid listing, fetch its main image
+          if (listing && listing.id) {
+            // First check if listing already has a mainURL
+            if (listing.mainURL) {
+              offerWithDetails.propertyImage = listing.mainURL;
+            } else {
+              // Otherwise fetch the main image using the service method
+              this.listingService.getMainImageUrl(listing.id).subscribe(
+                mainImageUrl => {
+                  offerWithDetails.propertyImage = mainImageUrl;
+                  // Force refresh the view with the new image
+                  this.filteredOffers = [...this.filteredOffers];
+                },
+                error => {
+                  console.error(`Error loading main image for listing ${listing.id}:`, error);
+                  // Keep the default image on error
+                }
+              );
+            }
+          }
           
           return offerWithDetails;
         });

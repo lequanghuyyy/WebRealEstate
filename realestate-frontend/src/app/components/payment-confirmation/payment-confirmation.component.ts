@@ -21,6 +21,7 @@ export class PaymentConfirmationComponent implements OnInit {
   @Input() transactionStyle: TransactionStyle = TransactionStyle.SALE;
   @Input() commissionFee: number = 0;
   @Input() agentId: string = '';
+  @Input() buyerId: string = '';
   @Output() confirmed = new EventEmitter<PaymentRequest>();
   @Output() canceled = new EventEmitter<void>();
 
@@ -68,7 +69,8 @@ export class PaymentConfirmationComponent implements OnInit {
         commissionFee: this.commissionFee,
         notes: this.paymentForm.value.notes,
         transactionStyle: this.transactionStyle,
-        agentId: this.agentId
+        agentId: this.agentId,
+        buyerId: this.buyerId
       };
       
       this.confirmed.emit(paymentRequest);

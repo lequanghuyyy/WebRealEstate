@@ -1,13 +1,5 @@
 <div class="zillow-login-container">
-  <div class="background-image-container">
-    <div class="slideshow">
-      <div class="slide active" style="background-image: url('/assets/images/homeInLogin.png')"></div>
-      <!-- <div class="slide" style="background-image: url('/assets/images/homeInLogin1.jpg')"></div>
-      <div class="slide" style="background-image: url('/assets/images/homeInLogin2.jpg')"></div>
-      <div class="slide" style="background-image: url('/assets/images/homeInLogin3.jpg')"></div> -->
-    </div>
-    <div class="bg-overlay"></div>
-  </div>
+  <div class="background-image-container">    <div class="slideshow">      <div class="slide" style="background-image: url('/assets/homeimage/pexels-alex-staudinger-829197-1732414.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-pixasquare-1115804.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-expect-best-79873-323776.jpg')"></div>      <div class="slide" style="background-image: url('/assets/homeimage/pexels-binyaminmellish-186077.jpg')"></div>    </div>    <div class="bg-overlay"></div>  </div>
   
   <div class="login-wrapper">
     <!-- Logo section -->
@@ -218,21 +210,6 @@
           <span *ngIf="isLoading">Creating account...</span>
         </button>
         
-        <div class="divider">
-          <span>or</span>
-        </div>
-        
-        <div class="alternate-login-options">
-          <button type="button" class="btn btn-outline-secondary btn-google" (click)="loginWithGoogle()">
-            <img src="/assets/images/gg.jpg" alt="Google" class="provider-icon">
-            Continue with Google
-          </button>
-          
-          <button type="button" class="btn btn-outline-secondary btn-facebook" (click)="loginWithFacebook()">
-            <img src="/assets/images/facebook.png" alt="Facebook" class="provider-icon">
-            Continue with Facebook
-          </button>
-        </div>
       </form>
       
       <div class="account-options">

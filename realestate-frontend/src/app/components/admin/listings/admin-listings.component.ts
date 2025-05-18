@@ -28,7 +28,7 @@ import { ListingResponse, ListingStatus, ListingType, PageDto } from '../../../m
       <!-- Error state -->
       <div *ngIf="errorMessage" class="alert alert-danger">
         <i class="fas fa-exclamation-circle"></i> {{ errorMessage }}
-        <button (click)="loadListings()" class="btn btn-sm btn-outline-danger ms-2">Retry</button>
+        <button (click)="loadListingsAdmin()" class="btn btn-sm btn-outline-danger ms-2">Retry</button>
       </div>
       
       <!-- Empty state -->
@@ -181,14 +181,14 @@ export class AdminListingsComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadListings();
+    this.loadListingsAdmin();
   }
   
-  loadListings(): void {
+  loadListingsAdmin(): void {
     this.isLoading = true;
     this.errorMessage = null;
     
-    this.listingService.getListingsPaged(this.currentPage, this.pageSize)
+    this.listingService.getListingsPagedAdmin(this.currentPage, this.pageSize)
       .subscribe({
         next: (response: PageDto<ListingResponse>) => {
           this.listings = response.items;
@@ -206,7 +206,7 @@ export class AdminListingsComponent implements OnInit {
   
   onPageSizeChange(): void {
     this.currentPage = 1; // Reset to first page when changing page size
-    this.loadListings();
+    this.loadListingsAdmin();
   }
   
   goToPage(page: number): void {
@@ -214,7 +214,7 @@ export class AdminListingsComponent implements OnInit {
       return;
     }
     this.currentPage = page;
-    this.loadListings();
+    this.loadListingsAdmin();
   }
   
   getPaginationRange(): number[] {
@@ -244,7 +244,7 @@ export class AdminListingsComponent implements OnInit {
       this.listingService.updateListingStatus(id, statusRequest)
         .subscribe({
           next: () => {
-            this.loadListings();
+            this.loadListingsAdmin();
           },
           error: (error) => {
             console.error('Error approving listing:', error);
@@ -262,7 +262,7 @@ export class AdminListingsComponent implements OnInit {
       this.listingService.deleteListing(id)
         .subscribe({
           next: () => {
-            this.loadListings();
+            this.loadListingsAdmin();
           },
           error: (error) => {
             console.error('Error deleting listing:', error);

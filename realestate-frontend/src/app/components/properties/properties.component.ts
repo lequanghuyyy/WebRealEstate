@@ -15,7 +15,7 @@ import {
 import { debounceTime, distinctUntilChanged, switchMap, catchError, takeUntil } from 'rxjs/operators';
 import { Subject, of, Subscription } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
-import { DefaultImageDirective } from '../../directives/default-image.directive';
+import { DefaultImageDirective } from '../../utils/default-image.directive';
 
 @Component({
   selector: 'app-properties',

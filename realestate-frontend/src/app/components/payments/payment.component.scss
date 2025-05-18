@@ -164,6 +164,22 @@
       .reset-btn {
         padding: 6px 12px;
       }
+      
+      .export-buttons {
+        display: flex;
+        gap: 8px;
+        
+        button {
+          padding: 6px 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          i {
+            margin-right: 5px;
+          }
+        }
+      }
     }
   }
 

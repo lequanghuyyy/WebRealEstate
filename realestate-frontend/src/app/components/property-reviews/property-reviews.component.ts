@@ -6,6 +6,8 @@ import { ReviewService } from '../../services/review.service';
 import { AuthService } from '../../services/auth.service';
 import { Router, RouterModule } from '@angular/router';
 import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
+import { UserService } from '../../services/user.service';
+import { UserResponse } from '../../models/auth.model';
 
 @Component({
   selector: 'app-property-reviews',
@@ -27,13 +29,17 @@ export class PropertyReviewsComponent implements OnInit {
   submitSuccessful: boolean = false;
   errorMessage: string = '';
   averageRating: number = 0;
+  
+  // Map to store user data for reviewers
+  userDataMap: Map<string, UserResponse> = new Map();
 
   constructor(
     private reviewService: ReviewService,
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private toastr: ToastrWrapperService
+    private toastr: ToastrWrapperService,
+    private userService: UserService
   ) {
     this.reviewForm = this.fb.group({
       rating: [5, [Validators.required, Validators.min(1), Validators.max(5)]],
@@ -76,6 +82,9 @@ export class PropertyReviewsComponent implements OnInit {
         if (currentUser) {
           this.hasReviewed = this.reviews.some(r => r.brId === currentUser.id);
         }
+        
+        // Load reviewer data for each review
+        this.loadReviewerData();
       },
       error: (error) => {
         console.error('Error loading reviews:', error);
@@ -83,6 +92,41 @@ export class PropertyReviewsComponent implements OnInit {
         this.errorMessage = 'Could not load reviews. Please try again later.';
       }
     });
+  }
+
+  // Load reviewer data for all reviews
+  loadReviewerData(): void {
+    // Get unique reviewer IDs
+    const reviewerIds = [...new Set(this.reviews.map(review => review.brId))];
+    
+    // Load user data for each reviewer
+    reviewerIds.forEach(reviewerId => {
+      this.userService.getUserById(reviewerId).subscribe({
+        next: (userData) => {
+          console.log(`Got user data for reviewer ${reviewerId}:`, userData);
+          this.userDataMap.set(reviewerId, userData);
+        },
+        error: (error) => {
+          console.error(`Error fetching data for reviewer ${reviewerId}:`, error);
+        }
+      });
+    });
+  }
+
+  // Get reviewer avatar URL
+  getReviewerAvatar(reviewerId: string): string {
+    const userData = this.userDataMap.get(reviewerId);
+    
+    if (userData) {
+      if (userData.avatarImg) {
+        return userData.avatarImg;
+      } else if (userData.photo) {
+        return userData.photo;
+      }
+    }
+    
+    // Return default if no user data or no avatar
+    return 'assets/images/default-avatar.jpg';
   }
 
   // Method to get the average rating for the template

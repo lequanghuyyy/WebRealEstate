@@ -1,0 +1,12 @@
+@startuml SecurityService_UseCase
+left to right direction
+actor User
+
+package "Security Service" {
+  usecase Register        as "Đăng ký"
+  usecase Login           as "Đăng nhập"
+}
+
+User -- Register
+User -- Login
+@enduml

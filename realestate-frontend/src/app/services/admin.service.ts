@@ -613,7 +613,16 @@ export class AdminService {
     return this.http.get<BaseResponse<User[]>>(`${environment.apiUrl}/users`, {
       headers: this.createAuthHeaders()
     }).pipe(
-      map(response => response.data),
+      map(response => {
+        // Process the users to ensure name field is populated correctly
+        return response.data.map(user => {
+          // If name is not already set, combine firstName and lastName
+          if (!user.name && (user.firstName || user.lastName)) {
+            user.name = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+          }
+          return user;
+        });
+      }),
       catchError(error => {
         console.error('Error fetching users:', error);
         return of(this.mockUsers);

@@ -122,9 +122,10 @@ export class AuthService {
     );
   }
 
-  login(username: string, password: string): Observable<JwtDto> {
+  login(username: string, password: string, rememberMe: boolean = false): Observable<JwtDto> {
     console.log('Login attempt for user:', username);
     console.log('API URL:', this.apiUrl);
+    console.log('Remember Me:', rememberMe);
     
     // Create login request object
     const loginRequest: AuthenticationRequest = {
@@ -154,9 +155,9 @@ export class AuthService {
           console.log('Token extracted from response:', token ? 'Token found' : 'No token found');
           
           if (token) {
-            // Save the token to localStorage
-            this.setToken(token);
-            console.log('Token saved to localStorage');
+            // Lưu token dựa vào tùy chọn Remember Me
+            this.setToken(token, rememberMe);
+            console.log('Token saved with rememberMe =', rememberMe);
             
             // Try to extract user info from token
             const decoded = this.decodeToken(token);
@@ -537,8 +538,18 @@ export class AuthService {
     }
   }
 
-  private setToken(token: string): void {
-    localStorage.setItem(this.tokenKey, token);
+  private setToken(token: string, rememberMe: boolean = false): void {
+    if (rememberMe) {
+      // Nếu remember me được chọn, lưu vào localStorage (tồn tại sau khi đóng trình duyệt)
+      localStorage.setItem(this.tokenKey, token);
+      // Xóa khỏi sessionStorage nếu có
+      sessionStorage.removeItem(this.tokenKey);
+    } else {
+      // Nếu không chọn remember me, lưu vào sessionStorage (chỉ tồn tại trong phiên làm việc)
+      sessionStorage.setItem(this.tokenKey, token);
+      // Xóa khỏi localStorage nếu có
+      localStorage.removeItem(this.tokenKey);
+    }
   }
 
   private storeUser(user: UserResponse): void {
@@ -586,14 +597,27 @@ export class AuthService {
   }
 
   public clearAuthData(): void {
+    // Xóa token từ cả localStorage và sessionStorage
     localStorage.removeItem(this.tokenKey);
+    sessionStorage.removeItem(this.tokenKey);
+    
+    // Xóa thông tin người dùng khỏi localStorage
     localStorage.removeItem(this.userKey);
+    
+    // Cập nhật BehaviorSubject
     this.currentUserSubject.next(null);
   }
 
   public getToken(): string | null {
-    const token = localStorage.getItem(this.tokenKey);
-    console.log('Getting token from localStorage:', token ? 'Token exists' : 'No token found');
+    // Kiểm tra trong localStorage trước (người dùng đã chọn "Remember Me")
+    let token = localStorage.getItem(this.tokenKey);
+    
+    // Nếu không tìm thấy trong localStorage, kiểm tra trong sessionStorage (đăng nhập phiên)
+    if (!token) {
+      token = sessionStorage.getItem(this.tokenKey);
+    }
+    
+    console.log('Getting token:', token ? 'Token exists' : 'No token found');
     return token;
   }
 

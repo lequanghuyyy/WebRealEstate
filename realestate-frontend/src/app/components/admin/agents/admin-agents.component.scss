@@ -1,3 +1,5 @@
+@use "sass:color";
+
 // Admin Agents Component Styles
 .card {
   border-radius: 8px;
@@ -15,8 +17,8 @@
   border-color: #3498db;
   
   &:hover, &:focus {
-    background-color: darken(#3498db, 10%);
-    border-color: darken(#3498db, 10%);
+    background-color: color.adjust(#3498db, $lightness: -10%);
+    border-color: color.adjust(#3498db, $lightness: -10%);
   }
 }
 

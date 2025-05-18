@@ -190,6 +190,27 @@ export class ListingService {
         })
       );
   }
+  getListingsPagedAdmin(page: number = 1, size: number = 10): Observable<PageDto<ListingResponse>> {
+    return this.http.get<BaseResponse<PageDto<ListingResponse>>>(`${this.apiUrl}/admin`, { 
+      params: { 
+        page: page.toString(), 
+        size: size.toString() 
+      } 
+    })
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error('Error fetching paged listings:', error);
+          return of({
+            items: [],
+            totalElements: 0,
+            totalPages: 0,
+            page: page,
+            size: size
+          } as PageDto<ListingResponse>);
+        })
+      );
+  }
 
   // Get listings by sale type
   getListingsBySaleType(): Observable<ListingResponse[]> {

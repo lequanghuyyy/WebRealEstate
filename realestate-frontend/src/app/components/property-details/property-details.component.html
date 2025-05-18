@@ -36,7 +36,7 @@
           <div class="property-owner">
             <span class="owner-label">Listed by:</span>
             <div class="owner-info">
-              <img [src]="property.agent.photo" alt="Agent photo" class="owner-photo" appDefaultImage>
+              <img [src]="property.agent.photo" alt="Agent photo" class="owner-photo" appDefaultImage [appDefaultImage]="'assets/images/agent-placeholder.jpg'">
               <div class="owner-details">
                 <span class="owner-name">{{ property.agent.name }}</span>
                 <span class="owner-title">{{ property.agent.title || 'Real Estate Agent' }}</span>
@@ -131,7 +131,7 @@
             </div>
             <div class="agent-content">
               <div class="agent-image">
-                <img [src]="property.agent.photo" alt="Agent photo" appDefaultImage>
+                <img [src]="property.agent.photo" alt="Agent photo" appDefaultImage [appDefaultImage]="'assets/images/agent-placeholder.jpg'">
               </div>
               <div class="agent-details">
                 <h3 class="agent-name">{{ property.agent.name }}</h3>
@@ -156,15 +156,15 @@
 
           <!-- Action buttons -->
           <div class="agent-action-buttons">
-            <button class="action-button favorite-button" (click)="toggleFavorite()" [ngClass]="{'is-favorite': isFavorite}">
+            <button class="action-button favorite-button" (click)="toggleFavorite()">
               <i [class]="isFavorite ? 'fas fa-heart' : 'far fa-heart'"></i> 
-              {{ isFavorite ? 'Saved to Favorites' : 'Add to Favorites' }}
+              {{ isAuthenticated ? (isFavorite ? 'Saved to Favorites' : 'Add to Favorites') : 'Add to Favorites' }}
             </button>
-            <button class="action-button schedule-button" (click)="toggleScheduleForm()" *ngIf="!isAgent">
+            <button class="action-button schedule-button" (click)="toggleScheduleForm()">
               <i class="fas fa-calendar-check"></i> Schedule a Viewing
             </button>
             <!-- Add Offer button -->
-            <button class="action-button offer-button" (click)="toggleOfferForm()" *ngIf="!isAgent">
+            <button class="action-button offer-button" (click)="toggleOfferForm()">
               <i class="fas fa-hand-holding-usd"></i> 
               {{ property.type === 'buy' ? 'Make an Offer' : 'Apply to Rent' }}
             </button>
@@ -330,7 +330,7 @@
                onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 10px 20px rgba(0,0,0,0.15)';" 
                onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0,0,0,0.1)';">
             <div class="property-card-image" style="position: relative; height: 200px; overflow: hidden;">
-              <img [src]="prop.images[0]" alt="Property image" style="width: 100%; height: 100%; object-fit: cover;">
+              <img [src]="prop.mainURL || prop.images[0]" alt="Property image" style="width: 100%; height: 100%; object-fit: cover;">
               <div class="property-card-price" style="position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, rgba(0,0,0,0.8), transparent); color: white; padding: 15px 10px 8px; font-weight: 500;">
                 {{ formatPrice(prop.price) }}
               </div>

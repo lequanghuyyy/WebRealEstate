@@ -20,6 +20,7 @@ public interface ListingService {
     PageDto<ListingResponse> searchListings(ListingSearchRequest searchRequest);
     ListingResponse updateListingStatus(String listingId, ListingStatusUpdateRequest request);
     PageDto<ListingResponse> getListingsPaged(int page, int size);
+    PageDto<ListingResponse> getListingsPagedAdmin(int page, int size);
     List<ListingResponse> getListingsBySaleType();
     List<ListingResponse> getListingsByRentType();
     PageDto<ListingResponse> getListingsBySaleTypePaged(int page, int size);

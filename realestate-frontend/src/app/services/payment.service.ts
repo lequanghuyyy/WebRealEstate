@@ -28,12 +28,7 @@ export class PaymentService {
 
   // Process payment
   processPayment(request: PaymentRequest): Observable<PaymentResponse> {
-    // Make sure agentId is included
-    if (!request.agentId) {
-      const currentUser = this.authService.getCurrentUser();
-      request.agentId = currentUser?.id || '';
-    }
-
+   
     return this.http.post<any>(`${this.apiUrl}/process`, request).pipe(
       map(response => response.data),
       tap(payment => console.log('Created payment:', payment)),
@@ -156,9 +151,7 @@ export class PaymentService {
       })
     );
   }
-  
-  // Helper method to convert PaymentResponse to Payment interface
-  private mapResponseToPayment(response: PaymentResponse): Payment {
+    private mapResponseToPayment(response: PaymentResponse): Payment {
     return {
       id: response.id,
       transactionId: response.transactionId,
@@ -170,6 +163,8 @@ export class PaymentService {
       notes: response.notes,
       createdAt: response.createdAt,
       transactionStyle: response.transactionStyle,
+      agentId: response.agentId,
+      buyerId: response.buyerId,
       
       // Map to legacy fields for compatibility
       status: response.paymentStatus.toLowerCase(),
@@ -192,7 +187,6 @@ export class PaymentService {
 
   createPayment(payment: Omit<Payment, 'id'>): Observable<Payment> {
     // Convert to the new request format
-    const currentUser = this.authService.getCurrentUser();
     const request: PaymentRequest = {
       transactionId: payment.transactionId || '',
       amount: payment.amount,
@@ -200,7 +194,8 @@ export class PaymentService {
       commissionFee: payment.commissionFee,
       notes: payment.notes || '',
       transactionStyle: payment.transactionStyle,
-      agentId: currentUser?.id || ''
+      agentId: payment.agentId || '',  // Use the provided agentId from the transaction
+      buyerId: payment.buyerId
     };
     
     return this.processPayment(request).pipe(
@@ -273,5 +268,114 @@ export class PaymentService {
         return of(style === TransactionStyle.SALE ? 0.03 : 0.05);
       })
     );
+  }
+
+  // Export payments to file (CSV or PDF)
+  exportPaymentsToFile(payments: PaymentResponse[] | Payment[], fileType: 'csv' | 'pdf'): void {
+    if (fileType === 'csv') {
+      this.exportPaymentsToCSV(payments);
+    } else if (fileType === 'pdf') {
+      this.exportPaymentsToPDF(payments);
+    }
+  }
+
+  // Export payments to CSV
+  private exportPaymentsToCSV(payments: PaymentResponse[] | Payment[]): void {
+    // Define CSV headers
+    const headers = [
+      'ID', 'Transaction ID', 'Amount', 'Payment Method', 'Payment Status', 
+      'Payment Date', 'Commission Fee', 'Transaction Type', 'Notes'
+    ];
+
+    // Convert payments to CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...payments.map(payment => {
+        // Use type guards to determine which interface we're dealing with
+        const isPaymentResponse = 'paymentMethod' in payment && typeof payment.paymentMethod === 'string';
+        const isPayment = 'method' in payment;
+        
+        // Get payment method based on type
+        let paymentMethod: string;
+        if (isPaymentResponse) {
+          paymentMethod = payment.paymentMethod;
+        } else if (isPayment) {
+          paymentMethod = (payment as Payment).method || '';
+        } else {
+          paymentMethod = '';
+        }
+        
+        // Get payment status based on type
+        let paymentStatus: string;
+        if (isPaymentResponse) {
+          paymentStatus = payment.paymentStatus;
+        } else if (isPayment) {
+          paymentStatus = (payment as Payment).status || '';
+        } else {
+          paymentStatus = '';
+        }
+        
+        // Get transaction type based on type
+        let transactionType: string;
+        if (isPaymentResponse) {
+          transactionType = payment.transactionStyle;
+        } else if (isPayment) {
+          transactionType = (payment as Payment).paymentType || '';
+        } else {
+          transactionType = '';
+        }
+        
+        // Get payment date based on type
+        let paymentDate: string;
+        if (isPaymentResponse) {
+          paymentDate = payment.paymentDate;
+        } else if (isPayment) {
+          paymentDate = (payment as Payment).date || '';
+        } else {
+          paymentDate = '';
+        }
+
+        return [
+          payment.id,
+          payment.transactionId,
+          payment.amount,
+          paymentMethod,
+          paymentStatus,
+          paymentDate,
+          payment.commissionFee,
+          transactionType,
+          `"${(payment.notes || '').replace(/"/g, '""')}"`
+        ].join(',');
+      })
+    ];
+
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+    
+    // Create and download the file
+    this.downloadFile(csvContent, 'payments.csv', 'text/csv');
+  }
+
+  // Export payments to PDF
+  private exportPaymentsToPDF(payments: PaymentResponse[] | Payment[]): void {
+    // For PDF exports, we might need a library like jspdf and jspdf-autotable
+    // This is a simplified implementation
+    alert('PDF export would be implemented here - requires additional PDF libraries');
+    
+    // Example implementation would be:
+    // 1. Create a PDF document using jspdf
+    // 2. Add a table with payment data using jspdf-autotable
+    // 3. Save the PDF file
+  }
+
+  // Generic file download function
+  private downloadFile(content: string, fileName: string, contentType: string): void {
+    const blob = new Blob([content], { type: contentType });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 } 

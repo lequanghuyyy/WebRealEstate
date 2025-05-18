@@ -91,6 +91,7 @@ export class FavoriteService {
   }
 
   getFavoritesByUser(userId: string): Observable<BaseResponse<FavoriteResponse[]>> {
+    console.log(`Getting favorites for user ${userId}`);
     return new Observable(observer => {
       this.http.get<BaseResponse<FavoriteResponse[]>>(`${this.apiUrl}/${userId}`).subscribe({
         next: (response) => {
@@ -110,7 +111,31 @@ export class FavoriteService {
   }
 
   getFavoritesByUserPaginated(userId: string, page: number = 0): Observable<BaseResponse<PageResponse<FavoriteResponse>>> {
-    return this.http.get<BaseResponse<PageResponse<FavoriteResponse>>>(`${this.apiUrl}/${userId}?page=${page}`);
+    console.log(`Getting favorites for user ${userId} at page ${page}`);
+    console.log(`Using API URL: ${this.apiUrl}/${userId}?page=${page}`);
+    
+    return new Observable(observer => {
+      this.http.get<BaseResponse<PageResponse<FavoriteResponse>>>(`${this.apiUrl}/${userId}?page=${page}`)
+        .subscribe({
+          next: (response) => {
+            console.log('Favorites pagination response:', response);
+            if (response.data && response.data.content) {
+              const favoriteIds = response.data.content.map(fav => fav.listingId);
+              this.favoriteIds = [...favoriteIds];
+              this.favorites$.next([...this.favoriteIds]);
+              console.log('Updated favoriteIds:', this.favoriteIds);
+            } else {
+              console.warn('Unexpected favorites response format:', response);
+            }
+            observer.next(response);
+            observer.complete();
+          },
+          error: (error) => {
+            console.error('Error getting paginated favorites:', error);
+            observer.error(error);
+          }
+        });
+    });
   }
 
   checkIsFavorite(userId: string, listingId: string): Observable<boolean> {

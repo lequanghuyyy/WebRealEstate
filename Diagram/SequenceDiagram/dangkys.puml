@@ -1,0 +1,24 @@
+@startuml
+title Sequence Diagram Đăng Ký
+
+actor User
+participant UI
+participant AuthService
+participant Database
+
+User -> UI: Nhập thông tin đăng ký (username, email, password, role)
+UI -> AuthService: Gửi yêu cầu đăng ký (RegisterRequest)
+AuthService -> Database: Kiểm tra xem email hoặc username đã tồn tại
+Database --> AuthService: Trả về kết quả kiểm tra (tồn tại hoặc không)
+
+alt Email/Username đã tồn tại
+    AuthService --> UI: Trả về lỗi "Email hoặc Username đã tồn tại"
+    UI --> User: Hiển thị thông báo lỗi
+else Email/Username hợp lệ
+    AuthService -> Database: Lưu thông tin người dùng vào bảng `UserEntity`
+    Database --> AuthService: Trả về kết quả lưu thành công
+    AuthService -> UI: Trả về thông báo thành công
+    UI --> User: Hiển thị thông báo "Đăng ký thành công"
+end
+
+@enduml

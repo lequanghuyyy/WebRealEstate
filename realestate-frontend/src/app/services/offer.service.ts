@@ -113,4 +113,14 @@ export class OfferService {
         })
       );
   }
+  getOfferByAgentId(agentId: string, page: number = 0): Observable<OfferResponse> {
+    return this.http.get<BaseResponse<OfferResponse>>(`${this.apiUrl}/agent/${agentId}/${page}`)
+      .pipe(
+        map(response => response.data),
+        catchError(error => {
+          console.error(`Error getting offer by agent ${agentId}:`, error);
+          throw error;
+        })
+      );
+  }
 } 

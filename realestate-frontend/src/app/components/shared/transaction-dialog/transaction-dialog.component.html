@@ -1,8 +1,8 @@
 <div class="modal-overlay" *ngIf="visible">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">{{ transaction ? 'Edit Transaction' : 'Add New Transaction' }}</h5>
+        <h5 class="modal-title">{{ transaction ? 'Transaction Details' : 'Add New Transaction' }}</h5>
         <button type="button" class="btn-close" (click)="closeDialog()">&times;</button>
       </div>
       
@@ -14,8 +14,145 @@
           </div>
         </div>
 
-        <!-- Form content -->
-        <form [formGroup]="transactionForm" (ngSubmit)="saveTransaction()" *ngIf="!isLoading">
+        <!-- Transaction details view -->
+        <div *ngIf="!isLoading && transaction">
+          <div class="row">
+            <div class="col-md-4 mb-4">
+              <!-- Property Image -->
+              <div class="property-image-container">
+                <img [src]="transaction.property.image || transaction.property.mainURL || 'assets/images/property-placeholder.jpg'" 
+                     alt="Property Image" 
+                     class="img-fluid rounded property-image">
+              </div>
+            </div>
+            <div class="col-md-8">
+              <!-- Transaction header info -->
+              <div class="mb-4">
+                <h4 class="property-title">{{ transaction.property.title }}</h4>
+                <div class="transaction-meta">
+                  <span class="badge rounded-pill me-2" [ngClass]="{
+                    'bg-success': transaction.status === 'completed',
+                    'bg-warning': transaction.status === 'pending',
+                    'bg-danger': transaction.status === 'cancelled'
+                  }">
+                    {{ transaction.status === 'completed' ? 'Completed' : 
+                      transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                  </span>
+                  <span class="badge rounded-pill" [ngClass]="{
+                    'bg-success': transaction.paymentStatus === 'paid',
+                    'bg-warning': transaction.paymentStatus === 'pending',
+                    'bg-info': transaction.paymentStatus === 'refunded'
+                  }">
+                    {{ transaction.paymentStatus === 'paid' ? 'Paid' : 
+                      transaction.paymentStatus === 'pending' ? 'Payment Pending' : 'Refunded' }}
+                  </span>
+                  <span class="transaction-date ms-2">
+                    <i class="fas fa-calendar-alt me-1"></i> {{ transaction.date | date:'mediumDate' }}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- Client Information -->
+              <div class="client-info mb-4">
+                <h5 class="section-title">Client Information</h5>
+                <div class="client-details">
+                  <div class="client-detail">
+                    <span class="fw-bold">Name:</span>
+                    <span>{{ transaction.client.name }}</span>
+                  </div>
+                  <div class="client-detail">
+                    <span class="fw-bold">Email:</span>
+                    <span>{{ transaction.client.email }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-12">
+              <!-- Transaction Details Section -->
+              <div class="transaction-details mb-4">
+                <h5 class="section-title">Transaction Details</h5>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Transaction ID:</span>
+                      <span>{{ transaction.id }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Transaction Type:</span>
+                      <span>{{ transaction.type === 'sale' ? 'Sale' : 'Rental' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Amount:</span>
+                      <span>{{ transaction.amount | currency:'VND':'symbol':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Commission Fee:</span>
+                      <span>{{ transaction.commissionFee | currency:'VND':'symbol':'1.0-0' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Payment Method:</span>
+                      <span>{{ transaction.paymentMethod || 'Not specified' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Transaction Status:</span>
+                      <span [ngClass]="{
+                        'text-success': transaction.status === 'completed',
+                        'text-warning': transaction.status === 'pending',
+                        'text-danger': transaction.status === 'cancelled'
+                      }">
+                        {{ transaction.status === 'completed' ? 'Completed' : 
+                          transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Rental Specific Information (if applicable) -->
+              <div class="rental-details mb-4" *ngIf="transaction.type === 'rent'">
+                <h5 class="section-title">Rental Information</h5>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">Start Date:</span>
+                      <span>{{ transaction.startDate | date:'mediumDate' }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <div class="detail-item">
+                      <span class="fw-bold">End Date:</span>
+                      <span>{{ transaction.endDate | date:'mediumDate' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Notes Section -->
+              <div class="notes-section mb-4" *ngIf="transaction.notes">
+                <h5 class="section-title">Notes</h5>
+                <div class="notes-content p-3 border rounded">
+                  {{ transaction.notes }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form content for adding/editing transactions -->
+        <form [formGroup]="transactionForm" (ngSubmit)="saveTransaction()" *ngIf="!isLoading && !transaction">
           <!-- Transaction Type Selection -->
           <div class="mb-3">
             <label for="type" class="form-label">Transaction Type <span class="text-danger">*</span></label>
@@ -213,6 +350,84 @@
           </div>
         </form>
       </div>
+      
+      <!-- Footer Only for Details View -->
+      <div class="modal-footer" *ngIf="!isLoading && transaction">
+        <button type="button" class="btn btn-secondary" (click)="closeDialog()">Close</button>
+      </div>
     </div>
   </div>
-</div> 
+</div>
+
+<style>
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050;
+}
+
+.modal-dialog {
+  max-width: 800px;
+  width: 100%;
+  margin: 1.75rem auto;
+}
+
+.property-image-container {
+  height: 200px;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+}
+
+.property-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.property-title {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+  color: #333;
+}
+
+.transaction-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #eee;
+}
+
+.client-details, .transaction-details {
+  padding: 1rem;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.detail-item, .client-detail {
+  margin-bottom: 0.5rem;
+}
+
+.detail-item span, .client-detail span {
+  display: inline-block;
+}
+
+.detail-item span:first-child, .client-detail span:first-child {
+  min-width: 150px;
+}
+</style> 

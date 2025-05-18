@@ -92,6 +92,12 @@ public class ListingController {
             @RequestParam(defaultValue = "10") int size) {
         return ResponseFactory.ok(listingService.getListingsBySaleTypePaged(page, size));
     }
+    @GetMapping("/admin")
+    public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> getAllListings(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseFactory.ok(listingService.getListingsPagedAdmin(page, size));
+    }
 
     @GetMapping("/rent/paged")
     public ResponseEntity<BaseResponse<PageDto<ListingResponse>>> getListingsByRentTypePaged(

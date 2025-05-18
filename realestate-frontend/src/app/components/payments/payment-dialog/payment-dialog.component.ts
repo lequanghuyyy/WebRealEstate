@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { PaymentMethod, PaymentRequest, TransactionStyle } from '../../../models/payment.model';
 import { PaymentService } from '../../../services/payment.service';
 import { AuthService } from '../../../services/auth.service';
+import { TransactionService } from '../../../services/transaction.service';
 
 @Component({
   selector: 'app-payment-dialog',
@@ -17,15 +18,21 @@ import { AuthService } from '../../../services/auth.service';
   ]
 })
 export class PaymentDialogComponent implements OnInit {
+  @Input() transactionId: string = '';
+  
   paymentForm: FormGroup;
   loading = false;
   errorMessage = '';
   paymentMethods = Object.values(PaymentMethod);
+  buyerId: string = '';
+  agentId: string = '';
+  transactionStyle: TransactionStyle = TransactionStyle.SALE;
   
   constructor(
     private fb: FormBuilder,
     private paymentService: PaymentService,
-    private authService: AuthService
+    private authService: AuthService,
+    private transactionService: TransactionService
   ) {
     this.paymentForm = this.fb.group({
       amount: [0, [Validators.required, Validators.min(1)]],
@@ -35,7 +42,37 @@ export class PaymentDialogComponent implements OnInit {
   }
   
   ngOnInit(): void {
-    // Additional initialization if needed
+    if (this.transactionId) {
+      this.loadTransactionData();
+    }
+  }
+  
+  loadTransactionData(): void {
+    this.loading = true;
+    this.transactionService.getTransactionById(this.transactionId).subscribe({
+      next: (transaction) => {
+        if (transaction) {
+          // Set the agent ID from the transaction
+          this.agentId = transaction.agentId?.toString() || '';
+          this.buyerId = transaction.buyerId?.toString() || '';
+          this.transactionStyle = transaction.type === 'sale' ? 
+            TransactionStyle.SALE : TransactionStyle.RENT;
+            
+          // Update form values if needed
+          this.paymentForm.patchValue({
+            amount: transaction.amount || 0
+          });
+        } else {
+          this.errorMessage = 'Transaction not found';
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        this.errorMessage = 'Error loading transaction data';
+        console.error('Error loading transaction:', error);
+        this.loading = false;
+      }
+    });
   }
   
   formatPaymentMethod(method: string): string {
@@ -49,19 +86,19 @@ export class PaymentDialogComponent implements OnInit {
     
     this.loading = true;
     const formValues = this.paymentForm.value;
-    const currentUser = this.authService.getCurrentUser();
     
     // Calculate commission fee - in a real app this might come from the server
-    const commissionAmount = this.calculateCommission(formValues.amount, TransactionStyle.SALE);
+    const commissionAmount = this.calculateCommission(formValues.amount, this.transactionStyle);
     
     const paymentRequest: PaymentRequest = {
-      transactionId: '',
+      transactionId: this.transactionId,
       amount: formValues.amount,
       paymentMethod: formValues.paymentMethod,
       commissionFee: commissionAmount,
       notes: formValues.notes,
-      transactionStyle: TransactionStyle.SALE,
-      agentId: currentUser?.id || ''
+      transactionStyle: this.transactionStyle,
+      agentId: this.agentId, // Sử dụng agentId từ transaction
+      buyerId: this.buyerId
     };
     
     this.paymentService.processPayment(paymentRequest).subscribe({

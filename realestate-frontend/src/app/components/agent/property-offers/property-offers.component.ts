@@ -63,7 +63,7 @@ export class PropertyOffersComponent implements OnInit {
       return;
     }
     
-    this.offerService.getAllOffers(page).pipe(
+    this.offerService.getOfferByAgentId(currentUser.id, page).pipe(
       catchError(error => {
         console.error('Error loading offers:', error);
         this.errorMessage = 'Failed to load offers';
@@ -71,8 +71,10 @@ export class PropertyOffersComponent implements OnInit {
       }),
       switchMap(response => {
         console.log('Raw offers response:', response);
-        this.totalPages = response.totalPages;
-        const offerDetailRequests = response.content.map((offer: OfferResponse) => {
+        // Use type assertion to handle the union type
+        const paginatedResponse = response as { content: OfferResponse[], totalPages: number };
+        this.totalPages = paginatedResponse.totalPages;
+        const offerDetailRequests = paginatedResponse.content.map((offer: OfferResponse) => {
           return forkJoin({
             listing: this.listingService.getListingById(offer.listingId).pipe(
               catchError(() => of(null))
@@ -93,13 +95,46 @@ export class PropertyOffersComponent implements OnInit {
     ).subscribe(results => {
       if (Array.isArray(results)) {
         this.offers = results.map(result => {
+          const listing = result.listing;
+          const defaultImage = 'assets/images/property-placeholder.jpg';
+          
+          // Create basic offer with details
           const offerWithDetails: OfferWithDetails = {
             ...result.offer,
-            propertyTitle: result.listing?.title || 'Unknown Property',
-            propertyImage: result.listing?.image || 'assets/images/property-placeholder.jpg',
+            propertyTitle: listing?.title || 'Unknown Property',
+            propertyImage: defaultImage,
             buyerName: result.buyer ? `${result.buyer.firstName} ${result.buyer.lastName}` : 'Unknown User',
-            propertyType: result.listing?.type || 'Unknown'
+            propertyType: listing?.type || 'Unknown'
           };
+          
+          // If we have a valid listing, get its image
+          if (listing && listing.id) {
+            // First check if listing already has a mainURL
+            if (listing.mainURL) {
+              offerWithDetails.propertyImage = listing.mainURL;
+            } 
+            // Then check if it has an image property
+            else if (listing.image) {
+              offerWithDetails.propertyImage = listing.image;
+            }
+            // Otherwise fetch the main image using the service method
+            else {
+              this.listingService.getMainImageUrl(listing.id).subscribe(
+                mainImageUrl => {
+                  if (mainImageUrl) {
+                    offerWithDetails.propertyImage = mainImageUrl;
+                    // Force refresh the view with the new image
+                    this.filteredOffers = [...this.filteredOffers];
+                  }
+                },
+                error => {
+                  console.error(`Error loading main image for listing ${listing.id}:`, error);
+                  // Keep the default image on error
+                }
+              );
+            }
+          }
+          
           return offerWithDetails;
         });
         
@@ -255,25 +290,19 @@ export class PropertyOffersComponent implements OnInit {
   getStatusClass(status: OfferStatus): string {
     switch (status) {
       case OfferStatus.PENDING:
-        return 'bg-warning';
+        return 'status-pending';
       case OfferStatus.ACCEPTED:
-        return 'bg-success';
+        return 'status-accepted';
       case OfferStatus.REJECTED:
-        return 'bg-danger';
+        return 'status-rejected';
       case OfferStatus.EXPIRED:
-        return 'bg-secondary';
+        return 'status-expired';
       default:
-        return 'bg-info';
+        return '';
     }
   }
   
-  // Helper method to safely check offer status
   isStatus(offerStatus: string | OfferStatus, statusToCheck: OfferStatus): boolean {
-    // Check for string equality (case insensitive)
-    if (typeof offerStatus === 'string') {
-      return offerStatus.toUpperCase() === statusToCheck.toString();
-    }
-    // Check for enum equality
     return offerStatus === statusToCheck;
   }
 } 

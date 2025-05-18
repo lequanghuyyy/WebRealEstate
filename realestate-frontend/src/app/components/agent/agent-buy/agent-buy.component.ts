@@ -6,7 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
 import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { TransactionService } from '../../../services/transaction.service';
-import { DefaultImageDirective } from '../../../directives/default-image.directive';
+import { DefaultImageDirective } from '../../../utils/default-image.directive';
 import { 
   ListingResponse, 
   ListingType, 

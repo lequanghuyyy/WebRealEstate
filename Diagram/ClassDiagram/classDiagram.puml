@@ -1,0 +1,185 @@
+@startuml Class_Diagram
+
+
+' ==== CLASSES ====
+class UserEntity {
+    - String id
+    - String username
+    - String email
+    - String password
+    - String firstName
+    - String lastName
+    - String phone
+    - String bio
+    - UserStatus status
+    - LocalDate createAt
+    - String avatarImg
+
+    + onCreate()
+}
+
+class RoleEntity {
+    - String id
+    - Role roleName
+}
+
+class ListingEntity {
+    - String id
+    - String title
+    - String description
+    - String address
+    - String city
+    - BigDecimal price
+    - BigDecimal area
+    - Integer bedrooms
+    - Integer bathrooms
+    - String mainURL
+    - Integer yearBuilt
+    - BigDecimal latitude
+    - BigDecimal longitude
+    - Integer view
+    - ListingType type
+    - ListingPropertyType propertyType
+    - ListingStatus status
+    - String ownerId
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+}
+
+class AppointmentEntity {
+    - String id
+    - String brId
+    - String agentId
+    - String listingId
+    - AppointmentStatus status
+    - Date day
+    - LocalTime time
+    - String brNote
+    - String agentNote
+}
+
+class FavoriteListingEntity {
+    - String id
+    - String userId
+    - String listingId
+    - LocalDateTime createdAt
+}
+
+class ReviewEntity {
+    - String id
+    - String listingId
+    - String brId
+    - String title
+    - String contentReview
+    - Integer rate
+    - Integer countLike
+    - LocalDateTime createdAt
+}
+
+class SavedSearchEntity {
+    - String id
+    - String userId
+    - String keyword
+    - String city
+    - BigDecimal minPrice
+    - BigDecimal maxPrice
+    - String type
+    - Integer bedrooms
+    - LocalDateTime createdAt
+}
+
+class OfferEntity {
+    - String id
+    - String listingId
+    - String userId
+    - String agentId
+    - BigDecimal offerPrice
+    - LocalDateTime expiresAt
+    - OfferStatus status
+    - String message
+    - LocalDate startRentAt
+    - LocalDate endRentAt
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+}
+
+class PaymentEntity {
+    - String id
+    - String transactionId
+    - String agentId
+    - BigDecimal amount
+    - PaymentMethod paymentMethod
+    - PaymentStatus paymentStatus
+    - LocalDateTime paymentDate
+    - BigDecimal commissionFee
+    - TransactionStyle transactionStyle
+    - String notes
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+}
+
+class RentalTransactionEntity {
+    - String id
+    - String listingId
+    - String renterId
+    - String agentId
+    - BigDecimal monthlyRent
+    - BigDecimal deposit
+    - LocalDate startDate
+    - LocalDate endDate
+    - RentalStatus status
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+}
+
+class SalesTransactionEntity {
+    - String id
+    - String listingId
+    - String buyerId
+    - String agentId
+    - BigDecimal amount
+    - SaleStatus transactionStatus
+    - LocalDateTime completedAt
+    - LocalDateTime createdAt
+    - LocalDateTime updatedAt
+}
+
+class ListingImageEntity {
+    - String id
+    - String url
+}
+
+' ==== RELATIONSHIPS ====
+UserEntity "1" -- "*" RoleEntity : roles
+RoleEntity "*" -- "*" UserEntity : users
+
+UserEntity "1" -- "*" AppointmentEntity : asAgent
+UserEntity "1" -- "*" AppointmentEntity : asBuyer
+AppointmentEntity "*" -- "1" ListingEntity : forListing
+
+UserEntity "1" -- "*" FavoriteListingEntity : favorites
+FavoriteListingEntity "*" -- "1" ListingEntity : listing
+
+UserEntity "1" -- "*" ReviewEntity : writes
+ReviewEntity "*" -- "1" ListingEntity : forListing
+
+UserEntity "1" -- "*" SavedSearchEntity : searches
+
+UserEntity "1" -- "*" OfferEntity : makes
+OfferEntity "*" -- "1" ListingEntity : onListing
+
+UserEntity "1" -- "*" PaymentEntity : processes
+PaymentEntity "*" -- "0..1" SalesTransactionEntity : paysSale
+PaymentEntity "*" -- "0..1" RentalTransactionEntity : paysRental
+
+UserEntity "1" -- "*" RentalTransactionEntity : rentsAsTenant
+UserEntity "1" -- "*" RentalTransactionEntity : rentsAsAgent
+RentalTransactionEntity "*" -- "1" ListingEntity : rentalOf
+
+UserEntity "1" -- "*" SalesTransactionEntity : buys
+UserEntity "1" -- "*" SalesTransactionEntity : sellsAsAgent
+SalesTransactionEntity "*" -- "1" ListingEntity : saleOf
+
+ListingEntity "1" -- "*" ListingImageEntity : images
+
+@enduml

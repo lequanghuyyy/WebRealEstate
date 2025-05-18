@@ -34,7 +34,7 @@
           <div class="user-dropdown" [ngClass]="{'open': userDropdownOpen}">
             <button class="user-dropdown-toggle" (click)="toggleUserDropdown()">
               <div class="user-avatar">
-                <img [src]="user?.profileImageUrl || 'assets/images/default-avatar.jpg'" alt="Admin">
+                <img [src]="user?.avatarImg || user?.photo || user?.profileImage || 'assets/images/default-avatar.jpg'" alt="Admin" (error)="handleImageError($event)">
               </div>
               <span class="user-name">{{ user?.name || user?.firstName || 'User' }}</span>
               <i class="fas" [ngClass]="userDropdownOpen ? 'fa-chevron-up' : 'fa-chevron-down'"></i>

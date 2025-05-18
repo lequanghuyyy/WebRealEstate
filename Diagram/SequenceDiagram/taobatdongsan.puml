@@ -1,0 +1,28 @@
+@startuml
+title Sequence Diagram Tạo Listing
+
+actor Agent
+participant UI
+participant AuthService
+participant ListingService
+participant Database
+
+Agent -> UI: Nhấn nút "Tạo Listing"
+UI -> AuthService: Kiểm tra trạng thái đăng nhập
+AuthService --> UI: Trả về trạng thái đăng nhập (đã đăng nhập)
+
+alt Đã đăng nhập
+    UI -> ListingService: Gửi yêu cầu tạo listing (ListingRequest)
+    ListingService -> Database: Lưu thông tin listing vào bảng `ListingEntity`
+    Database --> ListingService: Trả về kết quả lưu thành công
+    ListingService --> UI: Trả về thông báo thành công
+    UI --> Agent: Hiển thị thông báo "Listing đã được tạo thành công"
+else Chưa đăng nhập
+    UI --> Agent: Hiển thị thông báo "Vui lòng đăng nhập để thực hiện hành động này"
+end
+
+alt Lỗi trong quá trình lưu
+    ListingService --> UI: Trả về lỗi "Không thể tạo listing"
+    UI --> Agent: Hiển thị thông báo lỗi
+end
+@enduml

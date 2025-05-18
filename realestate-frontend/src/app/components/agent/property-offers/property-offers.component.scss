@@ -119,6 +119,24 @@
   color: white;
 }
 
+.status-pending {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.status-accepted {
+  background-color: #28a745;
+}
+
+.status-rejected {
+  background-color: #dc3545;
+}
+
+.status-expired {
+  background-color: #6c757d;
+}
+
+/* Keep the old classes for backward compatibility */
 .bg-success {
   background-color: #28a745;
 }

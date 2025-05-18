@@ -1,0 +1,22 @@
+@startuml
+title Sequence Diagram Mua Bất Động Sản
+actor Buyer
+participant UI
+participant AuthService
+participant PurchaseService
+participant Database
+
+Buyer -> UI: Nhấn nút "Gửi yêu cầu mua"
+UI -> AuthService: Kiểm tra trạng thái đăng nhập
+AuthService --> UI: Trả về trạng thái đăng nhập (đã đăng nhập)
+
+alt Đã đăng nhập
+    UI -> PurchaseService: Gửi yêu cầu mua bất động sản (propertyId, userId, offerPrice)
+    PurchaseService -> Database: Lưu thông tin yêu cầu vào bảng `OfferEntity`
+    Database --> PurchaseService: Trả về kết quả lưu thành công
+    PurchaseService --> UI: Trả về thông báo thành công
+    UI --> Buyer: Hiển thị thông báo "Yêu cầu mua đã được gửi"
+else Chưa đăng nhập
+    UI --> Buyer: Hiển thị thông báo "Vui lòng đăng nhập để sử dụng tính năng này"
+end
+@enduml

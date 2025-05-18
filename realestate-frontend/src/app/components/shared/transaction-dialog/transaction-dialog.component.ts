@@ -34,6 +34,7 @@ interface PropertyItem {
 export class TransactionDialogComponent implements OnInit {
   @Input() transaction: ExtendedTransaction | null = null;
   @Input() visible: boolean = false;
+  @Input() editMode: boolean = false;
   @Output() visibleChange = new EventEmitter<boolean>();
   @Output() save = new EventEmitter<Partial<ExtendedTransaction>>();
   
@@ -88,6 +89,14 @@ export class TransactionDialogComponent implements OnInit {
     this.loadProperties();
     
     if (this.transaction) {
+      // We're viewing or editing an existing transaction
+      // Check if we're in view mode and don't populate the form
+      if (this.transaction && !this.editMode) {
+        // View mode, no need to populate the form
+        this.isLoading = false;
+        return;
+      }
+      
       // We're editing an existing transaction
       this.transactionForm.patchValue({
         propertyId: this.transaction.property.id,

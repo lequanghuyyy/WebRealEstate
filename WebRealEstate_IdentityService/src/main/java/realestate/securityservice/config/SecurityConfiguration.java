@@ -72,9 +72,7 @@ public class SecurityConfiguration {
 
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auths -> auths
-                        .requestMatchers("/api/v1/users/delete/**").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/users/update/{userId}").hasRole("ADMIN")
-                        .requestMatchers("/api/v1/users/update").authenticated()
+
                         .requestMatchers(WHITE_LIST).permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

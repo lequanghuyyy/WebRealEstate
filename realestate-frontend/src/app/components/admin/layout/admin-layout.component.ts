@@ -32,25 +32,22 @@ export class AdminLayoutComponent implements OnInit {
     // Get user information
     this.user = this.authService.getCurrentUser();
     
-    if (!this.user) {
-      // Try to force reload the user data
-      this.authService.fetchCurrentUser().subscribe({
-        next: (user) => {
-          this.user = user;
-          if (!this.checkAdminAccess()) {
-            this.router.navigate(['/login']);
-          }
-        },
-        error: (err) => {
+    // Always try to fetch latest user data
+    this.authService.fetchCurrentUser().subscribe({
+      next: (user) => {
+        this.user = user;
+        if (!this.checkAdminAccess()) {
           this.router.navigate(['/login']);
         }
-      });
-      return;
-    }
-    
-    if (!this.checkAdminAccess()) {
-      return;
-    }
+      },
+      error: (err) => {
+        console.error('Failed to fetch latest user data:', err);
+        // Continue with cached user data if available
+        if (!this.user || !this.checkAdminAccess()) {
+          this.router.navigate(['/login']);
+        }
+      }
+    });
     
     // Force navigation to dashboard if on the root /admin path
     if (this.router.url === '/admin') {
@@ -77,6 +74,10 @@ export class AdminLayoutComponent implements OnInit {
   
   toggleUserDropdown(): void {
     this.userDropdownOpen = !this.userDropdownOpen;
+  }
+  
+  handleImageError(event: any): void {
+    event.target.src = 'assets/images/default-avatar.jpg';
   }
   
   logout(): void {

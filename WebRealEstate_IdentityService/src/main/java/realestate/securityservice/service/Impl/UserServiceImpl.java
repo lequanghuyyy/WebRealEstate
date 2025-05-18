@@ -1,9 +1,6 @@
 package realestate.securityservice.service.Impl;
 
 import jakarta.transaction.Transactional;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,7 +13,6 @@ import realestate.securityservice.dto.request.UserCreationRequest;
 import realestate.securityservice.dto.request.UserUpdateRequest;
 import realestate.securityservice.dto.respone.UserResponse;
 import realestate.securityservice.entity.PasswordEntity;
-import realestate.securityservice.entity.RoleEntity;
 import realestate.securityservice.entity.UserEntity;
 import realestate.securityservice.exception.AlreadyExistsException;
 import realestate.securityservice.exception.NotFoundException;
@@ -25,10 +21,10 @@ import realestate.securityservice.repository.PasswordRepository;
 import realestate.securityservice.repository.RoleRepository;
 import realestate.securityservice.repository.UserRepository;
 import realestate.securityservice.sercurity.CustomUserDetails;
+import realestate.securityservice.service.CloudinaryService;
 import realestate.securityservice.service.UserService;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -42,14 +38,16 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private static final Set<String> ALLOWED_ROLES = Set.of("ADMIN", "BUYER", "AGENT", "RENTER");
     private final PasswordRepository passwordRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper, RoleRepository roleRepository, PasswordRepository passwordRepository) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, UserMapper userMapper, RoleRepository roleRepository, PasswordRepository passwordRepository, CloudinaryService cloudinaryService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.userMapper = userMapper;
         this.roleRepository = roleRepository;
         this.passwordRepository = passwordRepository;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @Transactional
@@ -70,7 +68,6 @@ public class UserServiceImpl implements UserService {
 
         UserEntity userEntity = userMapper.convertToUserEntity(userCreationRequest);
         userEntity.setPassword(passwordEncoder.encode(userCreationRequest.getPassword()));
-        userEntity.setRoles(roleRepository.findAllByRoleNameIn(userCreationRequest.getRoles()));
 
         if (userCreationRequest.getRoles().contains("AGENT")) {
             userEntity.setStatus(UserStatus.PENDING_APPROVAL);
@@ -107,9 +104,18 @@ public class UserServiceImpl implements UserService {
         return userMapper.convertToUserResponse(userRepository.save(userEntity));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public void deleteUser(String userId) {
+        String idCurrent = getIdUserCurrent();
+        UserEntity userEntityA = userRepository.findById(idCurrent).orElseThrow(() -> new NotFoundException("User","UserId",idCurrent));
+
+        boolean isAdmin = userEntityA.getRoles().stream()
+                .anyMatch(role -> role.getRoleName() == Role.ADMIN);
+
+        if (!isAdmin) {
+            throw new RuntimeException("No permission to delete user");
+        }
+
         UserEntity userEntity = userRepository.findById(userId).orElseThrow(() -> new NotFoundException("User","UserId",userId));
         userRepository.delete(userEntity);
     }
@@ -133,6 +139,14 @@ public class UserServiceImpl implements UserService {
         return userRepository.countUserEntityByRoles(roles);
     }
 
+    @Override
+    public void uploadProfilePicture(String userId, String imageUrl) {
+        UserEntity userEntity = userRepository.findById(userId)
+                .orElseThrow(() -> new NotFoundException("User", "UserId", userId));
+        userEntity.setAvatarImg(imageUrl);
+        userRepository.save(userEntity);
+    }
+
 
     public String getIdUserCurrent(){
         CustomUserDetails principal = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -154,6 +168,8 @@ public class UserServiceImpl implements UserService {
             userEntity.setBio(userUpdateRequest.getBio());
         }
     }
+
+
 
     UserResponse getUserResponse(UserCreationRequest userCreationRequest,
                                  PasswordEncoder passwordEncoder,

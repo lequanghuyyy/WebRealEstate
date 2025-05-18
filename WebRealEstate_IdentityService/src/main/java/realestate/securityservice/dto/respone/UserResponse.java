@@ -24,4 +24,5 @@ public class UserResponse {
     List<String> roles;
     LocalDate createAt;
     String phone;
+    String avatarImg;
 }

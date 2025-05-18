@@ -20,19 +20,14 @@
 
       <div class="company-story">
         <div class="row">
-          <div class="col-md-6">
-            <div class="about-image">
-              <img src="/assets/images/about-office.jpg" alt="RealEstatePro Office">
-            </div>
-          </div>
-          <div class="col-md-6">
+          <div class="col-md-12">
             <div class="about-content">
               <h3>Who We Are</h3>
               <p>RealEstatePro was founded in 2010 with a vision to transform the real estate industry by combining innovative technology with personalized service. Our team of experienced professionals is dedicated to helping clients find their perfect property, whether it's a cozy apartment, a luxury house, or a commercial space.</p>
-              
+
               <h3>Our Mission</h3>
               <p>We are committed to providing exceptional real estate services that exceed our clients' expectations. Through integrity, expertise, and innovation, we aim to make the property buying, selling, and renting process as seamless and enjoyable as possible.</p>
-              
+
               <h3>Our Values</h3>
               <ul class="values-list">
                 <li><i class="fas fa-check-circle"></i> Integrity and transparency in all our dealings</li>
@@ -91,9 +86,6 @@
 
       <div class="team-grid">
         <div class="team-card" *ngFor="let member of teamMembers">
-          <div class="team-image">
-            <img [src]="member.image" [alt]="member.name">
-          </div>
           <div class="team-details">
             <h3 class="team-name">{{ member.name }}</h3>
             <p class="team-position">{{ member.position }}</p>
@@ -148,7 +140,6 @@
             <p>The team at RealEstatePro made finding our first home such a smooth and enjoyable experience. They were always available to answer our questions and guided us through every step of the process.</p>
           </div>
           <div class="testimonial-author">
-            <img src="/assets/images/testimonial-1.jpg" alt="David & Maria Wilson">
             <div class="author-info">
               <h4>David & Maria Wilson</h4>
               <p>First-time Homebuyers</p>
@@ -162,7 +153,6 @@
             <p>I've worked with many real estate agencies over the years, but RealEstatePro stands out for their professionalism and attention to detail. They truly understand the market and their clients' needs.</p>
           </div>
           <div class="testimonial-author">
-            <img src="/assets/images/testimonial-2.jpg" alt="Robert Johnson">
             <div class="author-info">
               <h4>Robert Johnson</h4>
               <p>Property Investor</p>
@@ -176,7 +166,6 @@
             <p>Selling our family home of 25 years was an emotional process, but the compassionate team at RealEstatePro made it easier. They secured a great price and ensured a hassle-free transaction.</p>
           </div>
           <div class="testimonial-author">
-            <img src="/assets/images/testimonial-3.jpg" alt="Linda Thompson">
             <div class="author-info">
               <h4>Linda Thompson</h4>
               <p>Home Seller</p>
@@ -200,4 +189,4 @@
       </div>
     </div>
   </section>
-</div> 
+</div>

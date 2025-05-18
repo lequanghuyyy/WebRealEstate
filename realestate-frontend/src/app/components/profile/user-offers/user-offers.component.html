@@ -70,7 +70,7 @@
               <tr *ngFor="let offer of filteredOffers">
                 <td>
                   <div class="property-info">
-                    <img [src]="offer.propertyImage" class="property-thumbnail" alt="Property image">
+                    <img [src]="offer.propertyImage" class="property-thumbnail" alt="Property image" appDefaultImage>
                     <div>
                       <span class="property-title">{{ offer.propertyTitle }}</span>
                       <span class="property-type">{{ offer.propertyType === 'SALE' ? 'For Sale' : 'For Rent' }}</span>

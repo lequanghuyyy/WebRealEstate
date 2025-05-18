@@ -8,6 +8,7 @@ export enum OfferStatus {
 export interface OfferRequest {
   listingId: string;
   userId: string;
+  agentId: string;
   offerPrice: number;
   expiresAt: string;
   message?: string;

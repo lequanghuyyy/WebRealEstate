@@ -203,8 +203,11 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
       this.currentUser.name = 'User';
       console.log("No usable name field found, using 'User'");
     }
-    
-    // Ensure UI updates by triggering change detection
+    if (this.currentUser.avatarImg) {
+      console.log("User has avatar image:", this.currentUser.avatarImg);
+    } else {
+      console.log("User has no avatar image, will use placeholder");
+    }
     setTimeout(() => {
       console.log("Name displayed in header will be:", this.currentUser.name);
     }, 0);
@@ -227,7 +230,6 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
   
   // Xử lý khi ảnh không tồn tại
   handleImageError(event: any) {
-    // Thay thế bằng placeholder image từ CDN (không phụ thuộc vào assets)
     event.target.src = 'https://placehold.co/50x50/3498db/ffffff?text=User';
   }
   

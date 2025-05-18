@@ -49,6 +49,7 @@ export interface AuthenticationRequest {
     name?: string;
     photo?: string;
     phone?: string;
+    avatarImg?: string;
   }
   
   export interface BaseResponse<T> {

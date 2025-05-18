@@ -19,6 +19,7 @@ import {
 import { PaymentService } from './payment.service';
 import { PaymentRequest, TransactionStyle } from '../models/payment.model';
 import { AuthService } from './auth.service';
+import { ListingStatus } from '../models/listing.model';
 
 @Injectable({
   providedIn: 'root'
@@ -58,7 +59,8 @@ export class TransactionService {
           commissionFee: this.calculateCommission(transaction.amount, TransactionStyle.SALE),
           notes: `Payment for sales transaction ${transaction.id}`,
           transactionStyle: TransactionStyle.SALE,
-          agentId: agentId
+          agentId: transaction.agentId || agentId,
+          buyerId: transaction.buyerId
         };
         
         return this.paymentService.processPayment(paymentRequest).pipe(
@@ -74,7 +76,7 @@ export class TransactionService {
 
   // Get a sales transaction by ID
   getSalesTransactionById(transactionId: string): Observable<SalesTransactionResponse> {
-    return this.http.get<any>(`${this.salesApiUrl}/${transactionId}`).pipe(
+    return this.http.get<any>(`${this.salesApiUrl}/find/${transactionId}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting sales transaction:', error);
@@ -152,7 +154,8 @@ export class TransactionService {
           commissionFee: this.calculateCommission(transaction.monthlyRent, TransactionStyle.RENT),
           notes: `Payment for rental transaction ${transaction.id}`,
           transactionStyle: TransactionStyle.RENT,
-          agentId: agentId
+          agentId: transaction.agentId || agentId,
+          buyerId: transaction.renterId
         };
         
         return this.paymentService.processPayment(paymentRequest).pipe(
@@ -168,7 +171,7 @@ export class TransactionService {
 
   // Get a rental transaction by ID
   getRentalTransactionById(transactionId: string): Observable<RentalTransactionResponse> {
-    return this.http.get<any>(`${this.rentalApiUrl}/${transactionId}`).pipe(
+    return this.http.get<any>(`${this.rentalApiUrl}/find/${transactionId}`).pipe(
       map(response => response.data),
       catchError(error => {
         console.error('Error getting rental transaction:', error);
@@ -325,15 +328,19 @@ export class TransactionService {
 
   // Get buy transactions with new status
   getBuyTransactions(): Observable<Transaction[]> {
-    const pageRequest: PageSalesTransactionRequest = {
-      page: 1,
-      size: 50
-    };
-
-    return this.getAllSalesTransactions(pageRequest).pipe(
-      map(salesPage => {
+    const currentUser = this.authService.getCurrentUser();
+    
+    // If no user is logged in or user has no ID, return empty array
+    if (!currentUser || !currentUser.id) {
+      console.warn('No user logged in or user ID missing');
+      return of([]);
+    }
+    
+    // Get sales transactions by buyer ID
+    return this.getSalesTransactionsByBuyer(currentUser.id).pipe(
+      map(sales => {
         // Transform sales transactions to the legacy format
-        return salesPage.items.map(sale => this.mapSalesToTransaction(sale));
+        return sales.map(sale => this.mapSalesToTransaction(sale));
       }),
       catchError(error => {
         console.error('Error getting buy transactions:', error);
@@ -344,15 +351,19 @@ export class TransactionService {
 
   // Get rent transactions with new status
   getRentTransactions(): Observable<Transaction[]> {
-    const pageRequest: PageRentalTransactionRequest = {
-      page: 1,
-      size: 50
-    };
-
-    return this.getAllRentalTransactions(pageRequest).pipe(
-      map(rentalPage => {
+    const currentUser = this.authService.getCurrentUser();
+    
+    // If no user is logged in or user has no ID, return empty array
+    if (!currentUser || !currentUser.id) {
+      console.warn('No user logged in or user ID missing');
+      return of([]);
+    }
+    
+    // Get rental transactions by renter ID
+    return this.getRentalTransactionsByRenter(currentUser.id).pipe(
+      map(rentals => {
         // Transform rental transactions to the legacy format
-        return rentalPage.items.map(rental => this.mapRentalToTransaction(rental));
+        return rentals.map(rental => this.mapRentalToTransaction(rental));
       }),
       catchError(error => {
         console.error('Error getting rent transactions:', error);
@@ -431,60 +442,70 @@ export class TransactionService {
     }
   }
 
-  // Helper method to map sales transaction to legacy format
-  private mapSalesToTransaction(sale: SalesTransactionResponse): Transaction {
+  // Helper method to map sales transaction response to Transaction model
+  public mapSalesToTransaction(sale: SalesTransactionResponse): Transaction {
+    const currentUser = this.authService.getCurrentUser();
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    // Calculate commission fee (default to 2% if not provided)
+    const commissionFee = sale.amount * 0.02;
+    
     return {
       id: sale.id,
       type: 'sale',
-      amount: sale.amount,
-      status: sale.transactionStatus,
-      paymentStatus: 'pending', // Default until we check payment status
-      date: new Date(sale.createdAt).toISOString(),
-      property: {
-        id: sale.listingId,
-        title: 'Property', // Will be fetched from listings
-        image: '', // Will be fetched from listings
-        mainURL: '' // Will be fetched from listings
-      },
-      client: {
-        name: 'Client', // We would need to fetch this from users
-        email: '' // We would need to fetch this from users
-      },
-      // Additional properties
       propertyId: sale.listingId,
-      transactionType: 'sale',
       buyerId: sale.buyerId,
       agentId: sale.agentId,
-      completionDate: sale.completedAt ? new Date(sale.completedAt) : undefined
+      amount: sale.amount,
+      commissionFee: commissionFee,
+      status: sale.transactionStatus,
+      paymentStatus: 'pending', // Default payment status
+      date: sale.createdAt.split('T')[0],
+      property: {
+        id: sale.listingId,
+        title: `Property #${sale.listingId}` // Will be updated when property details are loaded
+      },
+      client: {
+        name: `Client #${sale.buyerId}`, // Will be updated when client details are loaded
+        email: 'client@example.com' // Will be updated when client details are loaded
+      },
+      paymentMethod: 'Bank Transfer',
+      notes: `Sale transaction created on ${currentDate}`
     };
   }
-
-  // Helper method to map rental transaction to legacy format
-  private mapRentalToTransaction(rental: RentalTransactionResponse): Transaction {
+  
+  // Helper method to map rental transaction response to Transaction model
+  public mapRentalToTransaction(rental: RentalTransactionResponse): Transaction {
+    const currentUser = this.authService.getCurrentUser();
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    // Calculate commission fee (default to one month's rent if not provided)
+    const commissionFee = rental.monthlyRent;
+    
     return {
       id: rental.id,
       type: 'rent',
-      amount: rental.monthlyRent,
-      status: rental.status,
-      paymentStatus: 'pending', // Default until we check payment status
-      date: new Date(rental.createdAt).toISOString(),
-      property: {
-        id: rental.listingId,
-        title: 'Property', // Will be fetched from listings
-        image: '', // Will be fetched from listings
-        mainURL: '' // Will be fetched from listings
-      },
-      client: {
-        name: 'Client', // We would need to fetch this from users
-        email: '' // We would need to fetch this from users
-      },
-      // Additional properties
       propertyId: rental.listingId,
-      transactionType: 'rent',
       buyerId: rental.renterId,
       agentId: rental.agentId,
+      amount: rental.deposit,
+      monthlyRent: rental.monthlyRent,
+      commissionFee: commissionFee,
+      status: rental.status,
+      paymentStatus: 'pending', // Default payment status
+      date: rental.createdAt.split('T')[0],
       startDate: rental.startDate,
-      endDate: rental.endDate
+      endDate: rental.endDate,
+      property: {
+        id: rental.listingId,
+        title: `Property #${rental.listingId}` // Will be updated when property details are loaded
+      },
+      client: {
+        name: `Client #${rental.renterId}`, // Will be updated when client details are loaded
+        email: 'client@example.com' // Will be updated when client details are loaded
+      },
+      paymentMethod: 'Bank Transfer',
+      notes: `Rental transaction created on ${currentDate}`
     };
   }
 
@@ -504,5 +525,71 @@ export class TransactionService {
         );
       })
     );
+  }
+
+  // Export transactions to file (CSV or PDF)
+  exportTransactionsToFile(transactions: Transaction[], fileType: 'csv' | 'pdf'): void {
+    if (fileType === 'csv') {
+      this.exportTransactionsToCSV(transactions);
+    } else if (fileType === 'pdf') {
+      this.exportTransactionsToPDF(transactions);
+    }
+  }
+
+  // Export transactions to CSV
+  private exportTransactionsToCSV(transactions: Transaction[]): void {
+    // Define CSV headers
+    const headers = [
+      'ID', 'Type', 'Amount', 'Status', 'Payment Status', 
+      'Date', 'Property ID', 'Property Title', 'Client Name', 'Client Email'
+    ];
+
+    // Convert transactions to CSV rows
+    const csvRows = [
+      headers.join(','),
+      ...transactions.map(transaction => {
+        return [
+          transaction.id,
+          transaction.type,
+          transaction.amount,
+          transaction.status,
+          transaction.paymentStatus,
+          transaction.date,
+          transaction.property?.id || '',
+          `"${transaction.property?.title?.replace(/"/g, '""') || ''}"`,
+          `"${transaction.client?.name?.replace(/"/g, '""') || ''}"`,
+          transaction.client?.email || ''
+        ].join(',');
+      })
+    ];
+
+    // Create CSV content
+    const csvContent = csvRows.join('\n');
+    
+    // Create and download the file
+    this.downloadFile(csvContent, 'transactions.csv', 'text/csv');
+  }
+
+  // Export transactions to PDF
+  private exportTransactionsToPDF(transactions: Transaction[]): void {
+    // For PDF exports, we might need a library like jspdf and jspdf-autotable
+    // This is a simplified implementation
+    alert('PDF export would be implemented here - requires additional PDF libraries');
+    
+    // Example implementation would be:
+    // 1. Create a PDF document using jspdf
+    // 2. Add a table with transaction data using jspdf-autotable
+    // 3. Save the PDF file
+  }
+
+  // Generic file download function
+  private downloadFile(content: string, fileName: string, contentType: string): void {
+    const blob = new Blob([content], { type: contentType });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 } 

@@ -12,4 +12,5 @@ public interface OfferRepository extends JpaRepository<OfferEntity, String> {
     Page<OfferEntity> findByListingIdAndStatus(String listingId, OfferStatus status, Pageable pageable);
     List<OfferEntity> findByListingIdAndStatus(String listingId, OfferStatus status);
     Page<OfferEntity> findOfferEntityByUserId(String userId, Pageable pageable);
+    Page<OfferEntity> findOfferEntityByAgentId(String agentId, Pageable pageable);
 }

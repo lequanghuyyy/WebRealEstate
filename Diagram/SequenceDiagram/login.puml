@@ -1,0 +1,19 @@
+@startuml
+title Sequence Diagram Đăng Nhập 
+actor User
+participant UI
+participant AuthService
+participant Database
+
+User -> UI: Nhập thông tin đăng nhập
+UI -> AuthService: Gửi yêu cầu đăng nhập (username, password)
+AuthService -> Database: Kiểm tra thông tin người dùng
+Database --> AuthService: Trả về thông tin người dùng (nếu hợp lệ)
+AuthService --> UI: Trả về token xác thực
+UI --> User: Hiển thị thông báo đăng nhập thành công
+
+alt Thông tin không hợp lệ
+    AuthService --> UI: Trả về lỗi "Thông tin không hợp lệ"
+    UI --> User: Hiển thị thông báo lỗi
+end
+@enduml

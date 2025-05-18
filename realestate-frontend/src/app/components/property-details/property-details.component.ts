@@ -15,7 +15,7 @@ import { ListingService } from '../../services/listing.service';
 import { ListingImageResponse } from '../../models/listing.model';
 import { forkJoin, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
-import { DefaultImageDirective } from '../../directives/default-image.directive';
+import { DefaultImageDirective } from '../../utils/default-image.directive';
 import { UserService } from '../../services/user.service';
 import { UserResponse } from '../../models/auth.model';
 import { OfferService } from '../../services/offer.service';
@@ -99,26 +99,23 @@ export class PropertyDetailsComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.propertyId = this.route.snapshot.paramMap.get('id');
-    this.loadProperty();
     this.checkAuthStatus();
     
-      // Đăng ký lắng nghe thay đổi favorite
+    this.propertyId = this.route.snapshot.paramMap.get('id');
+    this.loadProperty();
+  
     this.favoriteService.favorites$.subscribe((favoriteIds: string[]) => {
       if (this.propertyId && favoriteIds.includes(this.propertyId)) {
         this.isFavorite = true;
       }
     });
     
-    // Set today's date as the minimum date for appointment
     this.scheduleForm.get('date')?.setValue(this.today);
     
-    // Set default expiration date for offer (30 days from now)
     const expiryDate = new Date();
     expiryDate.setDate(expiryDate.getDate() + 30);
     this.offerForm.get('expiresAt')?.setValue(expiryDate.toISOString().split('T')[0]);
     
-    // Monitor route changes to reload property data
     this.route.params.subscribe(params => {
       const newPropertyId = params['id'];
       if (newPropertyId && newPropertyId !== this.propertyId) {
@@ -218,8 +215,7 @@ export class PropertyDetailsComponent implements OnInit {
               this.property.images.unshift(mainImg);
             }
           }
-          
-          // Tiền tải ảnh để cải thiện trải nghiệm
+        
           this.preloadImages(this.property.images);
         } else if (this.property && (!this.property.images || this.property.images.length === 0)) {
           // If no images are available, set a default image
@@ -228,33 +224,55 @@ export class PropertyDetailsComponent implements OnInit {
         
         // Load agent information if we have a property with an ownerId
         if (this.property && this.property.agent && this.property.agent.id) {
-          this.userService.getUserById(this.property.agent.id.toString()).subscribe({
-            next: (userResponse) => {
-              // Update agent information with real user data
-              if (this.property && this.property.agent) {
-                this.property.agent.name = userResponse.firstName + ' ' + userResponse.lastName || 'Agent';
-                this.property.agent.email = userResponse.email || 'agent@example.com';
-                this.property.agent.phone = userResponse.phone || '123-456-7890';
-                
-                // If user has a profile image, use it
-                if (userResponse.photo) {
-                  this.property.agent.photo = userResponse.photo;
+          this.userService.getUserById(this.property.agent.id.toString())
+            .pipe(
+              catchError(error => {
+                console.warn('Could not load agent details:', error);
+                // Return default agent info on error instead of propagating the error
+                return of({
+                  id: this.property?.agent.id || '',
+                  firstName: 'Real Estate',
+                  lastName: 'Agent',
+                  email: 'contact@realestate.com',
+                  phone: '123-456-7890',
+                  photo: 'assets/images/agent-placeholder.jpg',
+                  avatarImg: 'assets/images/agent-placeholder.jpg',
+                  roles: ['AGENT']
+                });
+              })
+            )
+            .subscribe({
+              next: (userResponse) => {
+                // Update agent information with real user data
+                if (this.property && this.property.agent) {
+                  this.property.agent.name = userResponse.firstName + ' ' + userResponse.lastName || 'Agent';
+                  this.property.agent.email = userResponse.email || 'agent@example.com';
+                  this.property.agent.phone = userResponse.phone || '123-456-7890';
+                  
+                  // If user has a profile image, use it
+                  // First check avatarImg, then photo from userResponse
+                  if (userResponse.avatarImg) {
+                    this.property.agent.photo = userResponse.avatarImg;
+                    console.log('Using agent avatarImg:', userResponse.avatarImg);
+                  } else if (userResponse.photo) {
+                    this.property.agent.photo = userResponse.photo;
+                    console.log('Using agent photo:', userResponse.photo);
+                  } else {
+                    // If no photo found, use default
+                    this.property.agent.photo = 'assets/images/agent-placeholder.jpg';
+                    console.log('Using default agent photo');
+                  }
+                  
+                  // Get role/title
+                  if (userResponse.roles && userResponse.roles.includes('AGENT')) {
+                    this.property.agent.title = 'Licensed Real Estate Agent';
+                  }
                 }
-                
-                // Get role/title
-                if (userResponse.roles && userResponse.roles.includes('AGENT')) {
-                  this.property.agent.title = 'Licensed Real Estate Agent';
-                }
+              },
+              complete: () => {
+                this.isLoading = false;
               }
-            },
-            error: (error) => {
-              console.error('Error loading agent details:', error);
-              // Keep default agent information on error
-            },
-            complete: () => {
-              this.isLoading = false;
-            }
-          });
+            });
         } else {
           this.isLoading = false;
         }
@@ -298,7 +316,11 @@ export class PropertyDetailsComponent implements OnInit {
 
   toggleFavorite(): void {
     if (!this.isAuthenticated) {
+      // Redirect to login page with return URL to this property
       this.toastr.warning('Please login to save properties to favorites');
+      this.router.navigate(['/login'], { 
+        queryParams: { redirect: `/property/${this.propertyId}` } 
+      });
       return;
     }
 
@@ -397,7 +419,7 @@ export class PropertyDetailsComponent implements OnInit {
 
   submitContactForm(): void {
     this.formSubmitted = true;
-    
+    this.checkAuthStatus();
     if (this.contactForm.valid && this.property) {
       const formData = {
         ...this.contactForm.value,
@@ -423,7 +445,7 @@ export class PropertyDetailsComponent implements OnInit {
 
   submitScheduleForm(): void {
     this.scheduleSubmitted = true;
-    
+    this.checkAuthStatus();
     if (this.scheduleForm.valid && this.property && this.userId) {
       // Map data từ form sang đúng định dạng API yêu cầu
       const formData = {
@@ -488,31 +510,6 @@ export class PropertyDetailsComponent implements OnInit {
     
     return `https://www.google.com/maps?q=${address}`;
   }
-
-  getAmenityIcon(amenity: string): string {
-    // Convert amenity to lowercase for case-insensitive matching
-    const amenityLower = amenity.toLowerCase();
-    
-    if (amenityLower.includes('pool')) return 'fas fa-swimming-pool';
-    if (amenityLower.includes('gym') || amenityLower.includes('fitness')) return 'fas fa-dumbbell';
-    if (amenityLower.includes('parking') || amenityLower.includes('garage')) return 'fas fa-car';
-    if (amenityLower.includes('wifi') || amenityLower.includes('internet')) return 'fas fa-wifi';
-    if (amenityLower.includes('balcony') || amenityLower.includes('terrace')) return 'fas fa-door-open';
-    if (amenityLower.includes('ac') || amenityLower.includes('air') || amenityLower.includes('conditioning')) return 'fas fa-snowflake';
-    if (amenityLower.includes('heating')) return 'fas fa-temperature-high';
-    if (amenityLower.includes('elevator') || amenityLower.includes('lift')) return 'fas fa-arrow-alt-circle-up';
-    if (amenityLower.includes('security') || amenityLower.includes('guard')) return 'fas fa-shield-alt';
-    if (amenityLower.includes('pet') || amenityLower.includes('dog') || amenityLower.includes('cat')) return 'fas fa-paw';
-    if (amenityLower.includes('laundry') || amenityLower.includes('washer')) return 'fas fa-tshirt';
-    if (amenityLower.includes('tv') || amenityLower.includes('cable')) return 'fas fa-tv';
-    if (amenityLower.includes('furniture') || amenityLower.includes('furnished')) return 'fas fa-couch';
-    if (amenityLower.includes('garden') || amenityLower.includes('yard')) return 'fas fa-leaf';
-    if (amenityLower.includes('grill') || amenityLower.includes('bbq')) return 'fas fa-fire';
-    
-    // Default icon if no match is found
-    return 'fas fa-check-circle';
-  }
-
   isFieldInvalid(form: FormGroup, fieldName: string): boolean {
     const field = form.get(fieldName);
     return !!(field && field.invalid && (field.dirty || field.touched || 
@@ -544,6 +541,14 @@ export class PropertyDetailsComponent implements OnInit {
   }
 
   toggleScheduleForm(): void {
+    if (!this.isAuthenticated) {
+      this.toastr.info('Please log in to schedule a viewing');
+      this.router.navigate(['/login'], { 
+        queryParams: { redirect: `/property/${this.propertyId}` } 
+      });
+      return;
+    }
+    
     this.showScheduleForm = !this.showScheduleForm;
     
     // If opening schedule form, close contact form
@@ -562,7 +567,9 @@ export class PropertyDetailsComponent implements OnInit {
   toggleOfferForm(): void {
     if (!this.isAuthenticated) {
       this.toastr.info('Please log in to submit an offer');
-      this.router.navigate(['/login'], { queryParams: { returnUrl: this.router.url } });
+      this.router.navigate(['/login'], { 
+        queryParams: { redirect: `/property/${this.propertyId}` } 
+      });
       return;
     }
     
@@ -623,6 +630,7 @@ export class PropertyDetailsComponent implements OnInit {
     const offerRequest: OfferRequest = {
       listingId: this.propertyId,
       userId: this.userId,
+      agentId: this.property.agent?.id?.toString() || '',
       offerPrice: this.offerForm.value.offerPrice,
       expiresAt: new Date(this.offerForm.value.expiresAt).toISOString(),
       message: this.offerForm.value.message || undefined
@@ -633,6 +641,8 @@ export class PropertyDetailsComponent implements OnInit {
       offerRequest.startRentAt = this.offerForm.value.startDate;
       offerRequest.endRentAt = this.offerForm.value.endDate;
     }
+    
+    console.log('Submitting offer with agentId:', offerRequest.agentId);
     
     this.offerService.createOffer(offerRequest).subscribe({
       next: (response) => {

@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { ToastrWrapperService } from '../../services/toastr-wrapper.service';
 import { PaymentService } from '../../services/payment.service';
 import { AuthService } from '../../services/auth.service';
+import { TransactionService } from '../../services/transaction.service';
 import { 
   PaymentMethod, 
   PaymentRequest, 
@@ -24,7 +25,8 @@ export class PaymentFormComponent implements OnInit {
   @Input() transactionStyle: TransactionStyle = TransactionStyle.RENT;
   @Input() initialPaymentMethod: PaymentMethod = PaymentMethod.BANK_TRANSFER;
   @Input() commissionRate: number = 0.10; // 10% default commission rate
-  @Input() agentId: string = ''; // Added agent ID input
+  @Input() agentId: string = ''; // Added agent ID input but will be overridden by transaction data
+  @Input() buyerId: string = ''; // Added buyer/renter ID input
   
   @Output() paymentComplete = new EventEmitter<PaymentResponse>();
   @Output() paymentCancelled = new EventEmitter<void>();
@@ -33,6 +35,7 @@ export class PaymentFormComponent implements OnInit {
   isSubmitting: boolean = false;
   errorMessage: string | null = null;
   currentUser: any;
+  isLoading: boolean = false;
   
   // PaymentMethod enum for the template
   paymentMethods = Object.values(PaymentMethod);
@@ -41,7 +44,8 @@ export class PaymentFormComponent implements OnInit {
     private fb: FormBuilder,
     private paymentService: PaymentService,
     private toastr: ToastrWrapperService,
-    private authService: AuthService
+    private authService: AuthService,
+    private transactionService: TransactionService
   ) {
     // Initialize form with default values
     this.paymentForm = this.fb.group({
@@ -62,10 +66,35 @@ export class PaymentFormComponent implements OnInit {
     // Calculate commission amount based on total and rate
     this.calculateCommission();
     
-    // If no agent ID is provided, use the current user's ID
-    if (!this.agentId && this.currentUser) {
-      this.agentId = this.currentUser.id;
+    // Load transaction data to get the correct agentId
+    if (this.transactionId) {
+      this.loadTransactionData();
     }
+  }
+  
+  loadTransactionData(): void {
+    this.isLoading = true;
+    this.transactionService.getTransactionById(this.transactionId).subscribe({
+      next: (transaction) => {
+        if (transaction) {
+          // Update the agentId from the transaction data
+          this.agentId = transaction.agentId?.toString() || '';
+          console.log('Loaded agentId from transaction:', this.agentId);
+          
+          // We can also update buyerId if needed
+          if (!this.buyerId && transaction.buyerId) {
+            this.buyerId = transaction.buyerId.toString();
+          }
+        } else {
+          console.error('Transaction not found for ID:', this.transactionId);
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading transaction data:', error);
+        this.isLoading = false;
+      }
+    });
   }
   
   calculateCommission(): number {
@@ -98,7 +127,8 @@ export class PaymentFormComponent implements OnInit {
       commissionFee: this.calculateCommission(),
       notes: formValues.notes || '',
       transactionStyle: this.transactionStyle,
-      agentId: this.agentId
+      agentId: this.agentId,
+      buyerId: this.buyerId
     };
     
     // Process the payment

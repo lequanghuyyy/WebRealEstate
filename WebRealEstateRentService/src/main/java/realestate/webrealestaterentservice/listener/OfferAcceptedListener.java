@@ -27,7 +27,7 @@ public class OfferAcceptedListener {
         RentalTransactionRequest request = new RentalTransactionRequest();
         request.setListingId(event.getListingId());
         request.setRenterId(event.getUserId());
-        request.setAgentId(listing.getAgentId());
+        request.setAgentId(event.getAgentId());
         if (event.getOfferPrice() != null) {
             request.setMonthlyRent(event.getOfferPrice());
             request.setDeposit(event.getOfferPrice().multiply(BigDecimal.valueOf(0.5)));

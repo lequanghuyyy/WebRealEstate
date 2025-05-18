@@ -1,0 +1,19 @@
+@startuml PaymentService_UseCase
+left to right direction
+actor Buyer
+actor Agent
+actor Admin
+
+package "Payment Service" {
+  usecase RecordPayment      as "Ghi nhận thanh toán"
+  usecase ViewPaymentHistory as "Xem lịch sử thanh toán"
+  usecase Pay as "Thanh toán"
+}
+
+Buyer -- ViewPaymentHistory
+Buyer -- Pay
+Agent -- ViewPaymentHistory
+
+Admin -- RecordPayment
+Admin -- ViewPaymentHistory
+@enduml

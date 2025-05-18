@@ -138,7 +138,7 @@
         <div class="review-header">
           <div class="reviewer-info">
             <div class="reviewer-avatar">
-              <img src="assets/images/default-avatar.jpg" alt="User">
+              <img [src]="getReviewerAvatar(review.brId)" alt="User">
             </div>
             <div class="reviewer-details">
               <div class="reviewer-name">{{ getUserName(review.brId) }}</div>

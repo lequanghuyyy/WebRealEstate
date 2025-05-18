@@ -45,9 +45,7 @@
               <option value="all">All Statuses</option>
               <option value="PENDING">Pending</option>
               <option value="COMPLETED">Completed</option>
-              <option value="APPROVED">Approved</option>
               <option value="CANCELLED">Cancelled</option>
-              <option value="REJECTED">Rejected</option>
             </select>
           </div>
         </div>
@@ -86,7 +84,7 @@
                   </td>
                   <td>{{ formatCurrency(transaction.amount) }}</td>
                   <td>
-                    <span class="badge" [ngClass]="getStatusBadgeClass(transaction.status)">
+                    <span class="badge" [ngClass]="'bg-status-' + transaction.status.toLowerCase()">
                       {{ transaction.status }}
                     </span>
                   </td>
@@ -106,8 +104,6 @@
                           <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'PENDING')">Mark as Pending</a></li>
                           <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'COMPLETED')">Mark as Completed</a></li>
                           <li><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'CANCELLED')">Mark as Cancelled</a></li>
-                          <li *ngIf="transaction.type === 'rent'"><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'APPROVED')">Mark as Approved</a></li>
-                          <li *ngIf="transaction.type === 'rent'"><a class="dropdown-item" href="javascript:void(0);" (click)="updateTransactionStatus(transaction, 'REJECTED')">Mark as Rejected</a></li>
                         </ul>
                       </div>
                     </div>
@@ -117,40 +113,7 @@
             </table>
           </div>
           
-          <!-- Pagination Controls -->
-          <div class="d-flex justify-content-between align-items-center p-3 border-top">
-            <div>
-              <span>Showing {{ (currentPage - 1) * pageSize + 1 }} to {{ currentPage * pageSize > totalItems ? totalItems : currentPage * pageSize }} of {{ totalItems }} transactions</span>
-            </div>
-            <div class="d-flex align-items-center">
-              <div class="me-3">
-                <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" class="form-select form-select-sm">
-                  <option [value]="5">5 per page</option>
-                  <option [value]="10">10 per page</option>
-                  <option [value]="20">20 per page</option>
-                  <option [value]="50">50 per page</option>
-                </select>
-              </div>
-              <nav>
-                <ul class="pagination pagination-sm mb-0">
-                  <li class="page-item" [class.disabled]="currentPage === 1">
-                    <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage - 1)">
-                      <span aria-hidden="true">&laquo;</span>
-                    </a>
-                  </li>
-                  <li class="page-item" *ngFor="let page of [].constructor(totalPages > 5 ? 5 : totalPages); let i = index" 
-                      [class.active]="currentPage === i + 1">
-                    <a class="page-link" href="javascript:void(0)" (click)="onPageChange(i + 1)">{{ i + 1 }}</a>
-                  </li>
-                  <li class="page-item" [class.disabled]="currentPage === totalPages">
-                    <a class="page-link" href="javascript:void(0)" (click)="onPageChange(currentPage + 1)">
-                      <span aria-hidden="true">&raquo;</span>
-                    </a>
-                  </li>
-                </ul>
-              </nav>
-            </div>
-          </div>
+
         </div>
       </div>
     </div>
@@ -160,8 +123,14 @@
   <div class="modal" [class.show]="showTransactionModal" tabindex="-1" [style.display]="showTransactionModal ? 'block' : 'none'">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Transaction Details</h5>
+        <div class="modal-header" [ngClass]="{'bg-primary-subtle': !isRentalTransaction, 'bg-success-subtle': isRentalTransaction}">
+          <h5 class="modal-title">
+            <i [ngClass]="{'fas fa-shopping-cart me-2': !isRentalTransaction, 'fas fa-key me-2': isRentalTransaction}"></i>
+            {{ !isRentalTransaction ? 'Sale' : 'Rental' }} Transaction Details
+            <span class="badge ms-2" [ngClass]="!isRentalTransaction ? 'bg-primary' : 'bg-success'">
+              {{ !isRentalTransaction ? 'SALE' : 'RENT' }}
+            </span>
+          </h5>
           <button type="button" class="btn-close" (click)="closeTransactionModal()"></button>
         </div>
         <div class="modal-body" *ngIf="selectedTransaction">
@@ -173,146 +142,192 @@
           
           <!-- Transaction details for Sale transaction -->
           <div *ngIf="!isLoading && !isRentalTransaction" class="transaction-detail">
+            <div class="alert alert-primary-subtle mb-4">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-2 fs-4"></i>
+                <div>This is a property sale transaction for the amount of <strong>{{ formatCurrency(selectedTransaction.amount) }}</strong></div>
+              </div>
+            </div>
+            
             <div class="row mb-4">
               <div class="col-md-6">
-                <div class="detail-group">
-                  <h6 class="detail-header">Sale Transaction Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Transaction ID:</div>
-                    <div class="detail-value">{{ selectedTransaction.id }}</div>
+                <div class="detail-group border rounded p-3">
+                  <h6 class="detail-header border-bottom pb-2 text-primary">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Sale Transaction Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Transaction ID:</div>
+                    <div class="detail-value fw-bold">{{ selectedTransaction.id }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Status:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Status:</div>
                     <div class="detail-value">
                       <span class="badge" [ngClass]="getStatusBadgeClass(selectedTransaction.transactionStatus)">
                         {{ selectedTransaction.transactionStatus }}
                       </span>
                     </div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Amount:</div>
-                    <div class="detail-value">{{ formatCurrency(selectedTransaction.amount) }}</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Amount:</div>
+                    <div class="detail-value fw-bold fs-5">{{ formatCurrency(selectedTransaction.amount) }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Created Date:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Created Date:</div>
                     <div class="detail-value">{{ formatDate(selectedTransaction.createdAt) }}</div>
                   </div>
-                  <div class="detail-item" *ngIf="selectedTransaction.completedAt">
-                    <div class="detail-label">Completed Date:</div>
+                  <div class="detail-item py-2" *ngIf="selectedTransaction.completedAt">
+                    <div class="detail-label text-muted">Completed Date:</div>
                     <div class="detail-value">{{ formatDate(selectedTransaction.completedAt) }}</div>
                   </div>
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="detail-group">
-                  <h6 class="detail-header">Property Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Listing ID:</div>
+                <div class="detail-group border rounded p-3 mb-3">
+                  <h6 class="detail-header border-bottom pb-2 text-primary">
+                    <i class="fas fa-home me-2"></i>Property Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Listing ID:</div>
                     <div class="detail-value">{{ selectedTransaction.listingId }}</div>
                   </div>
+                  <div class="detail-item py-2">
+                    <div class="detail-label text-muted">Property Title:</div>
+                    <div class="detail-value">{{ selectedTransaction.propertyTitle || 'N/A' }}</div>
+                  </div>
                 </div>
                 
-                <div class="detail-group mt-4">
-                  <h6 class="detail-header">Customer Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Buyer ID:</div>
+                <div class="detail-group border rounded p-3 mb-3">
+                  <h6 class="detail-header border-bottom pb-2 text-primary">
+                    <i class="fas fa-user me-2"></i>Customer Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Buyer ID:</div>
                     <div class="detail-value">{{ selectedTransaction.buyerId }}</div>
                   </div>
-                </div>
-                
-                <div class="detail-group mt-4">
-                  <h6 class="detail-header">Agent Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Agent ID:</div>
-                    <div class="detail-value">{{ selectedTransaction.agentId }}</div>
+                  <div class="detail-item py-2">
+                    <div class="detail-label text-muted">Buyer Name:</div>
+                    <div class="detail-value">{{ selectedTransaction.buyerName || 'N/A' }}</div>
                   </div>
                 </div>
+              </div>
+            </div>
+            
+            <div class="detail-group border rounded p-3 mt-2" *ngIf="selectedTransaction.notes">
+              <h6 class="detail-header border-bottom pb-2 text-primary">
+                <i class="fas fa-sticky-note me-2"></i>Notes
+              </h6>
+              <div class="detail-item py-2">
+                <div class="notes-content">{{ selectedTransaction.notes }}</div>
               </div>
             </div>
           </div>
           
           <!-- Transaction details for Rental transaction -->
           <div *ngIf="!isLoading && isRentalTransaction" class="transaction-detail">
+            <div class="alert alert-success-subtle mb-4">
+              <div class="d-flex align-items-center">
+                <i class="fas fa-info-circle me-2 fs-4"></i>
+                <div>This is a property rental transaction with monthly rent of <strong>{{ formatCurrency(selectedTransaction.monthlyRent) }}</strong></div>
+              </div>
+            </div>
+            
             <div class="row mb-4">
               <div class="col-md-6">
-                <div class="detail-group">
-                  <h6 class="detail-header">Rental Transaction Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Transaction ID:</div>
-                    <div class="detail-value">{{ selectedTransaction.id }}</div>
+                <div class="detail-group border rounded p-3">
+                  <h6 class="detail-header border-bottom pb-2 text-success">
+                    <i class="fas fa-file-invoice-dollar me-2"></i>Rental Transaction Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Transaction ID:</div>
+                    <div class="detail-value fw-bold">{{ selectedTransaction.id }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Status:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Status:</div>
                     <div class="detail-value">
                       <span class="badge" [ngClass]="getStatusBadgeClass(selectedTransaction.status)">
                         {{ selectedTransaction.status }}
                       </span>
                     </div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Monthly Rent:</div>
-                    <div class="detail-value">{{ formatCurrency(selectedTransaction.monthlyRent) }}</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Monthly Rent:</div>
+                    <div class="detail-value fw-bold fs-5">{{ formatCurrency(selectedTransaction.monthlyRent) }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Deposit:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Deposit:</div>
                     <div class="detail-value">{{ formatCurrency(selectedTransaction.deposit) }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Start Date:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Lease Duration:</div>
+                    <div class="detail-value">
+                      End Date: {{ formatDate(selectedTransaction.endDate) }} - Start Date: {{ formatDate(selectedTransaction.startDate) }}
+                    </div>
+                  </div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Start Date:</div>
                     <div class="detail-value">{{ formatDate(selectedTransaction.startDate) }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">End Date:</div>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">End Date:</div>
                     <div class="detail-value">{{ formatDate(selectedTransaction.endDate) }}</div>
                   </div>
-                  <div class="detail-item">
-                    <div class="detail-label">Created Date:</div>
+                  <div class="detail-item py-2">
+                    <div class="detail-label text-muted">Created Date:</div>
                     <div class="detail-value">{{ formatDate(selectedTransaction.createdAt) }}</div>
                   </div>
                 </div>
               </div>
               <div class="col-md-6">
-                <div class="detail-group">
-                  <h6 class="detail-header">Property Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Listing ID:</div>
+                <div class="detail-group border rounded p-3 mb-3">
+                  <h6 class="detail-header border-bottom pb-2 text-success">
+                    <i class="fas fa-home me-2"></i>Property Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Listing ID:</div>
                     <div class="detail-value">{{ selectedTransaction.listingId }}</div>
                   </div>
-                </div>
-                
-                <div class="detail-group mt-4">
-                  <h6 class="detail-header">Customer Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Renter ID:</div>
-                    <div class="detail-value">{{ selectedTransaction.renterId }}</div>
+                  <div class="detail-item py-2">
+                    <div class="detail-label text-muted">Property Title:</div>
+                    <div class="detail-value">{{ selectedTransaction.propertyTitle || 'N/A' }}</div>
                   </div>
                 </div>
                 
-                <div class="detail-group mt-4">
-                  <h6 class="detail-header">Agent Information</h6>
-                  <div class="detail-item">
-                    <div class="detail-label">Agent ID:</div>
-                    <div class="detail-value">{{ selectedTransaction.agentId }}</div>
+                <div class="detail-group border rounded p-3 mb-3">
+                  <h6 class="detail-header border-bottom pb-2 text-success">
+                    <i class="fas fa-user me-2"></i>Renter Information
+                  </h6>
+                  <div class="detail-item py-2 border-bottom">
+                    <div class="detail-label text-muted">Renter ID:</div>
+                    <div class="detail-value">{{ selectedTransaction.renterId }}</div>
+                  </div>
+                  <div class="detail-item py-2">
+                    <div class="detail-label text-muted">Renter Name:</div>
+                    <div class="detail-value">{{ selectedTransaction.renterName || 'N/A' }}</div>
                   </div>
                 </div>
               </div>
             </div>
+            
+            <div class="detail-group border rounded p-3 mt-2" *ngIf="selectedTransaction.notes">
+              <h6 class="detail-header border-bottom pb-2" [ngClass]="{'text-success': isRentalTransaction, 'text-primary': !isRentalTransaction}">
+                <i class="fas fa-sticky-note me-2"></i>Notes
+              </h6>
+              <div class="detail-item py-2">
+                <div class="notes-content">{{ selectedTransaction.notes }}</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="modal-footer">
+        <div class="modal-footer" [ngClass]="{'bg-primary-subtle': !isRentalTransaction, 'bg-success-subtle': isRentalTransaction}">
           <button type="button" class="btn btn-secondary" (click)="closeTransactionModal()">Close</button>
           <!-- Status buttons for sales transactions -->
           <ng-container *ngIf="selectedTransaction && !isRentalTransaction">
             <button *ngIf="selectedTransaction.transactionStatus !== 'COMPLETED'" type="button" class="btn btn-success" (click)="updateTransactionStatus(selectedTransaction, 'COMPLETED')">Mark as Completed</button>
-            <button *ngIf="selectedTransaction.transactionStatus !== 'CANCELLED'" type="button" class="btn btn-danger" (click)="updateTransactionStatus(selectedTransaction, 'CANCELLED')">Mark as Cancelled</button>
           </ng-container>
           
           <!-- Status buttons for rental transactions -->
           <ng-container *ngIf="selectedTransaction && isRentalTransaction">
-            <button *ngIf="selectedTransaction.status === 'PENDING'" type="button" class="btn btn-success" (click)="updateTransactionStatus(selectedTransaction, 'APPROVED')">Approve</button>
-            <button *ngIf="selectedTransaction.status === 'PENDING'" type="button" class="btn btn-danger" (click)="updateTransactionStatus(selectedTransaction, 'REJECTED')">Reject</button>
-            <button *ngIf="selectedTransaction.status === 'APPROVED'" type="button" class="btn btn-primary" (click)="updateTransactionStatus(selectedTransaction, 'COMPLETED')">Mark as Completed</button>
-            <button *ngIf="selectedTransaction.status !== 'CANCELLED' && selectedTransaction.status !== 'REJECTED'" type="button" class="btn btn-danger" (click)="updateTransactionStatus(selectedTransaction, 'CANCELLED')">Cancel Rental</button>
+            <button *ngIf="selectedTransaction.status === 'PENDING'" type="button" class="btn btn-success" (click)="updateTransactionStatus(selectedTransaction, 'COMPLETED')">Mark as Completed</button>
           </ng-container>
         </div>
       </div>

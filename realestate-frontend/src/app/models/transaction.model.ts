@@ -68,6 +68,8 @@ export interface Transaction {
   startDate?: string;
   endDate?: string;
   commissionFee?: number;
+  monthlyRent?: number;
+  deposit?: number;
 }
 
 // Sales Transaction API interfaces

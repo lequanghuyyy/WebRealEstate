@@ -35,10 +35,8 @@
               <option value="all">All Roles</option>
               <option value="ADMIN">Admin</option>
               <option value="AGENT">Agent</option>
-              <option value="BUYER">Buyer</option>
-              <option value="RENTER">Renter</option>
               <option value="BUYER & RENTER">Buyer & Renter</option>
-              <option value="USER">User</option>
+      
             </select>
           </div>
         </div>
@@ -80,7 +78,7 @@
                   <td>
                     <div class="user-info">
                       <div class="user-avatar">
-                        <img [src]="user.photo || user.profileImage || 'assets/images/default-avatar.jpg'" [alt]="user.name">
+                        <span class="user-initials">{{ getInitials(user.name) }}</span>
                       </div>
                       <div class="user-name">{{ user.name }}</div>
                     </div>
@@ -129,7 +127,9 @@
             <div class="row">
               <div class="col-md-4">
                 <div class="profile-image">
-                  <img [src]="selectedUser.photo || selectedUser.profileImage || 'assets/images/default-avatar.jpg'" [alt]="selectedUser.name" class="img-fluid rounded">
+                  <div class="user-avatar-large">
+                    <span class="user-initials">{{ getInitials(selectedUser.name) }}</span>
+                  </div>
                 </div>
                 <div class="profile-info">
                   <div class="profile-name">{{ selectedUser.name }}</div>

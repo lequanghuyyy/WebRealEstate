@@ -139,7 +139,7 @@
               </div>
               
               <div class="col-md-12 text-end">
-                <button class="btn btn-outline-secondary" (click)="resetFilters()">
+                <button class="btn btn-outline-secondary me-2" (click)="resetFilters()">
                   <i class="fas fa-undo me-2"></i> Reset Filters
                 </button>
               </div>
@@ -204,6 +204,11 @@
                     <td>{{ transaction.id }}</td>
                     <td class="property-cell">
                       <div class="property-info d-flex align-items-center">
+                        <div class="property-image-container me-2" *ngIf="transaction.property.image || transaction.property.mainURL">
+                          <img [src]="transaction.property.image || transaction.property.mainURL || 'assets/images/property-placeholder.jpg'" 
+                               alt="Property image" 
+                               class="property-thumbnail">
+                        </div>
                         <span>{{ transaction.property.title }}</span>
                       </div>
                     </td>
@@ -216,12 +221,12 @@
                     <td class="text-end">{{ getFormattedCurrency(transaction.amount) }}</td>
                     <td>
                       <span class="badge rounded-pill" [ngClass]="{
-                        'bg-success': transaction.status === 'completed',
-                        'bg-warning text-dark': transaction.status === 'pending',
-                        'bg-danger': transaction.status === 'cancelled'
+                        'status-completed': transaction.status === 'COMPLETED',
+                        'status-pending': transaction.status === 'PENDING',
+                        'status-cancelled': transaction.status === 'CANCELLED'
                       }">
-                        {{ transaction.status === 'completed' ? 'Completed' : 
-                          transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                        {{ transaction.status === 'COMPLETED' ? 'Completed' : 
+                          transaction.status === 'PENDING' ? 'Pending' : 'Cancelled' }}
                       </span>
                     </td>
                     <td>
@@ -233,15 +238,15 @@
                           <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success me-1" title="Process Payment" (click)="processPayment(transaction)" 
-                          *ngIf="transaction.paymentStatus !== 'paid' && transaction.status !== 'completed' && transaction.status !== 'cancelled'">
+                          *ngIf="transaction.paymentStatus !== 'paid' && transaction.status !== 'COMPLETED' && transaction.status !== 'CANCELLED'">
                           <i class="fas fa-credit-card"></i>
                         </button>
                         <button class="btn btn-sm btn-success me-1" title="Complete Transaction" (click)="completeTransaction(transaction)" 
-                          *ngIf="transaction.status === 'pending'">
+                          *ngIf="transaction.status === 'PENDING'">
                           <i class="fas fa-check"></i>
                         </button>
                         <button class="btn btn-sm btn-danger" title="Cancel Transaction" (click)="cancelTransaction(transaction)" 
-                          *ngIf="transaction.status === 'pending'">
+                          *ngIf="transaction.status === 'PENDING'">
                           <i class="fas fa-times"></i>
                         </button>
                         <span *ngIf="transaction.isProcessing" class="ms-2">
@@ -318,6 +323,11 @@
                     <td>{{ transaction.id }}</td>
                     <td class="property-cell">
                       <div class="property-info d-flex align-items-center">
+                        <div class="property-image-container me-2" *ngIf="transaction.property.image || transaction.property.mainURL">
+                          <img [src]="transaction.property.image || transaction.property.mainURL || 'assets/images/property-placeholder.jpg'" 
+                               alt="Property image" 
+                               class="property-thumbnail">
+                        </div>
                         <span>{{ transaction.property.title }}</span>
                       </div>
                     </td>
@@ -337,12 +347,12 @@
                     </td>
                     <td>
                       <span class="badge rounded-pill" [ngClass]="{
-                        'bg-success': transaction.status === 'completed',
-                        'bg-warning text-dark': transaction.status === 'pending',
-                        'bg-danger': transaction.status === 'cancelled'
+                        'status-completed': transaction.status === 'COMPLETED',
+                        'status-pending': transaction.status === 'PENDING',
+                        'status-cancelled': transaction.status === 'CANCELLED'
                       }">
-                        {{ transaction.status === 'completed' ? 'Completed' : 
-                          transaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                        {{ transaction.status === 'COMPLETED' ? 'Completed' : 
+                          transaction.status === 'PENDING' ? 'Pending' : 'Cancelled' }}
                       </span>
                     </td>
                     <td>
@@ -354,15 +364,15 @@
                           <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm btn-outline-success me-1" title="Process Payment" (click)="processPayment(transaction)" 
-                          *ngIf="transaction.paymentStatus !== 'paid' && transaction.status !== 'completed' && transaction.status !== 'cancelled'">
+                          *ngIf="transaction.paymentStatus !== 'paid' && transaction.status !== 'COMPLETED' && transaction.status !== 'CANCELLED'">
                           <i class="fas fa-credit-card"></i>
                         </button>
                         <button class="btn btn-sm btn-success me-1" title="Complete Transaction" (click)="completeTransaction(transaction)" 
-                          *ngIf="transaction.status === 'pending'">
+                          *ngIf="transaction.status === 'PENDING'">
                           <i class="fas fa-check"></i>
                         </button>
                         <button class="btn btn-sm btn-danger" title="Cancel Transaction" (click)="cancelTransaction(transaction)" 
-                          *ngIf="transaction.status === 'pending'">
+                          *ngIf="transaction.status === 'PENDING'">
                           <i class="fas fa-times"></i>
                         </button>
                         <span *ngIf="transaction.isProcessing" class="ms-2">
@@ -473,9 +483,7 @@
                 </div>
                 <div class="col-md-6">
                   <ul class="list-group list-group-flush">
-                    <li class="list-group-item">
-                      <strong>Payment Method:</strong> {{ selectedTransaction.paymentMethod || 'Bank Transfer' }}
-                    </li>
+                    
                     <li class="list-group-item">
                       <strong>Payment Status:</strong> 
                       <span class="badge rounded-pill" [ngClass]="{
@@ -490,12 +498,12 @@
                     <li class="list-group-item">
                       <strong>Transaction Status:</strong>
                       <span class="badge rounded-pill" [ngClass]="{
-                        'bg-success': selectedTransaction.status === 'completed',
-                        'bg-warning text-dark': selectedTransaction.status === 'pending',
-                        'bg-danger': selectedTransaction.status === 'cancelled'
+                        'bg-success': selectedTransaction.status === 'COMPLETED',
+                        'bg-warning text-dark': selectedTransaction.status === 'PENDING',
+                        'bg-danger': selectedTransaction.status === 'CANCELLED'
                       }">
-                        {{ selectedTransaction.status === 'completed' ? 'Completed' : 
-                           selectedTransaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                        {{ selectedTransaction.status === 'COMPLETED' ? 'Completed' : 
+                           selectedTransaction.status === 'PENDING' ? 'Pending' : 'Cancelled' }}
                       </span>
                     </li>
                   </ul>
@@ -533,9 +541,6 @@
                 <div class="col-md-6">
                   <ul class="list-group list-group-flush">
                     <li class="list-group-item">
-                      <strong>Payment Method:</strong> {{ selectedTransaction.paymentMethod || 'Bank Transfer' }}
-                    </li>
-                    <li class="list-group-item">
                       <strong>Payment Status:</strong> 
                       <span class="badge rounded-pill" [ngClass]="{
                         'bg-success': selectedTransaction.paymentStatus === 'paid',
@@ -549,12 +554,12 @@
                     <li class="list-group-item">
                       <strong>Transaction Status:</strong>
                       <span class="badge rounded-pill" [ngClass]="{
-                        'bg-success': selectedTransaction.status === 'completed',
-                        'bg-warning text-dark': selectedTransaction.status === 'pending',
-                        'bg-danger': selectedTransaction.status === 'cancelled'
+                        'bg-success': selectedTransaction.status === 'COMPLETED',
+                        'bg-warning text-dark': selectedTransaction.status === 'PENDING',
+                        'bg-danger': selectedTransaction.status === 'CANCELLED'
                       }">
-                        {{ selectedTransaction.status === 'completed' ? 'Completed' : 
-                           selectedTransaction.status === 'pending' ? 'Pending' : 'Cancelled' }}
+                        {{ selectedTransaction.status === 'COMPLETED' ? 'Completed' : 
+                           selectedTransaction.status === 'PENDING' ? 'Pending' : 'Cancelled' }}
                       </span>
                     </li>
                   </ul>
@@ -589,6 +594,7 @@
 <app-transaction-dialog
   [(visible)]="showTransactionDialog"
   [transaction]="selectedTransaction"
+  [editMode]="editMode"
   (save)="handleSaveTransaction($event)">
 </app-transaction-dialog>
 
@@ -606,7 +612,8 @@
           [transactionId]="currentTransactionForPayment.id?.toString() || ''"
           [amount]="currentTransactionForPayment.amount"
           [transactionStyle]="currentTransactionForPayment.type === 'sale' ? TransactionStyle.SALE : TransactionStyle.RENT"
-          [agentId]="agent?.id"
+          [agentId]="currentTransactionForPayment.agentId?.toString() || ''"
+          [buyerId]="currentTransactionForPayment.buyerId?.toString() || ''"
           (paymentComplete)="handlePaymentComplete($event)"
           (paymentCancelled)="handlePaymentCancelled()">
         </app-payment-form>

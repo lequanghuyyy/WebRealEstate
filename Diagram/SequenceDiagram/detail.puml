@@ -1,0 +1,19 @@
+@startuml
+title Sequence Diagram Xem thông tin chi tiết bất động sản
+actor User
+participant UI
+participant PropertyService
+participant Database
+
+User -> UI: Nhấn vào bất động sản trong danh sách
+UI -> PropertyService: Gửi yêu cầu lấy thông tin chi tiết (propertyId)
+PropertyService -> Database: Truy vấn thông tin bất động sản từ bảng `ListingEntity`
+Database --> PropertyService: Trả về thông tin bất động sản
+PropertyService --> UI: Trả về thông tin chi tiết bất động sản
+UI --> User: Hiển thị thông tin chi tiết bất động sản
+
+alt Bất động sản không tồn tại
+    PropertyService --> UI: Trả về lỗi "Bất động sản không tồn tại"
+    UI --> User: Hiển thị thông báo lỗi
+end
+@enduml

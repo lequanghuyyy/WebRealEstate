@@ -1,0 +1,21 @@
+@startuml
+title Sequence Diagram Tìm và Lọc Listing
+
+actor User
+participant UI
+participant ListingService
+participant Database
+
+User -> UI: Nhập từ khóa và bộ lọc (keyword, city, price range, etc.)
+UI -> ListingService: Gửi yêu cầu tìm kiếm (ListingSearchRequest)
+ListingService -> Database: Truy vấn danh sách bất động sản theo tiêu chí
+Database --> ListingService: Trả về danh sách bất động sản phù hợp
+ListingService --> UI: Trả về danh sách kết quả tìm kiếm
+UI --> User: Hiển thị danh sách bất động sản
+
+alt Không có kết quả
+    ListingService --> UI: Trả về danh sách rỗng
+    UI --> User: Hiển thị thông báo "Không tìm thấy bất động sản phù hợp"
+end
+
+@enduml

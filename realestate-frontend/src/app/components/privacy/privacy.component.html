@@ -16,60 +16,103 @@
         <p>At RealEstatePro, we value your privacy and are committed to protecting your personal information. This Privacy Policy explains how we collect, use, and safeguard your data when you use our website and services.</p>
       </div>
 
-      <!-- Table of Contents -->
-      <div class="toc-container">
-        <h3>Table of Contents</h3>
-        <ul class="toc-list">
-          <li *ngFor="let category of privacyCategories; let i = index">
-            <a href="#section-{{i+1}}">{{i+1}}. {{ category.title }}</a>
-          </li>
-          <li><a href="#contact">{{privacyCategories.length+1}}. Contact Us</a></li>
-        </ul>
-      </div>
-
-      <!-- Privacy Sections -->
-      <div class="privacy-sections">
-        <div class="privacy-section" *ngFor="let category of privacyCategories; let i = index" [id]="'section-' + (i+1)">
-          <div class="section-header">
-            <span class="section-number">{{i+1}}</span>
-            <h2>{{ category.title }}</h2>
-          </div>
-          <div class="section-content">
-            <ul>
-              <li *ngFor="let item of category.content">{{ item }}</li>
-            </ul>
+      <!-- Two Column Layout -->
+      <div class="row">
+        <!-- Table of Contents - Left Sidebar -->
+        <div class="col-lg-3">
+          <div class="toc-container sticky-top" style="top: 20px;">
+            <div class="card shadow-sm">
+              <div class="card-header bg-primary text-white">
+                <h3 class="mb-0 fs-5">Table of Contents</h3>
+              </div>
+              <div class="card-body">
+                <ul class="toc-list list-unstyled">
+                  <li *ngFor="let category of privacyCategories; let i = index" class="mb-2">
+                    <a href="#section-{{i+1}}" class="text-decoration-none">
+                      <i class="fas fa-chevron-right me-2 text-primary"></i>
+                      {{i+1}}. {{ category.title }}
+                    </a>
+                  </li>
+                  <li class="mb-2">
+                    <a href="#contact" class="text-decoration-none">
+                      <i class="fas fa-chevron-right me-2 text-primary"></i>
+                      {{privacyCategories.length+1}}. Contact Us
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- Contact Section -->
-        <div class="privacy-section" id="contact">
-          <div class="section-header">
-            <span class="section-number">{{privacyCategories.length+1}}</span>
-            <h2>Contact Us</h2>
-          </div>
-          <div class="section-content contact-info">
-            <p>If you have any questions about our Privacy Policy, please contact us at:</p>
-            <div class="contact-details">
-              <div class="contact-item">
-                <i class="fas fa-envelope"></i>
-                <span>Email: privacy&#64;realestatepro.com</span>
+        <!-- Main Content - Right Column -->
+        <div class="col-lg-9">
+          <!-- Privacy Sections -->
+          <div class="privacy-sections">
+            <div class="privacy-section card shadow-sm mb-4" *ngFor="let category of privacyCategories; let i = index" [id]="'section-' + (i+1)">
+              <div class="card-header bg-light">
+                <div class="section-header d-flex align-items-center">
+                  <span class="section-number badge bg-primary rounded-circle me-3">{{i+1}}</span>
+                  <h2 class="mb-0 fs-4">{{ category.title }}</h2>
+                </div>
               </div>
-              <div class="contact-item">
-                <i class="fas fa-phone"></i>
-                <span>Phone: (555) 123-4567</span>
-              </div>
-              <div class="contact-item">
-                <i class="fas fa-map-marker-alt"></i>
-                <span>Address: 123 Property Lane, Real Estate City, RE 12345</span>
+              <div class="card-body">
+                <div class="section-content">
+                  <ul class="list-group list-group-flush">
+                    <li class="list-group-item" *ngFor="let item of category.content">
+                      <i class="fas fa-check-circle text-success me-2"></i>
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
-            <div class="privacy-cta">
-              <a routerLink="/contact" class="btn-contact">Contact Us</a>
-              <a routerLink="/terms" class="btn-terms">Terms & Conditions</a>
+
+            <!-- Contact Section -->
+            <div class="privacy-section card shadow-sm mb-4" id="contact">
+              <div class="card-header bg-light">
+                <div class="section-header d-flex align-items-center">
+                  <span class="section-number badge bg-primary rounded-circle me-3">{{privacyCategories.length+1}}</span>
+                  <h2 class="mb-0 fs-4">Contact Us</h2>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="section-content contact-info">
+                  <p>If you have any questions about our Privacy Policy, please contact us at:</p>
+                  <div class="contact-details">
+                    <div class="contact-item d-flex align-items-center mb-3">
+                      <div class="contact-icon bg-primary text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-envelope"></i>
+                      </div>
+                      <span>Email: privacy&#64;realestatepro.com</span>
+                    </div>
+                    <div class="contact-item d-flex align-items-center mb-3">
+                      <div class="contact-icon bg-primary text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-phone"></i>
+                      </div>
+                      <span>Phone: (555) 123-4567</span>
+                    </div>
+                    <div class="contact-item d-flex align-items-center mb-4">
+                      <div class="contact-icon bg-primary text-white rounded-circle p-3 me-3">
+                        <i class="fas fa-map-marker-alt"></i>
+                      </div>
+                      <span>Address: 123 Property Lane, Real Estate City, RE 12345</span>
+                    </div>
+                  </div>
+                  <div class="privacy-cta d-flex gap-3 mt-4">
+                    <a routerLink="/contact" class="btn btn-primary">
+                      <i class="fas fa-envelope me-2"></i>Contact Us
+                    </a>
+                    <a routerLink="/terms" class="btn btn-outline-primary">
+                      <i class="fas fa-file-contract me-2"></i>Terms & Conditions
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div> 
+</div>

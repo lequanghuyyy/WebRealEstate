@@ -1,0 +1,27 @@
+@startuml SalesService_UseCase
+left to right direction
+actor Buyer
+actor Agent
+actor Admin
+
+package "Sales Service" {
+  usecase SendPurchaseRequest   as "Gửi yêu cầu mua"
+  usecase ViewRequests          as "Xem yêu cầu mua"
+  usecase ApproveRejectRequest  as "Duyệt/từ chối yêu cầu"
+  usecase CreateTransaction     as "Tạo giao dịch mua"
+  usecase ViewPurchaseHistory   as "Xem lịch sử mua"
+}
+
+Buyer -- SendPurchaseRequest
+Buyer -- ViewPurchaseHistory
+
+Agent -- ViewRequests
+Agent -- ApproveRejectRequest
+Agent -- CreateTransaction
+
+Admin -- SendPurchaseRequest
+Admin -- ViewRequests
+Admin -- ApproveRejectRequest
+Admin -- CreateTransaction
+Admin -- ViewPurchaseHistory
+@enduml

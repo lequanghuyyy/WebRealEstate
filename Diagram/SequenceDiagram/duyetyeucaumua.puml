@@ -1,0 +1,40 @@
+@startuml
+title Sequence Diagram Duyệt/Từ chối yêu cầu mua
+actor Agent
+participant UI
+participant AuthService
+participant PurchaseService
+participant Database
+participant NotificationService
+
+Agent -> UI: Nhấn nút "Duyệt" hoặc "Từ chối" trên yêu cầu mua
+UI -> AuthService: Kiểm tra trạng thái đăng nhập
+AuthService --> UI: Trả về trạng thái đăng nhập (đã đăng nhập)
+
+alt Đã đăng nhập
+    UI -> PurchaseService: Gửi yêu cầu cập nhật trạng thái yêu cầu mua (requestId, status)
+    PurchaseService -> Database: Truy vấn yêu cầu mua từ bảng `OfferEntity`
+    Database --> PurchaseService: Trả về thông tin yêu cầu mua
+
+    alt Yêu cầu tồn tại
+        PurchaseService -> Database: Cập nhật trạng thái yêu cầu (status = APPROVED/REJECTED)
+        Database --> PurchaseService: Trả về kết quả cập nhật thành công
+
+        PurchaseService -> NotificationService: Gửi thông báo đến người mua về trạng thái yêu cầu
+        NotificationService --> Buyer: Gửi thông báo "Yêu cầu đã được duyệt/từ chối"
+
+        PurchaseService --> UI: Trả về thông báo thành công
+        UI --> Agent: Hiển thị thông báo "Yêu cầu đã được duyệt/từ chối"
+    else Yêu cầu không tồn tại
+        PurchaseService --> UI: Trả về lỗi "Yêu cầu không tồn tại"
+        UI --> Agent: Hiển thị thông báo lỗi
+    end
+else Chưa đăng nhập
+    UI --> Agent: Hiển thị thông báo "Vui lòng đăng nhập để thực hiện hành động này"
+end
+
+alt Lỗi trong quá trình cập nhật
+    PurchaseService --> UI: Trả về lỗi "Không thể cập nhật trạng thái yêu cầu"
+    UI --> Agent: Hiển thị thông báo lỗi
+end
+@enduml

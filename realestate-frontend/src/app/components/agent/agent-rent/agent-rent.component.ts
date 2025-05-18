@@ -6,7 +6,7 @@ import { AuthService } from '../../../services/auth.service';
 import { ListingService } from '../../../services/listing.service';
 import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { TransactionService } from '../../../services/transaction.service';
-import { DefaultImageDirective } from '../../../directives/default-image.directive';
+import { DefaultImageDirective } from '../../../utils/default-image.directive';
 import { 
   ListingResponse, 
   ListingType, 
@@ -39,19 +39,10 @@ export class AgentRentComponent implements OnInit {
   // Current agent
   agentId: string | null = null;
   
-  // Active tab
-  activeTab: 'listings' | 'requests' | 'rentals' = 'listings';
-  
   // Listing stats
   activeListings: number = 0;
   pendingListings: number = 0;
   rentedListings: number = 0;
-  
-  // Rental requests stats
-  pendingRequests: number = 0;
-  
-  // Active rentals stats
-  activeRentals: number = 0;
   
   // Filter options
   searchQuery: string = '';
@@ -63,14 +54,6 @@ export class AgentRentComponent implements OnInit {
   pageSize: number = 10;
   totalItems: number = 0;
   totalPages: number = 0;
-  
-  // Rental requests
-  rentalRequests: any[] = [];
-  filteredRequests: any[] = [];
-  
-  // Active rentals
-  activeRentalsList: any[] = [];
-  filteredRentals: any[] = [];
 
   // Rental transactions
   rentalTransactions: RentalTransactionResponse[] = [];
@@ -99,8 +82,6 @@ export class AgentRentComponent implements OnInit {
     if (user) {
       this.agentId = user.id;
       this.loadRentalListings();
-      this.loadRentalRequests();
-      this.loadActiveRentals();
       this.loadRentalTransactions();
     } else {
       this.error = 'Unable to retrieve agent information.';
@@ -175,48 +156,11 @@ export class AgentRentComponent implements OnInit {
     });
   }
   
-  loadRentalRequests(): void {
-    if (this.agentId) {
-      this.listingService.getRentalRequests(this.agentId).subscribe({
-        next: (requests) => {
-          this.rentalRequests = requests;
-          this.filteredRequests = [...requests];
-          this.pendingRequests = requests.filter(req => req.status === 'PENDING').length;
-          
-          // Load images for each request listing
-          this.loadRequestListingImages();
-        },
-        error: (err: any) => {
-          console.error('Error loading rental requests:', err);
-        }
-      });
-    }
-  }
-  
-  loadActiveRentals(): void {
-    if (this.agentId) {
-      this.listingService.getActiveRentals(this.agentId).subscribe({
-        next: (rentals) => {
-          this.activeRentalsList = rentals;
-          this.filteredRentals = [...rentals];
-          this.activeRentals = rentals.length;
-          
-          // Load images for each active rental listing
-          this.loadRentalListingImages();
-        },
-        error: (err: any) => {
-          console.error('Error loading active rentals:', err);
-        }
-      });
-    }
-  }
-
   loadRentalTransactions(): void {
     if (this.agentId) {
       this.transactionService.getRentalTransactionsByAgent(this.agentId).subscribe({
         next: (transactions) => {
           this.rentalTransactions = transactions;
-          console.log('Loaded rental transactions:', transactions);
         },
         error: (err) => {
           console.error('Error loading rental transactions:', err);
@@ -291,10 +235,6 @@ export class AgentRentComponent implements OnInit {
       l.status === ListingStatus.RENTED || 
       l.listingStatus === ListingStatus.RENTED
     ).length;
-  }
-  
-  changeTab(tab: 'listings' | 'requests' | 'rentals'): void {
-    this.activeTab = tab;
   }
   
   changePage(page: number): void {
@@ -405,7 +345,7 @@ export class AgentRentComponent implements OnInit {
     if (existingTransaction) {
       // Update the transaction status if needed
       if (existingTransaction.status !== RentalStatus.APPROVED) {
-        this.updateRentalTransactionStatus(existingTransaction.id, RentalStatus.APPROVED);
+        this.updateRentalTransactionStatus(existingTransaction.id, ListingStatus.RENTED);
       }
       return;
     }
@@ -423,7 +363,7 @@ export class AgentRentComponent implements OnInit {
       listingId: listingId,
       renterId: renterId,
       agentId: this.agentId,
-      status: RentalStatus.APPROVED,
+      status: ListingStatus.RENTED,
       monthlyRent: listing.price,
       deposit: listing.price * 2, // Example: 2 months deposit
       startDate: new Date().toISOString().split('T')[0], // Today
@@ -498,154 +438,6 @@ export class AgentRentComponent implements OnInit {
     }
   }
   
-  approveRentalRequest(requestId: string): void {
-    this.listingService.approveRentalRequest(requestId).subscribe({
-      next: (response) => {
-        this.toastr.success('Rental request approved');
-        this.loadRentalRequests();
-        this.loadActiveRentals();
-
-        // Create or update rental transaction
-        if (response && response.listingId) {
-          this.createRentalTransaction(response.listingId);
-        }
-      },
-      error: (err: any) => {
-        console.error('Error approving rental request:', err);
-        this.toastr.error('Failed to approve rental request');
-      }
-    });
-  }
-  
-  rejectRentalRequest(requestId: string): void {
-    this.listingService.rejectRentalRequest(requestId).subscribe({
-      next: (response) => {
-        this.toastr.success('Rental request rejected');
-        this.loadRentalRequests();
-
-        // Update transaction status if exists
-        if (response && response.listingId) {
-          const transaction = this.rentalTransactions.find(t => t.listingId === response.listingId);
-          if (transaction) {
-            this.updateRentalTransactionStatus(transaction.id, RentalStatus.REJECTED);
-          }
-        }
-      },
-      error: (err: any) => {
-        console.error('Error rejecting rental request:', err);
-        this.toastr.error('Failed to reject rental request');
-      }
-    });
-  }
-  
-  completeRental(rentalId: string): void {
-    this.listingService.completeRental(rentalId).subscribe({
-      next: (response) => {
-        this.toastr.success('Rental completed');
-        this.loadActiveRentals();
-
-        // Update transaction status
-        if (response && response.listingId) {
-          const transaction = this.rentalTransactions.find(t => t.listingId === response.listingId);
-          if (transaction) {
-            this.updateRentalTransactionStatus(transaction.id, RentalStatus.COMPLETED);
-          }
-        }
-      },
-      error: (err: any) => {
-        console.error('Error completing rental:', err);
-        this.toastr.error('Failed to complete rental');
-      }
-    });
-  }
-  
-  cancelRental(rentalId: string): void {
-    this.listingService.cancelRental(rentalId).subscribe({
-      next: (response) => {
-        this.toastr.success('Rental cancelled');
-        this.loadActiveRentals();
-
-        // Update transaction status
-        if (response && response.listingId) {
-          const transaction = this.rentalTransactions.find(t => t.listingId === response.listingId);
-          if (transaction) {
-            this.updateRentalTransactionStatus(transaction.id, RentalStatus.CANCELLED);
-          }
-        }
-      },
-      error: (err: any) => {
-        console.error('Error cancelling rental:', err);
-        this.toastr.error('Failed to cancel rental');
-      }
-    });
-  }
-
-  loadRequestListingImages(): void {
-    this.rentalRequests.forEach(request => {
-      if (request.listing) {
-        // Nếu listing có sẵn mainURL thì sử dụng luôn
-        if (request.listing.mainURL) {
-          request.listing.image = request.listing.mainURL;
-        }
-        // Nếu không có mainURL nhưng có images array
-        else if (request.listing.images && request.listing.images.length > 0) {
-          // Kiểm tra xem images là mảng chuỗi hay mảng object
-          if (typeof request.listing.images[0] === 'string') {
-            request.listing.image = request.listing.images[0];
-          } else if (request.listing.images[0].hasOwnProperty('imageUrl')) {
-            request.listing.image = request.listing.images[0].imageUrl;
-          }
-        }
-        // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
-        else if (request.listing.id && !request.listing.image) {
-          this.listingService.getMainImageUrl(request.listing.id).subscribe({
-            next: (imageUrl: string) => {
-              if (imageUrl) {
-                request.listing.image = imageUrl;
-              }
-            },
-            error: (err) => {
-              console.error(`Error loading image for request listing ${request.listing.id}:`, err);
-            }
-          });
-        }
-      }
-    });
-  }
-  
-  loadRentalListingImages(): void {
-    this.activeRentalsList.forEach(rental => {
-      if (rental.listing) {
-        // Nếu listing có sẵn mainURL thì sử dụng luôn
-        if (rental.listing.mainURL) {
-          rental.listing.image = rental.listing.mainURL;
-        }
-        // Nếu không có mainURL nhưng có images array
-        else if (rental.listing.images && rental.listing.images.length > 0) {
-          // Kiểm tra xem images là mảng chuỗi hay mảng object
-          if (typeof rental.listing.images[0] === 'string') {
-            rental.listing.image = rental.listing.images[0];
-          } else if (rental.listing.images[0].hasOwnProperty('imageUrl')) {
-            rental.listing.image = rental.listing.images[0].imageUrl;
-          }
-        }
-        // Trường hợp không có cả mainURL và images, gọi API để lấy ảnh
-        else if (rental.listing.id && !rental.listing.image) {
-          this.listingService.getMainImageUrl(rental.listing.id).subscribe({
-            next: (imageUrl: string) => {
-              if (imageUrl) {
-                rental.listing.image = imageUrl;
-              }
-            },
-            error: (err) => {
-              console.error(`Error loading image for rental listing ${rental.listing.id}:`, err);
-            }
-          });
-        }
-      }
-    });
-  }
-
   viewOffers(listingId: string): void {
     // Navigate to property offers component with query parameter
     this.router.navigate(['/agent/property-offers'], { 

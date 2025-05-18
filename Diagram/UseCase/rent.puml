@@ -1,0 +1,27 @@
+@startuml RentalService_UseCase
+left to right direction
+actor Renter
+actor Agent
+actor Admin
+
+package "Rental Service" {
+  usecase SendRentalRequest     as "Gửi yêu cầu thuê"
+  usecase ViewRentalRequests    as "Xem yêu cầu thuê"
+  usecase ApproveRejectRental   as "Duyệt/từ chối thuê"
+  usecase CreateRentalTransaction as "Tạo giao dịch thuê"
+  usecase ViewRentalHistory     as "Xem lịch sử thuê"
+}
+
+Renter -- SendRentalRequest
+Renter -- ViewRentalHistory
+
+Agent -- ViewRentalRequests
+Agent -- ApproveRejectRental
+Agent -- CreateRentalTransaction
+
+Admin -- SendRentalRequest
+Admin -- ViewRentalRequests
+Admin -- ApproveRejectRental
+Admin -- CreateRentalTransaction
+Admin -- ViewRentalHistory
+@enduml

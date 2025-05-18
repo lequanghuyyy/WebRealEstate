@@ -67,13 +67,7 @@ export class AdminUsersComponent implements OnInit {
               user.role = Role.ADMIN;
             } else if (user.roles.includes(Role.BUYER) && user.roles.includes(Role.RENTER)) {
               user.role = 'BUYER & RENTER';
-            } else if (user.roles.includes(Role.BUYER)) {
-              user.role = Role.BUYER;
-            } else if (user.roles.includes(Role.RENTER)) {
-              user.role = Role.RENTER;
-            } else {
-              user.role = Role.USER;
-            }
+            } 
           }
           return user;
         });
@@ -122,6 +116,20 @@ export class AdminUsersComponent implements OnInit {
     this.filteredUsers = filtered;
   }
 
+  // Get user initials from name
+  getInitials(name: string): string {
+    if (!name) return '??';
+    
+    const nameParts = name.split(' ').filter(part => part.length > 0);
+    if (nameParts.length === 0) return '??';
+    
+    if (nameParts.length === 1) {
+      return nameParts[0].substring(0, 2).toUpperCase();
+    }
+    
+    return (nameParts[0].charAt(0) + nameParts[nameParts.length - 1].charAt(0)).toUpperCase();
+  }
+
   openUserModal(user: User): void {
     this.selectedUser = user;
     this.showUserModal = true;
@@ -148,7 +156,7 @@ export class AdminUsersComponent implements OnInit {
     if (!this.userToDelete) return;
     
     this.isDeleting = true;
-    
+   
     this.adminService.deleteUser(this.userToDelete.id).subscribe({
       next: (response) => {
         // Remove the deleted user from the lists
@@ -175,10 +183,6 @@ export class AdminUsersComponent implements OnInit {
         return 'bg-danger';
       case Role.AGENT:
         return 'bg-warning';
-      case Role.BUYER:
-        return 'bg-primary';
-      case Role.RENTER:
-        return 'bg-info';
       case 'BUYER & RENTER':
         return 'bg-success';
       default:

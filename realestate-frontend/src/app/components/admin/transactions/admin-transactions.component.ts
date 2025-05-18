@@ -9,6 +9,8 @@ import { Transaction, TransactionStatus, RentalStatus,
          PageDto } from '../../../models/transaction.model';
 import { finalize, forkJoin } from 'rxjs';
 import { TransactionService } from '../../../services/transaction.service';
+import { PropertyService } from '../../../services/property.service';
+import { UserService } from '../../../services/user.service';
 
 @Component({
   selector: 'app-admin-transactions',
@@ -44,7 +46,9 @@ export class AdminTransactionsComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private transactionService: TransactionService
+    private transactionService: TransactionService,
+    private propertyService: PropertyService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -210,6 +214,13 @@ export class AdminTransactionsComponent implements OnInit {
         .subscribe({
           next: (rental) => {
             this.selectedTransaction = rental;
+            
+            // Fetch property title using listing ID
+            this.fetchPropertyTitle(rental.listingId);
+            
+            // Fetch renter name using renter ID
+            this.fetchUserName(rental.renterId, 'renter');
+            
             this.showTransactionModal = true;
             this.isLoading = false;
           },
@@ -223,6 +234,13 @@ export class AdminTransactionsComponent implements OnInit {
         .subscribe({
           next: (sale) => {
             this.selectedTransaction = sale;
+            
+            // Fetch property title using listing ID
+            this.fetchPropertyTitle(sale.listingId);
+            
+            // Fetch buyer name using buyer ID
+            this.fetchUserName(sale.buyerId, 'buyer');
+            
             this.showTransactionModal = true;
             this.isLoading = false;
           },
@@ -311,12 +329,12 @@ export class AdminTransactionsComponent implements OnInit {
     switch (status.toUpperCase()) {
       case 'COMPLETED':
       case 'APPROVED':
-        return 'bg-success';
+        return 'bg-status-completed';
       case 'PENDING':
-        return 'bg-warning';
+        return 'bg-status-pending';
       case 'CANCELLED':
       case 'REJECTED':
-        return 'bg-danger';
+        return 'bg-status-cancelled';
       default:
         return 'bg-secondary';
     }
@@ -325,5 +343,64 @@ export class AdminTransactionsComponent implements OnInit {
   getTypeBadgeClass(type: string | undefined): string {
     if (!type) return 'bg-secondary';
     return (type.toLowerCase() === 'sale') ? 'bg-primary' : 'bg-info';
+  }
+
+  // Calculate lease duration in months/years
+  calculateLeaseDuration(startDate?: string, endDate?: string): string {
+    if (!startDate || !endDate) {
+      return 'N/A';
+    }
+    
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    // Calculate the difference in months
+    const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+    
+    if (months < 12) {
+      return `${months} month${months !== 1 ? 's' : ''}`;
+    } else {
+      const years = Math.floor(months / 12);
+      const remainingMonths = months % 12;
+      
+      if (remainingMonths === 0) {
+        return `${years} year${years !== 1 ? 's' : ''}`;
+      } else {
+        return `${years} year${years !== 1 ? 's' : ''} and ${remainingMonths} month${remainingMonths !== 1 ? 's' : ''}`;
+      }
+    }
+  }
+
+  // Method to fetch property title
+  fetchPropertyTitle(listingId: string): void {
+    this.propertyService.getPropertyById(listingId).subscribe({
+      next: (property: any) => {
+        if (this.selectedTransaction) {
+          this.selectedTransaction.propertyTitle = property.title;
+        }
+      },
+      error: (err: any) => {
+        console.error('Error fetching property:', err);
+      }
+    });
+  }
+
+  // Method to fetch user name
+  fetchUserName(userId: string, userType: 'buyer' | 'renter'): void {
+    this.userService.getUserById(userId).subscribe({
+      next: (user: any) => {
+        if (this.selectedTransaction) {
+          const fullName = `${user.firstName} ${user.lastName}`;
+          if (userType === 'buyer') {
+            this.selectedTransaction.buyerName = fullName;
+          } else {
+            this.selectedTransaction.renterName = fullName;
+          }
+        }
+      },
+      error: (err: any) => {
+        console.error(`Error fetching ${userType}:`, err);
+      }
+    });
   }
 } 

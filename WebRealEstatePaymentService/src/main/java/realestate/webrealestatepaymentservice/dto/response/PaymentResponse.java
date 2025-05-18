@@ -11,6 +11,7 @@ public class PaymentResponse {
     private String id;
     private String transactionId;
     private String agentId;
+    private String buyerId;
     private BigDecimal amount;
     private String paymentMethod;
     private String paymentStatus;

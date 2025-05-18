@@ -10,6 +10,7 @@ public interface OfferService {
     OfferResponse acceptOffer(String offerId);
     OfferResponse rejectOffer(String offerId);
     Page<OfferResponse> getAllOffers(int page);
+    Page<OfferResponse> getOfferByAgentId(String agentId,int page);
     Page<OfferResponse> getOfferByUserId(String userId, int page);
     void deleteOffer(String offerId);
 }

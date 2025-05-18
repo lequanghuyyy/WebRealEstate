@@ -57,6 +57,12 @@ public class OfferController {
             @PathVariable int page) {
         return ResponseFactory.ok(offerService.getOfferByUserId(userId, page));
     }
+    @GetMapping("/agent/{agentId}/{page}")
+    public ResponseEntity<BaseResponse<Page<OfferResponse>>> getOffersByAgent(
+            @PathVariable String agentId,
+            @PathVariable int page) {
+        return ResponseFactory.ok(offerService.getOfferByAgentId(agentId, page));
+    }
     @DeleteMapping("/{offerId}")
     public ResponseEntity<BaseResponse<Void>> deleteOffer(
             @PathVariable String offerId) {

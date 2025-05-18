@@ -29,7 +29,7 @@ public class OfferAcceptedListener {
         SalesTransactionRequest request = new SalesTransactionRequest();
         request.setListingId(event.getListingId());
         request.setBuyerId(event.getUserId());
-        request.setAgentId(listing.getAgentId());
+        request.setAgentId(event.getAgentId());
 
         if (event.getOfferPrice() != null) {
             request.setAmount(event.getOfferPrice());

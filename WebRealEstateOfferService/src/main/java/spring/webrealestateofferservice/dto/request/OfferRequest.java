@@ -22,6 +22,7 @@ public class OfferRequest {
     @DecimalMin(value = "0.0", inclusive = false)
     private BigDecimal offerPrice;
 
+    private String agentId;
 
     private LocalDate startRentAt;
 

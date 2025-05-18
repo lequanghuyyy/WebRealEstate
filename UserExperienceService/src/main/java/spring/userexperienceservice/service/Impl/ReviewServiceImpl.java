@@ -1,5 +1,6 @@
 package spring.userexperienceservice.service.Impl;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -64,11 +65,9 @@ public class ReviewServiceImpl implements ReviewService {
 
     @Override
     public void deleteReview(String id) {
-        if (!reviewRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Review not found with id: " + id);
-        }
-
-        reviewRepository.deleteById(id);
+        ReviewEntity review = reviewRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Review not found"));
+        reviewRepository.delete(review);
     }
 
     @Override

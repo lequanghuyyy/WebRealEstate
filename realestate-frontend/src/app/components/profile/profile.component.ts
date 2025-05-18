@@ -102,32 +102,30 @@ export class ProfileComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    // Check auth status
     this.checkAuthStatus();
-
-    // If not logged in, redirect to login
     if (!this.isLoggedIn) {
       this.router.navigate(['/login']);
       return;
     }
-
-    // Load user profile data
     this.loadUserProfileFromBackend();
     
-    // Check URL for active tab
     const url = this.router.url;
     if (url.includes('appointments')) {
       this.activeTab = 'appointments';
     } else if (url.includes('favorites')) {
       this.activeTab = 'favorites';
+      this.loadFavoriteProperties();
     } else if (url.includes('saved-searches')) {
       this.activeTab = 'saved-searches';
+      this.loadSavedSearches();
     } else if (url.includes('offers')) {
       this.activeTab = 'offers';
+    } else if (url.includes('reviews')) {
+      this.activeTab = 'reviews';
+      this.loadUserReviews();
     }
   }
   
-  // Load user profile from the backend API
   loadUserProfileFromBackend(): void {
     this.isLoading = true;
     this.errorMessage = null;
@@ -153,7 +151,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       }).subscribe({
         next: (userData) => {
           console.log('User data received from direct API call:', userData);
-          // Extract the user data from the response format
           let userDataObj = userData;
           if (userData.data) {
             userDataObj = userData.data;
@@ -161,7 +158,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
           
           this.user = userDataObj;
           
-          // Ensure the name property is set
           if (this.user) {
             if (!this.user.name && this.user.firstName && this.user.lastName) {
               this.user.name = `${this.user.firstName} ${this.user.lastName}`;
@@ -169,13 +165,11 @@ export class ProfileComponent implements OnInit, OnDestroy {
               this.user.name = this.user.username !== this.user.id ? this.user.username : 'User';
             }
             
-            // Initialize the form with user data
             this.profileForm.name = this.user.name || '';
             this.profileForm.email = this.user.email || '';
             this.profileForm.phone = this.user.phone || '';
             this.profileForm.bio = this.user.bio || '';
             
-            // Update user in AuthService
             this.authService.updateCurrentUser(this.user);
           }
           
@@ -238,7 +232,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
     }
   }
   
-  // Cập nhật phương thức loadFavoriteProperties để sử dụng phân trang
   loadFavoriteProperties(page: number = 0): void {
     if (!this.user) {
       this.user = {} as UserResponse;
@@ -250,7 +243,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Sử dụng AuthService để lấy userId từ token
     const userId = this.authService.getUserIdFromToken(token);
     console.log('Loading favorites for user:', userId);
     
@@ -264,14 +256,12 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.favoritesError = null;
     this.favoriteCurrentPage = page;
     
-    // Sử dụng phương thức mới có phân trang
     this.favoriteService.getFavoritesByUserPaginated(this.user.id, page).subscribe({
       next: (response) => {
         console.log('Favorites response with pagination:', response);
         
         if (response.data && response.data.content) {
           const favorites = response.data.content || [];
-          // Lưu thông tin phân trang
           this.favoriteTotalPages = response.data.totalPages;
           this.favoriteTotalElements = response.data.totalElements;
           this.favoriteCurrentPage = response.data.number;
@@ -279,7 +269,6 @@ export class ProfileComponent implements OnInit, OnDestroy {
           console.log(`Loaded page ${this.favoriteCurrentPage + 1} of ${this.favoriteTotalPages} (${this.favoriteTotalElements} items total)`);
           this.fetchFavoritePropertyDetails(favorites);
         } else {
-          // Xử lý trường hợp API trả về dữ liệu không đúng định dạng
           console.warn('Unexpected response format:', response);
           this.favoriteProperties = [];
           this.favoritesLoading = false;
@@ -310,59 +299,84 @@ export class ProfileComponent implements OnInit, OnDestroy {
     let completedRequests = 0;
     
     listingIds.forEach((id, index) => {
+      if (!id) {
+        console.error('Invalid listing ID found in favorites');
+        completedRequests++;
+        checkCompletion();
+        return;
+      }
+      
       console.log('Fetching property details for ID:', id);
       
       this.propertyService.getPropertyById(id).subscribe({
         next: (response: any) => {
           console.log('Property details response for ID ' + id + ':', response);
           
+          let property = null;
+          
           if (response && response.data) {
             console.log('Property data extracted:', response.data);
-            const property = response.data;
-            // Lưu listingId để xử lý khi xóa favorite
-            property.listingId = id;
-            
-            // Add the favorite id for reference
-            const matchingFavorite = favorites.find(fav => fav.listingId === id);
-            if (matchingFavorite) {
-              property.favoriteId = matchingFavorite.id;
-            }
-            fetchedProperties.push(property);
+            property = response.data;
           } else if (response) {
             // Direct response (not wrapped in data property)
             console.log('Direct property data:', response);
-            const property = response;
-            // Lưu listingId để xử lý khi xóa favorite
-            property.listingId = id;
-            
-            // Add the favorite id for reference
-            const matchingFavorite = favorites.find(fav => fav.listingId === id);
-            if (matchingFavorite) {
-              property.favoriteId = matchingFavorite.id;
-            }
-            fetchedProperties.push(property);
+            property = response;
           } else {
             console.warn('No valid property data found for ID:', id);
+            completedRequests++;
+            checkCompletion();
+            return;
           }
           
-          console.log('Current fetched properties count:', fetchedProperties.length);
+          // Lưu listingId để xử lý khi xóa favorite
+          property.listingId = id;
+          
+          // Add the favorite id for reference
+          const matchingFavorite = favorites.find(fav => fav.listingId === id);
+          if (matchingFavorite) {
+            property.favoriteId = matchingFavorite.id;
+          }
+          
+          // Log the image URLs for debugging
+          console.log('Property image URLs:', {
+            mainURL: property.mainURL,
+            firstImage: property.images && property.images.length > 0 ? property.images[0] : 'no images',
+            image: property.image
+          });
+          
+          fetchedProperties.push(property);
+          console.log('Added property to fetchedProperties, current count:', fetchedProperties.length);
+          
+          completedRequests++;
           checkCompletion();
         },
         error: (err) => {
           console.error('Error fetching property details for ID ' + id + ':', err);
+          completedRequests++;
           checkCompletion();
         }
       });
     });
     
     const checkCompletion = () => {
-      completedRequests++;
       console.log(`Completed ${completedRequests}/${listingIds.length} property requests`);
       
       if (completedRequests === listingIds.length) {
         console.log('All property requests completed, setting favorites:', fetchedProperties);
         this.favoriteProperties = fetchedProperties;
         this.favoritesLoading = false;
+        // Force change detection to update UI
+        setTimeout(() => {
+          console.log('Final favorites array has', this.favoriteProperties.length, 'items');
+          // Log all image URLs in the final array
+          this.favoriteProperties.forEach((prop, idx) => {
+            console.log(`Property ${idx} image URLs:`, {
+              mainURL: prop.mainURL,
+              firstImage: prop.images && prop.images.length > 0 ? prop.images[0] : 'no images',
+              image: prop.image
+            });
+          });
+        }, 0);
       }
     };
   }
@@ -536,6 +550,15 @@ export class ProfileComponent implements OnInit, OnDestroy {
   setActiveTab(tabName: string): void {
     this.activeTab = tabName;
     
+    // Load appropriate data based on selected tab
+    if (tabName === 'favorites') {
+      this.loadFavoriteProperties();
+    } else if (tabName === 'saved-searches') {
+      this.loadSavedSearches();
+    } else if (tabName === 'reviews') {
+      this.loadUserReviews();
+    }
+    
     // Update URL to reflect the active tab without reloading
     const url = this.activeTab === 'profile' ? '/profile' : `/profile/${this.activeTab}`;
     this.router.navigate([url], { replaceUrl: true });
@@ -668,5 +691,43 @@ export class ProfileComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(subscription => subscription.unsubscribe());
+  }
+
+  // Method to handle file upload
+  onFileSelected(event: any): void {
+    const file: File = event.target.files[0];
+    if (file) {
+      if (file.type.match(/image\/*/) === null) {
+        this.toastr.error('Only images are supported');
+        return;
+      }
+      
+      if (file.size > 5000000) { // 5MB max
+        this.toastr.error('File size should not exceed 5MB');
+        return;
+      }
+      
+      const userId = this.user?.id;
+      if (!userId) {
+        this.toastr.error('User ID not available');
+        return;
+      }
+      
+      this.isLoading = true;
+      this.userService.uploadAvatar(userId, file).subscribe({
+        next: () => {
+          this.isLoading = false;
+          this.loadUserProfileFromBackend();
+          this.toastr.success('Avatar uploaded successfully');
+        },
+        error: (err) => {
+          this.isLoading = false;
+          console.error('Avatar upload failed:', err);
+          // Show more specific error message from the server if available
+          const errorMessage = err.message || 'Failed to upload avatar';
+          this.toastr.error(errorMessage);
+        }
+      });
+    }
   }
 } 

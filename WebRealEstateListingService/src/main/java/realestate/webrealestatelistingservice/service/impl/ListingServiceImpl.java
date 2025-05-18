@@ -144,6 +144,24 @@ public class ListingServiceImpl implements ListingService {
                 .build();
     }
 
+    @Override
+    public PageDto<ListingResponse> getListingsPagedAdmin(int page, int size) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.by("createdAt").descending());
+        Page<ListingEntity> pageResult = listingRepository.findAll(pageable);
+
+        List<ListingResponse> items = pageResult.getContent().stream()
+                .map(listingMapper::convertToListingResponse)
+                .collect(Collectors.toList());
+
+        return PageDto.<ListingResponse>builder()
+                .items(items)
+                .page(page)
+                .size(size)
+                .totalElements(pageResult.getTotalElements())
+                .totalPages(pageResult.getTotalPages())
+                .build();
+    }
+
 
     @Override
     public List<ListingResponse> getListingsBySaleType() {

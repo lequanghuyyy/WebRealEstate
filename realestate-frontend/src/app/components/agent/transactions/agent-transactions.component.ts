@@ -12,6 +12,10 @@ import { PaymentService } from '../../../services/payment.service';
 import { ToastrWrapperService } from '../../../services/toastr-wrapper.service';
 import { PaymentResponse } from '../../../models/payment.model';
 import { PaymentFormComponent } from '../../payments/payment-form.component';
+import { PropertyService } from '../../../services/property.service';
+import { UserService } from '../../../services/user.service';
+import { forkJoin, of } from 'rxjs';
+import { catchError, finalize, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-agent-transactions',
@@ -66,6 +70,7 @@ export class AgentTransactionsComponent implements OnInit {
   // Transaction dialog properties
   showTransactionDialog: boolean = false;
   selectedTransaction: ExtendedTransaction | null = null;
+  editMode: boolean = false;
 
   // Add new properties for payment form
   showPaymentForm: boolean = false;
@@ -81,7 +86,9 @@ export class AgentTransactionsComponent implements OnInit {
     private transactionPaymentService: TransactionPaymentService,
     private fb: FormBuilder,
     private paymentService: PaymentService,
-    private toastr: ToastrWrapperService
+    private toastr: ToastrWrapperService,
+    private propertyService: PropertyService,
+    private userService: UserService
   ) {
     this.filterForm = this.fb.group({
       searchQuery: [''],
@@ -125,11 +132,43 @@ export class AgentTransactionsComponent implements OnInit {
 
   loadTransactions(): void {
     this.isLoading = true;
+    const currentUser = this.authService.getCurrentUser();
     
-    // Use the transaction service to get data
-    this.transactionService.getTransactions().subscribe({
-      next: (transactions) => {
-        this.transactions = transactions as ExtendedTransaction[];
+    if (!currentUser || !currentUser.id) {
+      this.errorMessage = 'User information not available';
+      this.isLoading = false;
+      return;
+    }
+    
+    const agentId = currentUser.id;
+    
+    // Use forkJoin to get both sales and rental transactions for the agent
+    forkJoin({
+      salesTransactions: this.transactionService.getSalesTransactionsByAgent(agentId).pipe(
+        catchError(error => {
+          console.error('Error loading sales transactions:', error);
+          return of([]);
+        })
+      ),
+      rentalTransactions: this.transactionService.getRentalTransactionsByAgent(agentId).pipe(
+        catchError(error => {
+          console.error('Error loading rental transactions:', error);
+          return of([]);
+        })
+      )
+    }).subscribe({
+      next: (result) => {
+        // Map API responses to the ExtendedTransaction format
+        const salesTransactions = result.salesTransactions.map(sale => 
+          this.transactionService.mapSalesToTransaction(sale) as ExtendedTransaction
+        );
+        
+        const rentalTransactions = result.rentalTransactions.map(rental => 
+          this.transactionService.mapRentalToTransaction(rental) as ExtendedTransaction
+        );
+        
+        // Combine both transaction types
+        this.transactions = [...salesTransactions, ...rentalTransactions];
         
         // Add mock start and end dates for rent transactions if not present
         this.transactions = this.transactions.map(t => {
@@ -142,22 +181,95 @@ export class AgentTransactionsComponent implements OnInit {
               ...t,
               startDate: t.date,
               endDate: endDate.toISOString().split('T')[0],
-              paymentMethod: 'Bank Transfer',
               notes: 'Standard 1-year lease agreement'
             };
-          } else if (t.type === 'sale' && !t.paymentMethod) {
+          } else if (t.type === 'sale') {
             return {
               ...t,
-              paymentMethod: 'Bank Transfer',
               notes: 'Standard sale agreement'
             };
           }
           return t;
         });
         
-        this.applyFilters();
-        this.calculateSummary();
-        this.isLoading = false;
+        // Load detailed property and client info for each transaction
+        const observables = this.transactions.map(transaction => {
+          // Load full property details if we have propertyId
+          const propertyObs = transaction.propertyId ?
+            this.propertyService.getPropertyById(transaction.propertyId.toString()).pipe(
+              catchError(err => {
+                console.error('Error loading property details:', err);
+                return of(null);
+              })
+            ) : of(null);
+          
+          // Load client details if we have buyerId/renterId
+          const clientId = transaction.buyerId || (transaction.type === 'rent' ? transaction.buyerId : null);
+          const clientObs = clientId ?
+            this.userService.getUserById(clientId.toString()).pipe(
+              catchError(err => {
+                console.error('Error loading client details:', err);
+                return of(null);
+              })
+            ) : of(null);
+          
+          return forkJoin([propertyObs, clientObs]).pipe(
+            map(([property, client]) => {
+              // Update transaction with full property details if available
+              if (property) {
+                transaction.property = {
+                  ...transaction.property,
+                  id: property.id,
+                  title: property.title,
+                  image: property.mainURL || (property.images && property.images.length > 0 ? 
+                    (typeof property.images[0] === 'string' ? property.images[0] : property.images[0].toString()) : '')
+                };
+              }
+              
+              // Update client info if available
+              if (client) {
+                let clientName = transaction.client.name;
+                if (client.firstName && client.lastName) {
+                  clientName = client.firstName + ' ' + client.lastName;
+                } else if (client.firstName) {
+                  clientName = client.firstName;
+                } else if (client.lastName) {
+                  clientName = client.lastName;
+                } else if (client.name) {
+                  clientName = client.name;
+                }
+                
+                transaction.client = {
+                  ...transaction.client,
+                  name: clientName,
+                  email: client.email || transaction.client.email
+                };
+              }
+              
+              return transaction;
+            })
+          );
+        });
+        
+        // Wait for all property and client data to load
+        forkJoin(observables).pipe(
+          finalize(() => {
+            this.applyFilters();  
+            this.calculateSummary();
+            this.isLoading = false;
+          })
+        ).subscribe({
+          next: (updatedTransactions) => {
+            this.transactions = updatedTransactions;
+          },
+          error: (error) => {
+            console.error('Error loading transaction details:', error);
+            // We'll still show the transactions with what we have
+            this.applyFilters();
+            this.calculateSummary();
+            this.isLoading = false;
+          }
+        });
       },
       error: (error) => {
         console.error('Error loading transactions:', error);
@@ -175,8 +287,14 @@ export class AgentTransactionsComponent implements OnInit {
     
     this.filteredTransactions = this.transactions.filter(transaction => {
       // Transaction status filter
-      if (statusFilter !== 'all' && transaction.status !== statusFilter) {
-        return false;
+      if (statusFilter !== 'all') {
+        if (statusFilter === 'pending' && transaction.status !== 'PENDING') {
+          return false;
+        } else if (statusFilter === 'completed' && transaction.status !== 'COMPLETED') {
+          return false;
+        } else if (statusFilter === 'cancelled' && transaction.status !== 'CANCELLED') {
+          return false;
+        }
       }
       
       // Payment status filter
@@ -287,7 +405,7 @@ export class AgentTransactionsComponent implements OnInit {
   calculateSummary(): void {
     this.totalTransactions = this.transactions.length;
     this.successfulTransactions = this.transactions.filter(
-      t => t.status === 'completed'
+      t => t.status === 'COMPLETED'
     ).length;
     
     this.totalCommission = this.transactions.reduce(
@@ -392,23 +510,49 @@ export class AgentTransactionsComponent implements OnInit {
   // View transaction details in modal
   viewTransactionDetails(transaction: ExtendedTransaction): void {
     this.selectedTransaction = transaction;
+    this.editMode = false;
     
-    // Open modal using Bootstrap
-    const modal = document.getElementById('transactionDetailsModal');
-    if (modal) {
-      // @ts-ignore
-      const bsModal = new window.bootstrap.Modal(modal);
-      bsModal.show();
+    // Ensure property details are loaded
+    if (transaction.propertyId && (!transaction.property.image || !transaction.property.mainURL)) {
+      this.isLoading = true;
+      this.propertyService.getPropertyById(transaction.propertyId.toString())
+        .pipe(
+          catchError(err => {
+            console.error('Error loading property details for dialog:', err);
+            return of(null);
+          }),
+          finalize(() => {
+            this.isLoading = false;
+            this.showTransactionDialog = true;
+          })
+        )
+        .subscribe(property => {
+          if (property) {
+            this.selectedTransaction = {
+              ...this.selectedTransaction!,
+              property: {
+                ...this.selectedTransaction!.property,
+                title: property.title,
+                image: property.mainURL || (property.images && property.images.length > 0 ? 
+                  (typeof property.images[0] === 'string' ? property.images[0] : property.images[0].toString()) : 'assets/images/property-placeholder.jpg')
+              }
+            };
+          }
+        });
+    } else {
+      this.showTransactionDialog = true;
     }
   }
 
   openAddTransactionDialog(): void {
     this.selectedTransaction = null;
+    this.editMode = true;
     this.showTransactionDialog = true;
   }
 
   openEditTransactionDialog(transaction: ExtendedTransaction): void {
     this.selectedTransaction = transaction;
+    this.editMode = true;
     this.showTransactionDialog = true;
   }
 
@@ -497,7 +641,7 @@ export class AgentTransactionsComponent implements OnInit {
         transaction.type === 'rent'
       ).subscribe({
         next: () => {
-          transaction.status = 'completed';
+          transaction.status = 'COMPLETED';
           transaction.isProcessing = false;
           this.calculateSummary();
           alert('Transaction completed successfully!');
@@ -519,7 +663,7 @@ export class AgentTransactionsComponent implements OnInit {
     
     return this.transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
-      return transaction.status === 'completed' && 
+      return transaction.status === 'COMPLETED' && 
              transactionDate.getMonth() === currentMonth && 
              transactionDate.getFullYear() === currentYear;
     }).length;
@@ -533,7 +677,7 @@ export class AgentTransactionsComponent implements OnInit {
     
     return this.transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
-      return transaction.status === 'completed' && 
+      return transaction.status === 'COMPLETED' && 
              transaction.type === 'sale' &&
              transactionDate.getMonth() === currentMonth && 
              transactionDate.getFullYear() === currentYear;
@@ -548,7 +692,7 @@ export class AgentTransactionsComponent implements OnInit {
     
     return this.transactions.filter(transaction => {
       const transactionDate = new Date(transaction.date);
-      return transaction.status === 'completed' && 
+      return transaction.status === 'COMPLETED' && 
              transaction.type === 'rent' &&
              transactionDate.getMonth() === currentMonth && 
              transactionDate.getFullYear() === currentYear;
@@ -622,7 +766,7 @@ export class AgentTransactionsComponent implements OnInit {
         transaction.type === 'rent'
       ).subscribe({
         next: () => {
-          transaction.status = 'cancelled';
+          transaction.status = 'CANCELLED';
           transaction.paymentStatus = 'cancelled';
           transaction.isProcessing = false;
           this.calculateSummary();
@@ -635,5 +779,24 @@ export class AgentTransactionsComponent implements OnInit {
         }
       });
     }
+  }
+
+  // Export transactions to file
+  exportTransactionsToFile(fileType: 'csv' | 'pdf'): void {
+    let transactions: ExtendedTransaction[] = [];
+    
+    if (this.activeTab === 'buy') {
+      transactions = this.getFilteredSaleTransactions();
+    } else if (this.activeTab === 'rent') {
+      transactions = this.getFilteredRentalTransactions();
+    }
+    
+    if (transactions.length === 0) {
+      this.toastr.info('No transactions to export.');
+      return;
+    }
+    
+    this.transactionService.exportTransactionsToFile(transactions, fileType);
+    this.toastr.success(`Transactions exported as ${fileType.toUpperCase()} successfully.`);
   }
 } 

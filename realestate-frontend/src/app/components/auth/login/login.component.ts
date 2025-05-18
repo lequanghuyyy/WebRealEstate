@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -14,12 +14,12 @@ import { catchError, of } from 'rxjs';
   templateUrl: './login.component.html',
   styleUrls: ['./login.component.css']
 })
-export class LoginComponent implements OnInit {
+export class LoginComponent implements OnInit, OnDestroy {
   // Login form data
   loginData = {
     username: '',
     password: '',
-    rememberMe: false
+    rememberMe: true
   };
   
   // UI state
@@ -29,6 +29,10 @@ export class LoginComponent implements OnInit {
   registrationSuccess = false;
   redirectUrl: string | null = null;
   
+  // Slideshow properties
+  currentSlide = 0;
+  slideshowInterval: any;
+  
   constructor(
     private authService: AuthService,
     private router: Router,
@@ -37,6 +41,9 @@ export class LoginComponent implements OnInit {
   ) {}
   
   ngOnInit() {
+    // Start the slideshow
+    this.startSlideshow();
+    
     this.route.queryParams.subscribe(params => {
       if (params['registered'] === 'success') {
         this.registrationSuccess = true;
@@ -54,13 +61,45 @@ export class LoginComponent implements OnInit {
     this.authService.checkServiceHealth();
   }
   
+  ngOnDestroy() {
+    // Clear the interval when component is destroyed
+    if (this.slideshowInterval) {
+      clearInterval(this.slideshowInterval);
+    }
+  }
+  
+  startSlideshow() {
+    // Set the first slide as active
+    setTimeout(() => {
+      this.setActiveSlide(0);
+    }, 0);
+    
+    // Change slides every 5 seconds
+    this.slideshowInterval = setInterval(() => {
+      const slides = document.querySelectorAll('.slide');
+      this.currentSlide = (this.currentSlide + 1) % slides.length;
+      this.setActiveSlide(this.currentSlide);
+    }, 5000);
+  }
+  
+  setActiveSlide(index: number) {
+    const slides = document.querySelectorAll('.slide');
+    slides.forEach((slide, i) => {
+      if (i === index) {
+        slide.classList.add('active');
+      } else {
+        slide.classList.remove('active');
+      }
+    });
+  }
+  
   onSubmit() {
     // Set loading state
     this.isLoading = true;
     this.errorMessage = '';
     
-    // Make login request
-    this.authService.login(this.loginData.username, this.loginData.password)
+    // Make login request with rememberMe value
+    this.authService.login(this.loginData.username, this.loginData.password, this.loginData.rememberMe)
       .subscribe({
         next: (response) => {
           console.log('Login successful');
@@ -74,18 +113,34 @@ export class LoginComponent implements OnInit {
                 // Update current user in auth service
                 this.authService.updateCurrentUser(user);
                 
-                // Then redirect to dashboard or homepage
-                this.router.navigate([this.redirectUrl || '/']);
+                // Redirect to the original URL the user was trying to access
+                if (this.redirectUrl) {
+                  this.router.navigateByUrl(this.redirectUrl);
+                } else if (user.roles?.includes('ADMIN')) {
+                  this.router.navigate(['/admin/dashboard']);
+                } else if (user.roles?.includes('AGENT')) {
+                  this.router.navigate(['/agent/dashboard']);
+                } else {
+                  this.router.navigate(['/']);
+                }
               },
               error: (error) => {
                 console.error('Error fetching user details:', error);
                 // Still redirect even if we couldn't fetch details
-                this.router.navigate([this.redirectUrl || '/']);
+                if (this.redirectUrl) {
+                  this.router.navigateByUrl(this.redirectUrl);
+                } else {
+                  this.router.navigate(['/']);
+                }
               }
             });
           } else {
             // If no userId, just redirect
-            this.router.navigate([this.redirectUrl || '/']);
+            if (this.redirectUrl) {
+              this.router.navigateByUrl(this.redirectUrl);
+            } else {
+              this.router.navigate(['/']);
+            }
           }
           
           this.isLoading = false;

@@ -1,0 +1,24 @@
+@startuml
+title Sequence Diagram Thanh Toán
+
+actor User
+participant UI
+participant PaymentService
+participant Database
+
+User -> UI: Nhập thông tin thanh toán (transactionId, amount, paymentMethod, notes)
+UI -> PaymentService: Gửi yêu cầu xử lý thanh toán (PaymentRequest)
+PaymentService -> Database: Kiểm tra giao dịch tồn tại (transactionId)
+Database --> PaymentService: Trả về kết quả kiểm tra (tồn tại hoặc không)
+
+alt Giao dịch tồn tại
+    PaymentService -> Database: Lưu thông tin thanh toán vào bảng `PaymentEntity`
+    Database --> PaymentService: Trả về kết quả lưu thành công
+    PaymentService --> UI: Trả về thông báo thành công
+    UI --> User: Hiển thị thông báo "Thanh toán thành công"
+else Giao dịch không tồn tại
+    PaymentService --> UI: Trả về lỗi "Giao dịch không tồn tại"
+    UI --> User: Hiển thị thông báo lỗi
+end
+
+@enduml

@@ -146,13 +146,22 @@
           <!-- Status and actions -->
           <div class="col-md-3 action-column">
             <div class="action-buttons">
-              <!-- Show cancel button only for pending or confirmed appointments -->
+              <!-- Show cancel button only for pending appointments -->
               <button 
-                *ngIf="appointment.status === 'PENDING' || appointment.status === 'CONFIRMED'" 
+                *ngIf="isPending(appointment.status)" 
                 class="btn btn-sm btn-outline-danger action-btn"
                 (click)="cancelAppointment(appointment.id)"
               >
                 <i class="fas fa-times me-1"></i> Cancel Appointment
+              </button>
+              
+              <!-- Show delete button for completed, cancelled or confirmed appointments -->
+              <button 
+                *ngIf="canDelete(appointment.status)" 
+                class="btn btn-sm btn-outline-danger action-btn"
+                (click)="deleteAppointment(appointment.id.toString())"
+              >
+                <i class="fas fa-trash-alt me-1"></i> Delete
               </button>
               
               <!-- Link to property details -->
